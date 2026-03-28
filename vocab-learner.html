@@ -1,0 +1,1429 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LexiLearn — Học Từ Vựng Thông Minh</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<style>
+  :root {
+    --bg: #F7F4EE;
+    --surface: #FDFCF9;
+    --surface2: #F0EDE5;
+    --border: #E2DDD4;
+    --border2: #CCC7BB;
+    --text: #2A2520;
+    --text2: #6B6358;
+    --text3: #9E9589;
+    --teal: #1A5C55;
+    --teal-light: #E6F2F0;
+    --teal-mid: #2E8B7A;
+    --amber: #C97B22;
+    --amber-light: #FDF2E3;
+    --red: #C0392B;
+    --red-light: #FDECEA;
+    --green: #2D7A4F;
+    --green-light: #E8F5EE;
+    --highlight: #FFE066;
+    --highlight-learned: #B5EAD7;
+    --shadow: 0 2px 12px rgba(42,37,32,0.08);
+    --shadow-lg: 0 8px 32px rgba(42,37,32,0.12);
+    --r: 10px;
+    --r-sm: 6px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  /* HEADER */
+  header {
+    background: var(--teal);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    font-family: 'Lora', serif;
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: -0.02em;
+  }
+  .logo span { color: #80D4CA; }
+  .header-stats {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+  }
+  .stat-pill {
+    background: rgba(255,255,255,0.12);
+    color: rgba(255,255,255,0.9);
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .stat-pill strong { color: #fff; }
+
+  /* TABS */
+  .tabs {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    padding: 0 2rem;
+    gap: 0;
+    overflow-x: auto;
+  }
+  .tab-btn {
+    padding: 14px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text2);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .tab-btn:hover { color: var(--teal); }
+  .tab-btn.active { color: var(--teal); border-bottom-color: var(--teal); }
+  .tab-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--teal-light);
+    color: var(--teal);
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 1px 7px;
+    margin-left: 6px;
+  }
+
+  /* MAIN LAYOUT */
+  .main { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* CARDS */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+  }
+  .card-title {
+    font-family: 'Lora', serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title .icon {
+    width: 28px; height: 28px;
+    background: var(--teal-light);
+    color: var(--teal);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+  }
+
+  /* BUTTONS */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 18px;
+    border-radius: var(--r-sm);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+  }
+  .btn-primary { background: var(--teal); color: #fff; }
+  .btn-primary:hover { background: #1d6b62; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(26,92,85,0.3); }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: var(--border); }
+  .btn-amber { background: var(--amber); color: #fff; }
+  .btn-amber:hover { background: #b56d1c; transform: translateY(-1px); }
+  .btn-danger { background: var(--red-light); color: var(--red); border: 1px solid #f5c6c1; }
+  .btn-danger:hover { background: #f8d7d4; }
+  .btn-success { background: var(--green-light); color: var(--green); border: 1px solid #a8dcc0; }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none !important; }
+
+  /* UPLOAD AREA */
+  .upload-zone {
+    border: 2px dashed var(--border2);
+    border-radius: var(--r);
+    padding: 2.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--bg);
+  }
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--teal-mid);
+    background: var(--teal-light);
+  }
+  .upload-icon {
+    width: 48px; height: 48px;
+    margin: 0 auto 1rem;
+    background: var(--teal-light);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+  .upload-zone p { color: var(--text2); font-size: 14px; }
+  .upload-zone strong { color: var(--teal); }
+
+  /* TEXT EDITOR */
+  .editor-toolbar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 12px 16px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm) var(--r-sm) 0 0;
+    border-bottom: none;
+  }
+  .tool-hint {
+    font-size: 12px;
+    color: var(--text3);
+    padding: 6px 12px;
+    background: var(--amber-light);
+    border-radius: 20px;
+    margin-left: auto;
+    display: flex; align-items: center; gap: 5px;
+  }
+  #textEditor {
+    min-height: 260px;
+    max-height: 420px;
+    overflow-y: auto;
+    padding: 1.25rem 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 0 0 var(--r-sm) var(--r-sm);
+    outline: none;
+    font-family: 'Lora', serif;
+    font-size: 15px;
+    line-height: 1.9;
+    background: var(--surface);
+    color: var(--text);
+  }
+  #textEditor:empty:before {
+    content: attr(data-placeholder);
+    color: var(--text3);
+    font-style: italic;
+  }
+  #textEditor .word-marked {
+    background: var(--highlight);
+    border-radius: 3px;
+    padding: 1px 2px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.2s;
+  }
+  #textEditor .word-marked:hover { background: #FFD700; }
+  #textEditor .word-learned {
+    background: var(--highlight-learned);
+    border-radius: 3px;
+    padding: 1px 2px;
+    font-weight: 600;
+    cursor: pointer;
+    position: relative;
+  }
+  #textEditor .word-learned::after {
+    content: '✓';
+    font-size: 10px;
+    color: var(--green);
+    vertical-align: super;
+  }
+
+  /* VOCAB GRID */
+  .vocab-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+    margin-top: 1.5rem;
+  }
+  .vocab-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 1.2rem 1.25rem;
+    position: relative;
+    transition: box-shadow 0.2s, transform 0.2s;
+  }
+  .vocab-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-2px); }
+  .vocab-card.learned { border-left: 3px solid var(--green); }
+  .vocab-word {
+    font-family: 'Lora', serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--teal);
+    margin-bottom: 3px;
+  }
+  .vocab-phonetic {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--amber);
+    margin-bottom: 8px;
+    letter-spacing: 0.02em;
+  }
+  .vocab-pos {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--teal);
+    background: var(--teal-light);
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .vocab-meaning {
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.6;
+    margin-bottom: 8px;
+  }
+  .vocab-vi {
+    font-size: 13px;
+    color: var(--text2);
+    font-style: italic;
+    margin-bottom: 8px;
+    padding-left: 10px;
+    border-left: 2px solid var(--border2);
+  }
+  .vocab-example {
+    font-size: 13px;
+    color: var(--text2);
+    font-style: italic;
+    line-height: 1.6;
+  }
+  .vocab-actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .icon-btn {
+    width: 30px; height: 30px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    transition: all 0.15s;
+  }
+  .icon-btn:hover { background: var(--teal-light); border-color: var(--teal); }
+  .icon-btn.active-learned { background: var(--green-light); border-color: var(--green); }
+
+  /* FILTER BAR */
+  .filter-bar {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+  .filter-chip {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text2);
+    transition: all 0.15s;
+  }
+  .filter-chip.active {
+    background: var(--teal);
+    color: #fff;
+    border-color: var(--teal);
+  }
+  .search-input {
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    background: var(--surface);
+    color: var(--text);
+    outline: none;
+    width: 200px;
+    margin-left: auto;
+  }
+  .search-input:focus { border-color: var(--teal); }
+
+  /* EXERCISES */
+  .exercise-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .fill-blank {
+    font-family: 'Lora', serif;
+    font-size: 15px;
+    line-height: 2.2;
+    margin-bottom: 1rem;
+  }
+  .blank-input {
+    display: inline-block;
+    border: none;
+    border-bottom: 2px solid var(--teal);
+    background: transparent;
+    min-width: 100px;
+    padding: 2px 6px;
+    font-family: 'Lora', serif;
+    font-size: 15px;
+    color: var(--teal);
+    outline: none;
+    text-align: center;
+    font-weight: 600;
+  }
+  .blank-input.correct { border-bottom-color: var(--green); color: var(--green); background: var(--green-light); border-radius: 3px; }
+  .blank-input.wrong { border-bottom-color: var(--red); color: var(--red); background: var(--red-light); border-radius: 3px; }
+  .exercise-score {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  /* WORD BANK */
+  .word-bank {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--r-sm);
+    margin-bottom: 1rem;
+  }
+  .bank-word {
+    padding: 5px 12px;
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'Lora', serif;
+  }
+  .bank-word:hover { background: var(--teal-light); border-color: var(--teal); color: var(--teal); }
+  .bank-word.used { opacity: 0.35; text-decoration: line-through; pointer-events: none; }
+
+  /* PROGRESS */
+  .progress-bar-wrap {
+    background: var(--surface2);
+    border-radius: 10px;
+    height: 10px;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--teal-mid), var(--teal));
+    border-radius: 10px;
+    transition: width 0.5s ease;
+  }
+
+  /* GRID LAYOUT */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+
+  /* METRIC */
+  .metric-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r);
+    padding: 1.25rem;
+    text-align: center;
+  }
+  .metric-val {
+    font-family: 'Lora', serif;
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: var(--teal);
+  }
+  .metric-lbl { font-size: 12px; color: var(--text2); font-weight: 500; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+  /* LOADING */
+  .loading-overlay {
+    position: fixed; inset: 0;
+    background: rgba(247,244,238,0.85);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 999;
+    display: none;
+  }
+  .loading-spinner {
+    width: 44px; height: 44px;
+    border: 3px solid var(--border2);
+    border-top-color: var(--teal);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-bottom: 1rem;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 14px; color: var(--text2); }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 2rem; right: 2rem;
+    background: var(--teal);
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: var(--r-sm);
+    font-size: 14px;
+    font-weight: 500;
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(.34,1.56,.64,1);
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* MISC */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+  }
+  .section-title {
+    font-family: 'Lora', serif;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .badge-new { background: var(--amber-light); color: var(--amber); }
+  .badge-learned { background: var(--green-light); color: var(--green); }
+  .empty-state {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: var(--text3);
+  }
+  .empty-state .empty-icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; }
+  .empty-state p { font-size: 14px; }
+
+  @media (max-width: 768px) {
+    .main { padding: 1rem; }
+    .two-col, .three-col { grid-template-columns: 1fr; }
+    .vocab-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Lexi<span>Learn</span></div>
+  <div class="header-stats">
+    <div class="stat-pill">Tổng từ: <strong id="totalCount">0</strong></div>
+    <div class="stat-pill">Đã học: <strong id="learnedCount">0</strong></div>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('editor')">✏️ Soạn thảo</button>
+  <button class="tab-btn" onclick="switchTab('vocab')">📖 Từ vựng <span class="tab-count" id="vocabTabCount">0</span></button>
+  <button class="tab-btn" onclick="switchTab('exercise')">🎯 Bài tập</button>
+  <button class="tab-btn" onclick="switchTab('progress')">📊 Tiến độ</button>
+</div>
+
+<div class="main">
+
+  <!-- EDITOR TAB -->
+  <div id="tab-editor" class="panel active">
+    <div class="two-col" style="align-items: start;">
+      <div>
+        <div class="card" style="margin-bottom: 1.5rem;">
+          <div class="card-title"><span class="icon">📁</span> Tải lên văn bản</div>
+          <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()" ondragover="event.preventDefault(); this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="handleDrop(event)">
+            <div class="upload-icon">📄</div>
+            <p><strong>Kéo thả file .docx</strong> hoặc nhấn để chọn</p>
+            <p style="margin-top: 4px; font-size: 12px;">Hỗ trợ: .docx, .txt</p>
+          </div>
+          <input type="file" id="fileInput" accept=".docx,.txt" style="display:none" onchange="handleFileUpload(event)">
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">✍️</span> Soạn thảo văn bản</div>
+          <div class="editor-toolbar">
+            <button class="btn btn-secondary" onclick="clearEditor()" title="Xóa văn bản">🗑️ Xóa</button>
+            <button class="btn btn-secondary" onclick="selectAllWords()">Chọn tất cả</button>
+            <button class="btn btn-secondary" onclick="clearAllMarks()">Bỏ chọn tất cả</button>
+            <div class="tool-hint">💡 Nhấn đôi vào từ để đánh dấu học</div>
+          </div>
+          <div id="textEditor" contenteditable="true" spellcheck="false" data-placeholder="Dán đoạn văn tiếng Anh vào đây hoặc tải file lên..."></div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card" style="margin-bottom: 1.5rem;">
+          <div class="card-title"><span class="icon">⚡</span> Tùy chọn</div>
+          <div style="margin-bottom: 12px;">
+            <label style="font-size: 13px; font-weight: 500; color: var(--text2); display: block; margin-bottom: 6px;">Ngôn ngữ dịch nghĩa</label>
+            <select id="targetLang" style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--r-sm); font-family: 'DM Sans'; font-size: 14px; background: var(--surface); color: var(--text);">
+              <option value="Vietnamese">Tiếng Việt</option>
+              <option value="English">Tiếng Anh</option>
+              <option value="Chinese">Tiếng Trung</option>
+            </select>
+          </div>
+          <div style="margin-bottom: 12px;">
+            <label style="font-size: 13px; font-weight: 500; color: var(--text2); display: block; margin-bottom: 6px;">Bỏ qua từ đã học</label>
+            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+              <input type="checkbox" id="skipLearned" checked style="width: 16px; height: 16px; accent-color: var(--teal);">
+              <span style="font-size: 13px; color: var(--text2);">Lọc từ đã nằm trong danh sách học</span>
+            </label>
+          </div>
+          <div style="margin-bottom: 1rem;">
+            <label style="font-size: 13px; font-weight: 500; color: var(--text2); display: block; margin-bottom: 6px;">Số từ đã đánh dấu</label>
+            <div id="markedWordsList" style="font-size: 13px; color: var(--text2); min-height: 36px; padding: 8px 12px; background: var(--bg); border-radius: var(--r-sm); font-family: 'Lora', serif; line-height: 1.8; max-height: 120px; overflow-y: auto;">
+              <span style="font-style: italic; color: var(--text3);">Chưa đánh dấu từ nào...</span>
+            </div>
+          </div>
+          <button class="btn btn-primary" style="width: 100%; justify-content: center; padding: 12px;" onclick="generateVocab()">
+            ✨ Tạo danh sách từ vựng
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="icon">🔢</span> Thống kê nhanh</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+            <div class="metric-card" style="padding: 1rem;">
+              <div class="metric-val" style="font-size: 1.8rem;" id="wordCountStat">0</div>
+              <div class="metric-lbl">Tổng số từ</div>
+            </div>
+            <div class="metric-card" style="padding: 1rem;">
+              <div class="metric-val" style="font-size: 1.8rem;" id="markedStat">0</div>
+              <div class="metric-lbl">Đã đánh dấu</div>
+            </div>
+            <div class="metric-card" style="padding: 1rem;">
+              <div class="metric-val" style="font-size: 1.8rem;" id="uniqueStat">0</div>
+              <div class="metric-lbl">Từ duy nhất</div>
+            </div>
+            <div class="metric-card" style="padding: 1rem;">
+              <div class="metric-val" style="font-size: 1.8rem;" id="sentenceStat">0</div>
+              <div class="metric-lbl">Câu</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VOCAB TAB -->
+  <div id="tab-vocab" class="panel">
+    <div class="section-header">
+      <div class="section-title">Danh sách từ vựng</div>
+      <div style="display: flex; gap: 10px;">
+        <button class="btn btn-success" onclick="downloadVocab('txt')">📄 Tải .TXT</button>
+        <button class="btn btn-success" onclick="downloadVocab('csv')">📊 Tải .CSV</button>
+        <button class="btn btn-amber" onclick="generateVocab()">🔄 Cập nhật</button>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <button class="filter-chip active" onclick="filterVocab('all', this)">Tất cả</button>
+      <button class="filter-chip" onclick="filterVocab('new', this)">🆕 Mới</button>
+      <button class="filter-chip" onclick="filterVocab('learned', this)">✅ Đã học</button>
+      <input class="search-input" type="text" placeholder="🔍 Tìm từ..." oninput="searchVocab(this.value)">
+    </div>
+
+    <div id="vocabContainer">
+      <div class="empty-state">
+        <div class="empty-icon">📖</div>
+        <p>Chưa có từ vựng nào. Hãy đánh dấu từ trong văn bản và nhấn <strong>Tạo danh sách</strong>.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXERCISE TAB -->
+  <div id="tab-exercise" class="panel">
+    <div class="section-header">
+      <div class="section-title">Bài tập luyện tập</div>
+      <div style="display: flex; gap: 10px;">
+        <button class="btn btn-secondary" onclick="generateExercise()">🎲 Tạo bài mới</button>
+        <button class="btn btn-danger" onclick="resetExercise()">🔄 Làm lại</button>
+        <button class="btn btn-primary" onclick="checkAnswers()">✅ Kiểm tra</button>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 10px; margin-bottom: 1.5rem; flex-wrap: wrap;">
+      <button class="filter-chip active" id="exType-fill" onclick="setExType('fill', this)">Điền từ</button>
+      <button class="filter-chip" id="exType-choice" onclick="setExType('choice', this)">Trắc nghiệm</button>
+      <button class="filter-chip" id="exType-match" onclick="setExType('match', this)">Nối từ</button>
+    </div>
+
+    <div id="exerciseContainer">
+      <div class="empty-state">
+        <div class="empty-icon">🎯</div>
+        <p>Chưa có bài tập. Hãy tạo danh sách từ vựng trước, sau đó nhấn <strong>Tạo bài mới</strong>.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROGRESS TAB -->
+  <div id="tab-progress" class="panel">
+    <div class="section-title" style="margin-bottom: 1.5rem;">Tiến độ học tập</div>
+    <div class="three-col" style="margin-bottom: 1.5rem;">
+      <div class="metric-card">
+        <div class="metric-val" id="prog-total">0</div>
+        <div class="metric-lbl">Tổng từ đã tạo</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" id="prog-learned">0</div>
+        <div class="metric-lbl">Đã thành thạo</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-val" id="prog-pct">0%</div>
+        <div class="metric-lbl">Tỉ lệ nắm vững</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom: 1.5rem;">
+      <div class="card-title"><span class="icon">📈</span> Tiến độ tổng quan</div>
+      <div style="margin-bottom: 8px; display: flex; justify-content: space-between; font-size: 13px;">
+        <span style="color: var(--text2);">Từ đã học</span>
+        <span id="prog-bar-text" style="font-weight: 600; color: var(--teal);">0 / 0</span>
+      </div>
+      <div class="progress-bar-wrap" style="height: 14px;">
+        <div class="progress-bar-fill" id="prog-bar" style="width: 0%"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon">📋</span> Lịch sử bài tập</div>
+      <div id="exerciseHistory" style="font-size: 14px; color: var(--text2);">
+        <div style="font-style: italic; color: var(--text3); padding: 1rem 0;">Chưa có lịch sử bài tập nào.</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <div class="loading-text" id="loadingText">Đang xử lý...</div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+let vocabList = [];
+let learnedWords = new Set();
+let exerciseHistory = [];
+let currentExType = 'fill';
+let fullText = '';
+let currentFilter = 'all';
+
+// ============================================================
+// TABS
+// ============================================================
+function switchTab(tab) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  event.target.classList.add('active');
+  if (tab === 'progress') updateProgress();
+}
+
+// ============================================================
+// EDITOR
+// ============================================================
+const editor = document.getElementById('textEditor');
+
+editor.addEventListener('dblclick', function(e) {
+  const selection = window.getSelection();
+  if (!selection || selection.isCollapsed) return;
+  const word = selection.toString().trim();
+  if (!word || word.length < 2 || /\s/.test(word)) return;
+  e.preventDefault();
+  wrapSelectedWord(word);
+  updateStats();
+  updateMarkedList();
+});
+
+function wrapSelectedWord(word) {
+  const selection = window.getSelection();
+  if (!selection.rangeCount) return;
+  const range = selection.getRangeAt(0);
+  const selectedText = range.toString().trim();
+  if (!selectedText) return;
+  const span = document.createElement('span');
+  span.className = 'word-marked';
+  span.textContent = selectedText;
+  span.title = 'Nhấn đôi để bỏ đánh dấu';
+  span.addEventListener('dblclick', function(e) {
+    e.stopPropagation();
+    const parent = this.parentNode;
+    parent.replaceChild(document.createTextNode(this.textContent), this);
+    parent.normalize();
+    updateStats();
+    updateMarkedList();
+  });
+  try {
+    range.deleteContents();
+    range.insertNode(span);
+    selection.removeAllRanges();
+  } catch(err) {}
+}
+
+function getMarkedWords() {
+  const spans = editor.querySelectorAll('.word-marked');
+  const words = [...spans].map(s => s.textContent.toLowerCase().trim());
+  return [...new Set(words)].filter(w => w.length > 1);
+}
+
+function updateMarkedList() {
+  const words = getMarkedWords();
+  const el = document.getElementById('markedWordsList');
+  if (words.length === 0) {
+    el.innerHTML = '<span style="font-style: italic; color: var(--text3);">Chưa đánh dấu từ nào...</span>';
+  } else {
+    el.innerHTML = words.map(w =>
+      `<span style="display:inline-block; background:var(--highlight); border-radius:3px; padding:1px 8px; margin:2px; font-weight:600;">${w}</span>`
+    ).join(' ');
+  }
+  document.getElementById('markedStat').textContent = words.length;
+}
+
+function updateStats() {
+  const text = editor.innerText || '';
+  fullText = text;
+  const words = text.trim().split(/\s+/).filter(w => w.length > 0);
+  const unique = new Set(words.map(w => w.toLowerCase().replace(/[^a-z]/g, ''))).size;
+  const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0).length;
+  document.getElementById('wordCountStat').textContent = words.length;
+  document.getElementById('uniqueStat').textContent = unique;
+  document.getElementById('sentenceStat').textContent = sentences;
+}
+
+editor.addEventListener('input', updateStats);
+editor.addEventListener('paste', function(e) {
+  e.preventDefault();
+  const text = e.clipboardData.getData('text/plain');
+  document.execCommand('insertText', false, text);
+  setTimeout(updateStats, 50);
+});
+
+function clearEditor() {
+  if (editor.innerText.trim() && !confirm('Xóa toàn bộ văn bản?')) return;
+  editor.innerHTML = '';
+  updateStats();
+  updateMarkedList();
+}
+
+function selectAllWords() {
+  const text = editor.innerText;
+  if (!text.trim()) { showToast('Chưa có văn bản!', 'warn'); return; }
+  // Wrap all English words
+  const html = text.replace(/\b([a-zA-Z]{2,})\b/g, (match) => {
+    return `<span class="word-marked">${match}</span>`;
+  });
+  editor.innerHTML = html;
+  editor.querySelectorAll('.word-marked').forEach(span => {
+    span.addEventListener('dblclick', function(e) {
+      e.stopPropagation();
+      const parent = this.parentNode;
+      parent.replaceChild(document.createTextNode(this.textContent), this);
+      parent.normalize();
+      updateStats();
+      updateMarkedList();
+    });
+  });
+  updateStats();
+  updateMarkedList();
+  showToast('Đã chọn tất cả từ tiếng Anh!');
+}
+
+function clearAllMarks() {
+  editor.querySelectorAll('.word-marked, .word-learned').forEach(span => {
+    const parent = span.parentNode;
+    parent.replaceChild(document.createTextNode(span.textContent), span);
+    parent.normalize();
+  });
+  updateStats();
+  updateMarkedList();
+}
+
+// ============================================================
+// FILE UPLOAD
+// ============================================================
+async function handleFileUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  await loadFile(file);
+}
+
+async function handleDrop(event) {
+  event.preventDefault();
+  document.getElementById('uploadZone').classList.remove('drag-over');
+  const file = event.dataTransfer.files[0];
+  if (file) await loadFile(file);
+}
+
+async function loadFile(file) {
+  showLoading('Đang đọc file...');
+  try {
+    if (file.name.endsWith('.docx')) {
+      const arrayBuffer = await file.arrayBuffer();
+      const result = await mammoth.extractRawText({ arrayBuffer });
+      editor.innerText = result.value;
+    } else if (file.name.endsWith('.txt')) {
+      const text = await file.text();
+      editor.innerText = text;
+    } else {
+      showToast('Chỉ hỗ trợ .docx và .txt!', 'error');
+      hideLoading();
+      return;
+    }
+    updateStats();
+    updateMarkedList();
+    showToast('Tải file thành công! Nhấn đôi vào từ để đánh dấu.');
+  } catch (err) {
+    showToast('Lỗi đọc file: ' + err.message, 'error');
+  }
+  hideLoading();
+}
+
+// ============================================================
+// GENERATE VOCAB
+// ============================================================
+async function generateVocab() {
+  const marked = getMarkedWords();
+  if (marked.length === 0) {
+    showToast('Hãy đánh dấu ít nhất 1 từ bằng cách nhấn đôi!', 'warn');
+    return;
+  }
+
+  const skipLearned = document.getElementById('skipLearned').checked;
+  const lang = document.getElementById('targetLang').value;
+
+  let wordsToProcess = marked;
+  if (skipLearned) {
+    const existingWords = new Set(vocabList.map(v => v.word.toLowerCase()));
+    wordsToProcess = marked.filter(w => !existingWords.has(w) || learnedWords.has(w));
+  }
+
+  if (wordsToProcess.length === 0) {
+    showToast('Tất cả từ đã có trong danh sách!', 'warn');
+    switchTab('vocab');
+    return;
+  }
+
+  showLoading('Đang tra từ điển... (' + wordsToProcess.length + ' từ)');
+
+  const context = (editor.innerText || '').slice(0, 800);
+
+  try {
+    const prompt = `You are a bilingual dictionary. For each word below, provide a structured definition.
+Context passage (for usage reference): "${context}"
+Words to define: ${wordsToProcess.join(', ')}
+
+Return ONLY a valid JSON array. No markdown. No extra text. Format:
+[
+  {
+    "word": "example",
+    "phonetic": "/ɪɡˈzæmpəl/",
+    "pos": "noun",
+    "definition": "A thing characteristic of its kind or illustrating a general rule.",
+    "translation_${lang}": "${lang === 'Vietnamese' ? 'ví dụ, thí dụ' : lang === 'Chinese' ? '例子' : 'illustration'}",
+    "example": "This is a good example of modern architecture."
+  }
+]
+Only include words from the given list. Use IPA phonetics. Keep definitions concise (under 20 words). Include a short natural example sentence using the word in context.`;
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 3000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await response.json();
+    const rawText = data.content.map(i => i.text || '').join('');
+    const clean = rawText.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+
+    // Merge with existing vocab
+    const existingMap = new Map(vocabList.map(v => [v.word.toLowerCase(), v]));
+    parsed.forEach(item => {
+      const key = item.word.toLowerCase();
+      existingMap.set(key, {
+        word: item.word,
+        phonetic: item.phonetic || '',
+        pos: item.pos || 'word',
+        definition: item.definition || '',
+        translation: item[`translation_${lang}`] || '',
+        example: item.example || ''
+      });
+    });
+    vocabList = [...existingMap.values()];
+
+    renderVocab();
+    updateCounts();
+    showToast(`Đã thêm ${parsed.length} từ vào danh sách!`);
+    switchTab('vocab');
+
+    // Mark learned words in editor
+    markLearnedInEditor();
+  } catch (err) {
+    showToast('Lỗi: ' + err.message, 'error');
+    console.error(err);
+  }
+  hideLoading();
+}
+
+function markLearnedInEditor() {
+  // Visual update: keep marked spans but add learned class to known words
+  editor.querySelectorAll('.word-marked').forEach(span => {
+    const w = span.textContent.toLowerCase().trim();
+    if (vocabList.some(v => v.word.toLowerCase() === w)) {
+      span.classList.add('word-learned');
+    }
+  });
+}
+
+// ============================================================
+// RENDER VOCAB
+// ============================================================
+function renderVocab(filter = currentFilter, search = '') {
+  const container = document.getElementById('vocabContainer');
+  if (vocabList.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">📖</div><p>Chưa có từ vựng nào.</p></div>';
+    return;
+  }
+
+  let list = vocabList;
+  if (filter === 'learned') list = list.filter(v => learnedWords.has(v.word.toLowerCase()));
+  if (filter === 'new') list = list.filter(v => !learnedWords.has(v.word.toLowerCase()));
+  if (search) list = list.filter(v => v.word.toLowerCase().includes(search.toLowerCase()) || v.definition.toLowerCase().includes(search.toLowerCase()));
+
+  if (list.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><p>Không tìm thấy từ nào.</p></div>';
+    return;
+  }
+
+  container.innerHTML = '<div class="vocab-grid">' + list.map(v => {
+    const isLearned = learnedWords.has(v.word.toLowerCase());
+    return `
+    <div class="vocab-card ${isLearned ? 'learned' : ''}">
+      <div style="display:flex; justify-content:space-between; align-items:start;">
+        <div>
+          <div class="vocab-word">${v.word}</div>
+          ${v.phonetic ? `<div class="vocab-phonetic">${v.phonetic}</div>` : ''}
+          <span class="vocab-pos">${v.pos}</span>
+        </div>
+        ${isLearned ? '<span class="badge badge-learned">✓ Đã học</span>' : '<span class="badge badge-new">Mới</span>'}
+      </div>
+      <div class="vocab-meaning">${v.definition}</div>
+      ${v.translation ? `<div class="vocab-vi">🇻🇳 ${v.translation}</div>` : ''}
+      ${v.example ? `<div class="vocab-example">"${v.example}"</div>` : ''}
+      <div class="vocab-actions">
+        <button class="icon-btn ${isLearned ? 'active-learned' : ''}" onclick="toggleLearned('${v.word}')" title="${isLearned ? 'Bỏ đánh dấu đã học' : 'Đánh dấu đã học'}">
+          ${isLearned ? '✅' : '⬜'}
+        </button>
+        <button class="icon-btn" onclick="removeWord('${v.word}')" title="Xóa từ này">🗑️</button>
+        <button class="icon-btn" onclick="speakWord('${v.word}')" title="Phát âm">🔊</button>
+      </div>
+    </div>`;
+  }).join('') + '</div>';
+}
+
+function toggleLearned(word) {
+  const key = word.toLowerCase();
+  if (learnedWords.has(key)) learnedWords.delete(key);
+  else learnedWords.add(key);
+  renderVocab(currentFilter);
+  updateCounts();
+  updateProgress();
+}
+
+function removeWord(word) {
+  vocabList = vocabList.filter(v => v.word !== word);
+  renderVocab(currentFilter);
+  updateCounts();
+}
+
+function filterVocab(type, btn) {
+  currentFilter = type;
+  document.querySelectorAll('.filter-bar .filter-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderVocab(type, document.querySelector('.search-input').value);
+}
+
+function searchVocab(val) {
+  renderVocab(currentFilter, val);
+}
+
+function speakWord(word) {
+  const utter = new SpeechSynthesisUtterance(word);
+  utter.lang = 'en-US';
+  speechSynthesis.speak(utter);
+}
+
+// ============================================================
+// EXERCISES
+// ============================================================
+function setExType(type, btn) {
+  currentExType = type;
+  document.querySelectorAll('[id^="exType-"]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+async function generateExercise() {
+  if (vocabList.length < 3) {
+    showToast('Cần ít nhất 3 từ trong danh sách!', 'warn');
+    return;
+  }
+
+  if (currentExType === 'fill') generateFillBlank();
+  else if (currentExType === 'choice') generateMultipleChoice();
+  else if (currentExType === 'match') generateMatchExercise();
+}
+
+function generateFillBlank() {
+  const container = document.getElementById('exerciseContainer');
+  const words = vocabList.filter(v => v.example);
+  if (words.length < 3) {
+    showToast('Cần từ có câu ví dụ. Hãy tạo danh sách từ vựng trước!', 'warn');
+    return;
+  }
+
+  const selected = shuffle([...words]).slice(0, Math.min(8, words.length));
+  const bankWords = shuffle(selected.map(v => v.word));
+
+  let html = `
+  <div class="card" style="margin-bottom: 1rem;">
+    <div class="card-title"><span class="icon">📝</span> Điền từ vào chỗ trống</div>
+    <p style="font-size: 13px; color: var(--text2); margin-bottom: 1rem;">Điền từ thích hợp vào chỗ trống. Sử dụng ngân hàng từ bên dưới hoặc gõ trực tiếp.</p>
+    <div class="word-bank" id="wordBank">
+      ${bankWords.map(w => `<div class="bank-word" onclick="fillFromBank('${w}', this)">${w}</div>`).join('')}
+    </div>
+    <div class="fill-blank" id="fillExercise">
+  `;
+
+  selected.forEach((v, i) => {
+    const sentence = v.example.replace(new RegExp(`\\b${v.word}\\b`, 'gi'), 
+      `<input class="blank-input" data-answer="${v.word.toLowerCase()}" placeholder="___" id="blank-${i}" autocomplete="off">`);
+    html += `<div style="margin-bottom: 10px;"><span style="color: var(--text3); font-size: 13px; margin-right: 8px;">${i+1}.</span>${sentence}</div>`;
+  });
+
+  html += `</div></div>`;
+  container.innerHTML = html;
+  showToast('Bài tập mới đã được tạo!');
+}
+
+function fillFromBank(word, el) {
+  const inputs = document.querySelectorAll('.blank-input:not(.correct):not(.wrong)');
+  const emptyInput = [...inputs].find(i => !i.value);
+  if (emptyInput) {
+    emptyInput.value = word;
+    el.classList.add('used');
+  }
+}
+
+function generateMultipleChoice() {
+  const container = document.getElementById('exerciseContainer');
+  const words = [...vocabList];
+  if (words.length < 4) { showToast('Cần ít nhất 4 từ!', 'warn'); return; }
+
+  const selected = shuffle([...words]).slice(0, Math.min(6, words.length));
+  let html = '<div>';
+
+  selected.forEach((v, i) => {
+    const wrong = shuffle(words.filter(w => w.word !== v.word)).slice(0, 3);
+    const options = shuffle([v, ...wrong]);
+    html += `
+    <div class="exercise-block" id="mcq-${i}">
+      <p style="font-weight: 500; margin-bottom: 1rem; font-family: 'Lora', serif;">${i+1}. "${v.phonetic || v.word}" — <em style="color:var(--text2);font-size:14px;">${v.definition.slice(0, 60)}...</em></p>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+        ${options.map(opt => `
+          <button class="btn btn-secondary" style="justify-content: flex-start; text-align:left;" 
+            onclick="checkMCQ(this, '${opt.word}', '${v.word}', ${i})">
+            ${opt.word}
+          </button>`).join('')}
+      </div>
+    </div>`;
+  });
+  html += '</div>';
+  container.innerHTML = html;
+  showToast('Bài trắc nghiệm mới!');
+}
+
+function checkMCQ(btn, selected, correct, idx) {
+  const block = document.getElementById('mcq-' + idx);
+  block.querySelectorAll('button').forEach(b => b.disabled = true);
+  if (selected === correct) {
+    btn.style.background = 'var(--green-light)';
+    btn.style.borderColor = 'var(--green)';
+    btn.style.color = 'var(--green)';
+    btn.textContent = '✓ ' + btn.textContent;
+  } else {
+    btn.style.background = 'var(--red-light)';
+    btn.style.color = 'var(--red)';
+    block.querySelectorAll('button').forEach(b => {
+      if (b.textContent.trim() === correct) {
+        b.style.background = 'var(--green-light)';
+        b.style.color = 'var(--green)';
+      }
+    });
+  }
+}
+
+function generateMatchExercise() {
+  const container = document.getElementById('exerciseContainer');
+  const words = shuffle([...vocabList]).slice(0, Math.min(6, vocabList.length));
+
+  let selectedLeft = null;
+  const defns = shuffle(words.map((v, i) => ({ text: v.definition.slice(0, 60) + '...', idx: i })));
+
+  let html = `
+  <div class="card">
+    <div class="card-title"><span class="icon">🔗</span> Nối từ với định nghĩa</div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+      <div>
+        <div style="font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 10px; text-transform: uppercase; letter-spacing: .06em;">Từ</div>
+        ${words.map((v, i) => `<button class="btn btn-secondary" style="display:block; width:100%; margin-bottom:8px; font-family:'Lora',serif; font-weight:600;" id="ml-${i}" onclick="matchLeft(${i})">${v.word}</button>`).join('')}
+      </div>
+      <div>
+        <div style="font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 10px; text-transform: uppercase; letter-spacing: .06em;">Định nghĩa</div>
+        ${defns.map((d, j) => `<button class="btn btn-secondary" style="display:block; width:100%; margin-bottom:8px; text-align:left; font-size:12px;" id="mr-${j}" data-idx="${d.idx}" onclick="matchRight(${j}, ${d.idx})">${d.text}</button>`).join('')}
+      </div>
+    </div>
+  </div>`;
+
+  container.innerHTML = html;
+  window._matchSelected = null;
+  showToast('Bài nối từ mới!');
+
+  window.matchLeft = function(i) {
+    document.querySelectorAll('[id^="ml-"]').forEach(b => b.style.borderColor = '');
+    document.getElementById('ml-' + i).style.borderColor = 'var(--teal)';
+    window._matchSelected = i;
+  };
+  window.matchRight = function(j, wordIdx) {
+    if (window._matchSelected === null) { showToast('Hãy chọn từ bên trái trước!', 'warn'); return; }
+    const leftBtn = document.getElementById('ml-' + window._matchSelected);
+    const rightBtn = document.getElementById('mr-' + j);
+    if (window._matchSelected === wordIdx) {
+      leftBtn.style.background = 'var(--green-light)'; leftBtn.style.color = 'var(--green)'; leftBtn.disabled = true;
+      rightBtn.style.background = 'var(--green-light)'; rightBtn.style.color = 'var(--green)'; rightBtn.disabled = true;
+      showToast('Đúng! ✓');
+    } else {
+      leftBtn.style.background = 'var(--red-light)'; leftBtn.style.color = 'var(--red)';
+      setTimeout(() => { leftBtn.style.background = ''; leftBtn.style.color = ''; leftBtn.style.borderColor = ''; }, 800);
+    }
+    window._matchSelected = null;
+  };
+}
+
+function checkAnswers() {
+  const inputs = document.querySelectorAll('.blank-input');
+  if (inputs.length === 0) { showToast('Không có bài tập điền từ!', 'warn'); return; }
+
+  let correct = 0;
+  inputs.forEach(inp => {
+    inp.classList.remove('correct', 'wrong');
+    if (inp.value.toLowerCase().trim() === inp.dataset.answer) {
+      inp.classList.add('correct');
+      correct++;
+    } else {
+      inp.classList.add('wrong');
+    }
+  });
+
+  const score = Math.round((correct / inputs.length) * 100);
+  const colorClass = score >= 80 ? 'var(--green-light)' : score >= 50 ? 'var(--amber-light)' : 'var(--red-light)';
+  const colorText = score >= 80 ? 'var(--green)' : score >= 50 ? 'var(--amber)' : 'var(--red)';
+
+  const resultEl = document.createElement('div');
+  resultEl.innerHTML = `
+    <div style="margin-top: 1rem; padding: 14px 20px; background: ${colorClass}; border-radius: var(--r-sm); display: flex; align-items: center; gap: 12px;">
+      <span style="font-size: 1.8rem;">${score >= 80 ? '🎉' : score >= 50 ? '👍' : '💪'}</span>
+      <div>
+        <div style="font-weight: 600; color: ${colorText}; font-size: 16px;">Kết quả: ${correct}/${inputs.length} đúng — ${score}%</div>
+        <div style="font-size: 13px; color: var(--text2);">${score >= 80 ? 'Xuất sắc!' : score >= 50 ? 'Khá tốt, tiếp tục cố gắng!' : 'Hãy ôn lại các từ này!'}</div>
+      </div>
+    </div>`;
+
+  const existing = document.querySelector('.exercise-result');
+  if (existing) existing.remove();
+  resultEl.className = 'exercise-result';
+  document.getElementById('exerciseContainer').appendChild(resultEl);
+
+  // Add to history
+  exerciseHistory.unshift({ type: 'Điền từ', score, total: inputs.length, date: new Date().toLocaleDateString('vi-VN') });
+  updateProgress();
+}
+
+function resetExercise() {
+  document.querySelectorAll('.blank-input').forEach(inp => {
+    inp.value = '';
+    inp.classList.remove('correct', 'wrong');
+  });
+  document.querySelector('.exercise-result')?.remove();
+  document.querySelectorAll('.bank-word').forEach(b => b.classList.remove('used'));
+}
+
+// ============================================================
+// DOWNLOAD
+// ============================================================
+function downloadVocab(format) {
+  if (vocabList.length === 0) { showToast('Chưa có từ vựng!', 'warn'); return; }
+
+  let content = '';
+  const filename = 'vocabulary-' + new Date().toISOString().slice(0,10);
+
+  if (format === 'csv') {
+    content = 'Word,Phonetic,Part of Speech,Definition,Translation,Example\n';
+    content += vocabList.map(v =>
+      `"${v.word}","${v.phonetic}","${v.pos}","${v.definition}","${v.translation}","${v.example}"`
+    ).join('\n');
+    downloadFile(content, filename + '.csv', 'text/csv');
+  } else {
+    content = '=== DANH SÁCH TỪ VỰNG ===\nTạo bởi LexiLearn — ' + new Date().toLocaleDateString('vi-VN') + '\n\n';
+    vocabList.forEach((v, i) => {
+      const status = learnedWords.has(v.word.toLowerCase()) ? '[ĐÃ HỌC]' : '[MỚI]';
+      content += `${i+1}. ${v.word} ${status}\n`;
+      if (v.phonetic) content += `   Phiên âm: ${v.phonetic}\n`;
+      content += `   Từ loại: ${v.pos}\n`;
+      content += `   Nghĩa: ${v.definition}\n`;
+      if (v.translation) content += `   Tiếng Việt: ${v.translation}\n`;
+      if (v.example) content += `   Ví dụ: ${v.example}\n`;
+      content += '\n';
+    });
+    downloadFile(content, filename + '.txt', 'text/plain');
+  }
+  showToast('Đã tải xuống!');
+}
+
+function downloadFile(content, filename, type) {
+  const blob = new Blob(['\uFEFF' + content], { type: type + ';charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+}
+
+// ============================================================
+// PROGRESS
+// ============================================================
+function updateProgress() {
+  const total = vocabList.length;
+  const learned = learnedWords.size;
+  const pct = total > 0 ? Math.round((learned / total) * 100) : 0;
+
+  document.getElementById('prog-total').textContent = total;
+  document.getElementById('prog-learned').textContent = learned;
+  document.getElementById('prog-pct').textContent = pct + '%';
+  document.getElementById('prog-bar').style.width = pct + '%';
+  document.getElementById('prog-bar-text').textContent = learned + ' / ' + total;
+
+  // History
+  const histEl = document.getElementById('exerciseHistory');
+  if (exerciseHistory.length === 0) {
+    histEl.innerHTML = '<div style="font-style: italic; color: var(--text3); padding: 1rem 0;">Chưa có lịch sử bài tập nào.</div>';
+  } else {
+    histEl.innerHTML = exerciseHistory.slice(0, 10).map(h => `
+      <div style="display:flex; justify-content:space-between; align-items:center; padding: 10px 0; border-bottom: 1px solid var(--border);">
+        <span>${h.type} — ${h.date}</span>
+        <span style="font-weight: 600; color: ${h.score >= 80 ? 'var(--green)' : h.score >= 50 ? 'var(--amber)' : 'var(--red)'};">${h.score}% (${Math.round(h.score * h.total / 100)}/${h.total})</span>
+      </div>`).join('');
+  }
+}
+
+function updateCounts() {
+  const total = vocabList.length;
+  const learned = learnedWords.size;
+  document.getElementById('totalCount').textContent = total;
+  document.getElementById('learnedCount').textContent = learned;
+  document.getElementById('vocabTabCount').textContent = total;
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function showLoading(msg) {
+  document.getElementById('loadingText').textContent = msg || 'Đang xử lý...';
+  document.getElementById('loadingOverlay').style.display = 'flex';
+}
+
+function hideLoading() {
+  document.getElementById('loadingOverlay').style.display = 'none';
+}
+
+function showToast(msg, type = 'success') {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.style.background = type === 'error' ? 'var(--red)' : type === 'warn' ? 'var(--amber)' : 'var(--teal)';
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+// Init
+updateStats();
+</script>
+</body>
+</html>
