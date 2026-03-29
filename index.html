@@ -31,7 +31,7 @@
         <div class="flex items-center gap-8">
             <div class="flex items-center gap-2">
                 <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black text-xl">V</div>
-                <span class="text-xl font-black text-slate-800 tracking-tighter">VocaFlow <span class="text-indigo-600">Pro</span></span>
+                <span class="text-xl font-black text-slate-800 tracking-tighter"Be Heard <span class="text-indigo-600">Lexi Leaning</span></span>
             </div>
             <div id="mainTabs" class="hidden flex gap-6 h-16 items-center text-sm font-bold text-slate-500">
                 <button onclick="switchTab('creator')" class="tab-btn tab-active h-full px-2" data-tab="creator">SOẠN BÀI</button>
@@ -306,7 +306,7 @@
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
-            link.download = `VocaFlow_${new Date().getTime()}.csv`;
+            link.download = `BeHeard_${new Date().getTime()}.csv`;
             link.click();
         };
 
