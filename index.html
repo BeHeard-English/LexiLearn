@@ -218,7 +218,7 @@
         </div>
         <div class="key-wrap">
             <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px;color:rgba(255,255,255,.5)" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
-            <input type="password" id="apiKey" placeholder="Gemini API Key..." autocomplete="off">
+            <input type="password" id="apiKey" placeholder="Groq API Key..." autocomplete="off">
             <button class="key-save-btn" id="saveKeyBtn" title="Lưu Key">
                 <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
             </button>
@@ -241,7 +241,7 @@
 
 <!-- Mobile settings panel -->
 <div class="settings-panel" id="settingsPanel">
-    <p class="section-label">Gemini API Key</p>
+    <p class="section-label">Groq API Key</p>
     <div style="display:flex;gap:8px;">
         <input type="password" id="apiKeyMobile" placeholder="Nhập API Key..." style="flex:1;padding:9px 12px;border:2px solid var(--border);border-radius:10px;font-family:inherit;font-size:.82rem;outline:none;">
         <button id="saveKeyMobileBtn" class="btn-primary" style="padding:9px 14px;border-radius:10px;">Lưu</button>
@@ -667,11 +667,37 @@ document.getElementById('generateBtn').onclick = async () => {
     document.getElementById('vocabList').innerHTML = `<div style="text-align:center;padding:32px;color:var(--primary);"><div style="font-size:2rem;margin-bottom:12px;"><span class="ldot">●</span><span class="ldot">●</span><span class="ldot">●</span></div><div style="font-weight:700;">AI đang phân tích...</div></div>`;
     const prompt = `Return a JSON array for: [${sel.join(', ')}]. JSON: {"word":"string","ipa":"string","vn":"tiếng Việt","level":"A1-C2","example":"English sentence"}. Only return the JSON array.`;
     try {
-        const res  = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${key}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})});
-        const data = await res.json();
-        learningData = JSON.parse(data.candidates[0].content.parts[0].text.replace(/```json|```/g,'').trim());
-        renderVocabList(); saveVocabToDb(learningData); showToast('✅ Phân tích thành công!');
-    } catch(e) { showToast('❌ Lỗi kết nối AI.'); document.getElementById('vocabList').innerHTML=`<div class="empty-state"><div class="icon">❌</div><p>Không thể kết nối AI</p></div>`; }
+    const res = await fetch(`https://api.groq.com/openai/v1/chat/completions`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${key}` // Groq dùng Bearer Token
+        },
+        body: JSON.stringify({
+            model: "llama-3.3-70b-versatile", // Hoặc "llama3-8b-8192" để nhanh hơn
+            messages: [
+                {
+                    role: "user",
+                    content: prompt
+                }
+            ],
+            temperature: 0.2 // Giữ độ chính xác cao cho JSON
+        })
+    });
+
+    const data = await res.json();
+    // Groq/OpenAI trả về data.choices[0].message.content
+    const aiText = data.choices[0].message.content;
+    learningData = JSON.parse(aiText.replace(/```json|```/g, '').trim());
+    
+    renderVocabList(); 
+    saveVocabToDb(learningData); 
+    showToast('✅ Phân tích thành công!');
+} catch(e) { 
+    console.error(e);
+    showToast('❌ Lỗi kết nối Groq AI.'); 
+    document.getElementById('vocabList').innerHTML = `<div class="empty-state"><div class="icon">❌</div><p>Lỗi kết nối hoặc Key không hợp lệ</p></div>`; 
+}
 };
 
 function lvClass(l){ return {A1:'level-A1',A2:'level-A2',B1:'level-B1',B2:'level-B2',C1:'level-C1',C2:'level-C2'}[l]||'level-B1'; }
@@ -995,15 +1021,26 @@ document.getElementById('libFileInput').onchange = async (e) => {
             [{"word":"string","ipa":"string","vn":"(keep the provided Vietnamese meaning)","level":"A1-C2","example":"English sentence"}]
             Do not output any markdown formatting or extra text, just the raw JSON array.`;
 
-            const aiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${key}`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-            });
+            const aiRes = await fetch(`https://api.groq.com/openai/v1/chat/completions`, {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${key}`
+    },
+    body: JSON.stringify({
+        model: "llama-3.3-70b-versatile",
+        messages: [
+            {
+                role: "user",
+                content: prompt
+            }
+        ]
+    })
+});
 
-            const data = await aiRes.json();
-            const jsonStr = data.candidates[0].content.parts[0].text.replace(/```json|```/g, '').trim();
-            const finalData = JSON.parse(jsonStr);
+const data = await aiRes.json();
+const jsonStr = data.choices[0].message.content.replace(/```json|```/g, '').trim();
+const finalData = JSON.parse(jsonStr);
 
             // 5. Lưu vào Firestore
             await saveVocabToDb(finalData);
