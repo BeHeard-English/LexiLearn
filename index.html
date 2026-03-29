@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Be Heard|Lexi Learning</title>
+    <title>Be Heard | Lexi Learning</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <!-- Firebase SDKs -->
@@ -17,10 +17,11 @@
         .editor-word { cursor: pointer; border-radius: 4px; padding: 0 3px; transition: 0.2s; display: inline-block; }
         .editor-word.is-bold { font-weight: 800; color: #1e40af; background-color: #fef08a; text-decoration: underline; }
         .drop-zone { border: 2px dashed #cbd5e1; min-width: 140px; display: inline-block; height: 2em; vertical-align: middle; margin: 0 6px; border-radius: 8px; background: #f1f5f9; text-align: center; transition: all 0.3s; padding: 2px 10px; }
-        .drop-zone:empty::before { content: "Kéo từ vào đây"; color: #94a3b8; font-size: 0.75rem; font-style: italic; }
-        .draggable-item { cursor: grab; padding: 8px 18px; background: white; border: 2px solid #e2e8f0; border-radius: 12px; font-weight: 700; font-size: 0.9rem; transition: 0.2s; }
-        .draggable-item:hover { border-color: #4f46e5; transform: translateY(-2px); }
+        .draggable-item { cursor: grab; padding: 8px 18px; background: white; border: 2px solid #e2e8f0; border-radius: 12px; font-weight: 700; font-size: 0.9rem; }
         .tab-active { border-bottom: 3px solid #4f46e5; color: #4f46e5; font-weight: 800; }
+        .choice-btn { transition: all 0.2s; border: 2px solid #e2e8f0; }
+        .choice-btn.correct { background-color: #dcfce7 !important; border-color: #22c55e !important; color: #166534 !important; }
+        .choice-btn.wrong { background-color: #fee2e2 !important; border-color: #ef4444 !important; color: #991b1b !important; }
         .ultra-container { max-width: 1400px; margin: 0 auto; }
     </style>
 </head>
@@ -31,7 +32,7 @@
         <div class="flex items-center gap-8">
             <div class="flex items-center gap-2">
                 <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black text-xl">V</div>
-                <span class="text-xl font-black text-slate-800 tracking-tighter"Be Heard <span class="text-indigo-600">Lexi Leaning</span></span>
+                <span class="text-xl font-black text-slate-800 tracking-tighter">BeHeard <span class="text-indigo-600">LexiLearning</span></span>
             </div>
             <div id="mainTabs" class="hidden flex gap-6 h-16 items-center text-sm font-bold text-slate-500">
                 <button onclick="switchTab('creator')" class="tab-btn tab-active h-full px-2" data-tab="creator">SOẠN BÀI</button>
@@ -41,9 +42,14 @@
         </div>
 
         <div class="flex items-center gap-4">
-            <input type="password" id="apiKey" class="text-xs border border-slate-200 rounded-xl px-4 py-2 w-48 outline-none focus:border-indigo-500 transition-all" placeholder="Gemini API Key...">
+            <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+                <input type="password" id="apiKey" class="text-xs bg-transparent border-none rounded-lg px-3 py-2 w-40 outline-none" placeholder="Gemini API Key...">
+                <button id="saveKeyBtn" class="bg-white text-indigo-600 p-2 rounded-lg shadow-sm hover:bg-indigo-50 transition" title="Lưu Key">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
+                </button>
+            </div>
             <div id="authArea">
-                <button id="loginBtn" class="bg-slate-900 text-white px-5 py-2 rounded-xl text-sm font-bold hover:bg-indigo-600 transition">Đăng nhập Google</button>
+                <button id="loginBtn" class="bg-slate-900 text-white px-5 py-2 rounded-xl text-sm font-bold hover:bg-indigo-600 transition">Đăng nhập</button>
                 <div id="userProfile" class="hidden flex items-center gap-3">
                     <img id="userAvatar" class="w-8 h-8 rounded-full border border-slate-200">
                     <button id="logoutBtn" class="text-xs font-bold text-red-500 hover:underline">Thoát</button>
@@ -59,48 +65,47 @@
             <div class="xl:col-span-7 space-y-6">
                 <section class="bg-white rounded-2xl shadow-sm border p-6">
                     <div class="flex justify-between items-center mb-4">
-                        <span class="text-xs font-black text-slate-400 uppercase tracking-widest">Văn bản nguồn</span>
-                        <button onclick="document.getElementById('fileInput').click()" class="text-indigo-600 text-xs font-bold hover:underline">📂 Tải .docx</button>
+                        <span class="text-xs font-black text-slate-400 uppercase tracking-widest">Nguồn bài học</span>
                         <input type="file" id="fileInput" class="hidden" accept=".docx">
+                        <button onclick="document.getElementById('fileInput').click()" class="text-indigo-600 text-xs font-bold">📂 Tải tài liệu .docx</button>
                     </div>
-                    <textarea id="rawInput" class="w-full h-32 p-4 bg-slate-50 rounded-xl focus:outline-none resize-none text-slate-600" placeholder="Dán nội dung bài học tiếng Anh..."></textarea>
+                    <textarea id="rawInput" class="w-full h-32 p-4 bg-slate-50 rounded-xl focus:outline-none resize-none text-slate-600" placeholder="Dán văn bản tiếng Anh vào đây..."></textarea>
                     <button id="loadBtn" class="w-full mt-4 bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-indigo-600 transition">Hiển thị nội dung</button>
                 </section>
 
                 <section class="bg-white rounded-2xl shadow-sm border min-h-[400px] flex flex-col overflow-hidden">
                     <div id="editor" class="flex-grow p-8 text-xl leading-[1.8] text-slate-700"></div>
                     <div class="p-6 bg-indigo-600 flex justify-between items-center">
-                        <span class="text-white text-sm font-medium italic">Double-click từ để chọn trích xuất AI</span>
-                        <button id="generateBtn" class="bg-white text-indigo-600 px-8 py-3 rounded-xl font-black shadow-lg hover:scale-105 transition">PHÂN TÍCH AI</button>
+                        <span class="text-white text-xs">Double-click để chọn từ khó</span>
+                        <button id="generateBtn" class="bg-white text-indigo-600 px-8 py-3 rounded-xl font-black shadow-lg">PHÂN TÍCH AI</button>
                     </div>
                 </section>
             </div>
 
             <div class="xl:col-span-5 space-y-6">
-                <!-- Danh sách từ AI trả về -->
                 <div id="vocabContainer" class="hidden bg-white rounded-2xl shadow-md border overflow-hidden flex flex-col h-[700px]">
-                    <div class="p-5 border-b flex justify-between items-center bg-white sticky top-0 z-10">
-                        <h3 class="font-black text-slate-800">TỪ VỰNG TRÍCH XUẤT</h3>
-                        <button id="downloadBtn" class="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-lg text-xs font-bold hover:bg-indigo-100">Tải CSV</button>
+                    <div class="p-5 border-b flex justify-between items-center">
+                        <h3 class="font-black text-slate-800">DANH SÁCH TỪ VỰNG</h3>
+                        <button id="downloadBtn" class="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-lg text-xs font-bold">Tải CSV</button>
                     </div>
                     <div id="vocabList" class="flex-grow overflow-y-auto p-4 space-y-4 bg-slate-50/50"></div>
                     <div class="p-5 bg-white border-t">
-                        <button id="showDragDropBtn" class="w-full py-4 bg-emerald-500 text-white rounded-xl font-black shadow-lg hover:bg-emerald-600 transition">TẠO BÀI TẬP KÉO THẢ</button>
+                        <button id="showDragDropBtn" class="w-full py-4 bg-emerald-500 text-white rounded-xl font-black">TẠO BÀI TẬP KÉO THẢ</button>
                     </div>
                 </div>
 
-                <!-- Bài tập Kéo thả -->
+                <!-- Kéo thả -->
                 <div id="dragDropContainer" class="hidden bg-slate-900 rounded-3xl shadow-2xl flex flex-col h-[700px] overflow-hidden">
-                    <div class="p-6 border-b border-slate-800 flex justify-between items-center">
-                        <h3 class="text-emerald-400 font-black">DRAG & DROP PRACTICE</h3>
+                    <div class="p-6 border-b border-slate-800 flex justify-between items-center text-emerald-400">
+                        <span class="font-black italic">PRACTICE MODE</span>
                         <button onclick="closeDragDrop()" class="text-slate-500 hover:text-white">✕</button>
                     </div>
                     <div id="wordBank" class="p-4 bg-slate-800/50 border-b border-slate-800">
                         <div id="draggableContainer" class="flex flex-wrap gap-2 justify-center"></div>
                     </div>
                     <div class="flex-grow overflow-y-auto p-8 space-y-8" id="quizSentences"></div>
-                    <div class="p-6 bg-slate-900 border-t border-slate-800 space-y-4">
-                        <div id="dragDropScoreDisplay"></div> <!-- Vùng hiện điểm -->
+                    <div class="p-6 bg-slate-900 border-t border-slate-800">
+                        <div id="dragDropScore" class="mb-4"></div>
                         <button id="checkDragDropBtn" class="w-full py-4 bg-emerald-500 text-white rounded-xl font-black transition">KIỂM TRA ĐÁP ÁN</button>
                     </div>
                 </div>
@@ -110,19 +115,19 @@
         <!-- SECTION 2: LIBRARY -->
         <div id="tab-library" class="hidden space-y-6">
             <div class="bg-white p-8 rounded-3xl border shadow-sm">
-                <h2 class="text-3xl font-black text-slate-800 mb-6">Thư viện cá nhân</h2>
+                <h2 class="text-3xl font-black text-slate-800 mb-6">Thư viện của tôi</h2>
                 <div id="libraryStats" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10"></div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left">
                         <thead>
-                            <tr class="text-slate-400 text-xs uppercase tracking-widest border-b">
+                            <tr class="text-slate-400 text-xs border-b">
                                 <th class="py-4 px-4">Từ vựng</th>
                                 <th class="py-4 px-4">Định nghĩa</th>
-                                <th class="py-4 px-4">Tiến độ (Đúng/10)</th>
-                                <th class="py-4 px-4">Trạng thái</th>
+                                <th class="py-4 px-4">Tiến độ</th>
+                                <th class="py-4 px-4 text-center">Hành động</th>
                             </tr>
                         </thead>
-                        <tbody id="libraryTableBody" class="text-slate-600 font-medium"></tbody>
+                        <tbody id="libraryTableBody"></tbody>
                     </table>
                 </div>
             </div>
@@ -132,19 +137,18 @@
         <div id="tab-review" class="hidden max-w-2xl mx-auto py-10">
             <div id="reviewStart" class="text-center space-y-6 bg-white p-12 rounded-3xl border shadow-sm">
                 <div class="text-5xl">🎯</div>
-                <h2 class="text-3xl font-black text-slate-800">Ôn tập Thông minh</h2>
-                <p class="text-slate-500">Hệ thống sẽ đố các từ bạn chưa thuộc (dưới 10 lần đúng) hoặc hay làm sai.</p>
-                <button onclick="startReviewQuiz()" class="bg-indigo-600 text-white px-10 py-4 rounded-2xl font-black shadow-xl hover:bg-indigo-700 transition">BẮT ĐẦU ÔN TẬP</button>
+                <h2 class="text-3xl font-black text-slate-800">Ôn tập trắc nghiệm</h2>
+                <p class="text-slate-500">Hệ thống chọn những từ bạn hay sai hoặc chưa thuộc để đố.</p>
+                <button onclick="startReviewQuiz()" class="bg-indigo-600 text-white px-10 py-4 rounded-2xl font-black shadow-xl">BẮT ĐẦU NGAY</button>
             </div>
 
-            <div id="reviewQuizArea" class="hidden space-y-8">
-                <div class="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
-                    <div id="reviewProgress" class="h-full bg-indigo-500 transition-all" style="width: 0%"></div>
-                </div>
-                <div class="bg-white p-10 rounded-3xl border shadow-xl text-center">
-                    <span id="qIpa" class="text-slate-400 font-mono text-lg block mb-2">/ /</span>
+            <div id="reviewQuizArea" class="hidden space-y-6">
+                <div class="bg-white p-10 rounded-3xl border shadow-xl text-center relative overflow-hidden">
+                    <div id="feedbackOverlay" class="hidden absolute inset-x-0 top-0 py-2 font-black text-sm uppercase tracking-widest"></div>
+                    <span id="qIpa" class="text-slate-400 font-mono text-lg block mb-2 mt-4">/ /</span>
                     <h1 id="qWord" class="text-5xl font-black text-slate-900 mb-10 tracking-tight">Word</h1>
                     <div id="qChoices" class="grid grid-cols-1 gap-3"></div>
+                    <button id="nextReviewBtn" class="hidden mt-8 w-full py-4 bg-slate-900 text-white rounded-xl font-bold transition">Câu tiếp theo ➜</button>
                 </div>
             </div>
         </div>
@@ -152,7 +156,7 @@
     </main>
 
     <script>
-        // 1. CẤU HÌNH FIREBASE (THAY THẾ TẠI ĐÂY)
+        // 1. FIREBASE CONFIG (Dán của bạn vào đây)
         const firebaseConfig = {
     apiKey: "AIzaSyAf87waidSGWoxESPDaQ9ViihIvFrVZ_4k",
     authDomain: "lexi-learning-with-be-heard.firebaseapp.com",
@@ -172,7 +176,19 @@
         let reviewPool = [];
         let currentReviewIdx = 0;
 
-        // 2. AUTH LOGIC
+        // 2. API KEY PERSISTENCE
+        window.addEventListener('load', () => {
+            const savedKey = localStorage.getItem('vflow_api_key');
+            if(savedKey) document.getElementById('apiKey').value = savedKey;
+        });
+
+        document.getElementById('saveKeyBtn').onclick = () => {
+            const key = document.getElementById('apiKey').value.trim();
+            localStorage.setItem('vflow_api_key', key);
+            alert("Đã lưu API Key thành công!");
+        };
+
+        // 3. AUTH & TABS
         auth.onAuthStateChanged(user => {
             currentUser = user;
             if (user) {
@@ -189,13 +205,9 @@
             }
         });
 
-        document.getElementById('loginBtn').onclick = () => {
-            const provider = new firebase.auth.GoogleAuthProvider();
-            auth.signInWithPopup(provider).catch(err => alert("Lỗi đăng nhập: " + err.message));
-        };
+        document.getElementById('loginBtn').onclick = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
         document.getElementById('logoutBtn').onclick = () => auth.signOut();
 
-        // 3. TAB LOGIC
         function switchTab(tabName) {
             document.querySelectorAll('[id^="tab-"]').forEach(el => el.classList.add('hidden'));
             document.getElementById('tab-' + tabName).classList.remove('hidden');
@@ -206,7 +218,7 @@
             if(tabName === 'library') loadLibrary();
         }
 
-        // 4. CREATOR & AI LOGIC
+        // 4. CREATOR LOGIC
         document.getElementById('loadBtn').onclick = () => {
             const text = document.getElementById('rawInput').value.trim();
             if(!text) return;
@@ -217,18 +229,18 @@
 
         document.getElementById('generateBtn').onclick = async () => {
             const key = document.getElementById('apiKey').value.trim();
-            if(!key) return alert("Vui lòng nhập Gemini API Key!");
+            if(!key) return alert("Vui lòng nhập API Key!");
             
             const selected = Array.from(new Set(Array.from(document.querySelectorAll('.is-bold')).map(el => 
                 el.innerText.trim().replace(/[^a-zA-Z-]/g, '')
             ))).filter(w => w.length > 1);
 
-            if(selected.length === 0) return alert("Double-click để chọn ít nhất 1 từ!");
+            if(selected.length === 0) return alert("Hãy chọn từ bằng cách double-click!");
 
             document.getElementById('vocabContainer').classList.remove('hidden');
-            document.getElementById('vocabList').innerHTML = '<p class="text-center py-10 text-indigo-500 animate-pulse">AI đang xử lý dữ liệu...</p>';
+            document.getElementById('vocabList').innerHTML = '<p class="text-center py-10 text-indigo-500 animate-pulse">AI đang phân tích...</p>';
             
-            const prompt = `Return a JSON array for: [${selected.join(', ')}]. Structure: {"word": "string", "ipa": "string", "vn": "tiếng Việt", "level": "A1-C2", "example": "English sentence"}.`;
+            const prompt = `Return a JSON array for: [${selected.join(', ')}]. JSON structure: {"word": "string", "ipa": "string", "vn": "tiếng Việt", "level": "A1-C2", "example": "English sentence"}.`;
 
             try {
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${key}`, {
@@ -237,25 +249,24 @@
                     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                 });
                 const data = await response.json();
-                const cleanJson = data.candidates[0].content.parts[0].text.replace(/```json|```/g, '').trim();
-                learningData = JSON.parse(cleanJson);
+                const resText = data.candidates[0].content.parts[0].text.replace(/```json|```/g, '').trim();
+                learningData = JSON.parse(resText);
                 renderVocabList();
-                saveToFirebase(learningData);
-            } catch (e) { alert("Lỗi kết nối AI. Kiểm tra API Key của bạn."); }
+                saveVocabToDb(learningData);
+            } catch (e) { alert("Lỗi kết nối AI. Hãy kiểm tra Key hoặc mạng."); }
         };
 
         function renderVocabList() {
             document.getElementById('vocabList').innerHTML = learningData.map(item => `
                 <div class="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
                     <div class="flex justify-between items-center"><span class="font-black text-slate-800">${item.word}</span><span class="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-1 rounded font-bold">${item.level}</span></div>
-                    <p class="text-xs text-slate-400 font-mono mb-1">${item.ipa}</p>
-                    <p class="text-sm font-bold text-indigo-600">${item.vn}</p>
+                    <p class="text-xs text-slate-400 font-mono">${item.ipa}</p>
+                    <p class="text-sm font-bold text-indigo-600 mt-1">${item.vn}</p>
                 </div>
             `).join('');
         }
 
-        // 5. FIREBASE STORAGE
-        async function saveToFirebase(data) {
+        async function saveVocabToDb(data) {
             if(!currentUser) return;
             const batch = db.batch();
             data.forEach(item => {
@@ -270,107 +281,92 @@
             await batch.commit();
         }
 
+        // 5. LIBRARY & DELETE
         async function loadLibrary() {
             if(!currentUser) return;
             const snap = await db.collection('users').doc(currentUser.uid).collection('vocabulary').get();
             const list = snap.docs.map(doc => doc.data());
             
             document.getElementById('libraryTableBody').innerHTML = list.map(item => `
-                <tr class="border-b hover:bg-slate-50">
+                <tr class="border-b hover:bg-slate-50 transition group">
                     <td class="py-4 px-4 font-black text-slate-800">${item.word}</td>
                     <td class="py-4 px-4 text-sm">${item.vn}</td>
                     <td class="py-4 px-4">
                         <div class="w-24 h-2 bg-slate-100 rounded-full overflow-hidden">
-                            <div class="h-full bg-emerald-500" style="width: ${Math.min((item.correct_count || 0) * 10, 100)}%"></div>
+                            <div class="h-full bg-indigo-500" style="width: ${Math.min((item.correct_count || 0) * 10, 100)}%"></div>
                         </div>
+                        <span class="text-[10px] text-slate-400 font-bold">${item.correct_count || 0}/10 lần đúng</span>
                     </td>
-                    <td class="py-4 px-4 text-xs font-bold">${(item.correct_count >= 10) ? '✅ MASTERED' : '📖 LEARNING'}</td>
+                    <td class="py-4 px-4 text-center">
+                        <button onclick="deleteWord('${item.word}')" class="text-slate-300 hover:text-red-500 transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
+                    </td>
                 </tr>
             `).join('');
 
-            const mastered = list.filter(i => i.correct_count >= 10).length;
+            const mastered = list.filter(i => (i.correct_count || 0) >= 10).length;
             document.getElementById('libraryStats').innerHTML = `
-                <div class="bg-white p-6 rounded-2xl border text-center"><p class="text-xs font-bold text-slate-400 uppercase">Tổng số từ</p><h3 class="text-3xl font-black">${list.length}</h3></div>
-                <div class="bg-emerald-50 p-6 rounded-2xl border-emerald-100 border text-center"><p class="text-xs font-bold text-emerald-500 uppercase">Đã thuộc</p><h3 class="text-3xl font-black text-emerald-600">${mastered}</h3></div>
-                <div class="bg-indigo-50 p-6 rounded-2xl border-indigo-100 border text-center"><p class="text-xs font-bold text-indigo-500 uppercase">Đang học</p><h3 class="text-3xl font-black text-indigo-600">${list.length - mastered}</h3></div>
+                <div class="bg-white p-6 rounded-2xl border text-center"><p class="text-xs font-bold text-slate-400 uppercase">Tổng từ</p><h3 class="text-3xl font-black">${list.length}</h3></div>
+                <div class="bg-indigo-50 p-6 rounded-2xl border-indigo-100 border text-center"><p class="text-xs font-bold text-indigo-500 uppercase">Đã thuộc</p><h3 class="text-3xl font-black text-indigo-600">${mastered}</h3></div>
+                <div class="bg-slate-50 p-6 rounded-2xl border text-center"><p class="text-xs font-bold text-slate-400 uppercase">Đang học</p><h3 class="text-3xl font-black">${list.length - mastered}</h3></div>
             `;
         }
 
-        // 6. CSV EXPORT (FIXED)
+        async function deleteWord(word) {
+            if(!confirm(`Xoá từ "${word}" khỏi thư viện?`)) return;
+            await db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(word.toLowerCase()).delete();
+            loadLibrary();
+        }
+
+        // 6. CSV & DRAG DROP
         document.getElementById('downloadBtn').onclick = () => {
             if(learningData.length === 0) return;
             let csv = "\uFEFFTừ vựng,Phiên âm,Định nghĩa,Cấp độ,Ví dụ\n";
-            learningData.forEach(i => {
-                csv += `"${i.word}","${i.ipa}","${i.vn}","${i.level}","${i.example.replace(/"/g, '""')}"\n`;
-            });
+            learningData.forEach(i => csv += `"${i.word}","${i.ipa}","${i.vn}","${i.level}","${i.example.replace(/"/g, '""')}"\n`);
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
-            link.download = `BeHeard_${new Date().getTime()}.csv`;
+            link.download = `Be_.csv`;
             link.click();
         };
 
-        // 7. DRAG & DROP WITH SCORING (FIXED)
         document.getElementById('showDragDropBtn').onclick = () => {
             document.getElementById('vocabContainer').classList.add('hidden');
             document.getElementById('dragDropContainer').classList.remove('hidden');
-            document.getElementById('dragDropScoreDisplay').innerHTML = ""; // Reset score
-
-            const shuffledWords = shuffle([...learningData]);
-            document.getElementById('draggableContainer').innerHTML = shuffledWords.map(item => 
-                `<div class="draggable-item" draggable="true" ondragstart="event.dataTransfer.setData('text','${item.word}')">${item.word}</div>`
-            ).join('');
-
-            document.getElementById('quizSentences').innerHTML = shuffle([...learningData]).map((item, i) => {
-                const display = item.example.replace(new RegExp(item.word, 'gi'), `<div class="drop-zone" data-answer="${item.word}"></div>`);
-                return `<div class="bg-slate-800/40 p-6 rounded-2xl border border-slate-800 text-slate-300 text-lg leading-relaxed"><span class="text-slate-600 font-black mr-4">${i+1}</span>${display}</div>`;
+            document.getElementById('dragDropScore').innerHTML = "";
+            
+            const words = shuffle([...learningData]);
+            document.getElementById('draggableContainer').innerHTML = words.map(i => `<div class="draggable-item" draggable="true" ondragstart="event.dataTransfer.setData('text','${i.word}')">${i.word}</div>`).join('');
+            
+            document.getElementById('quizSentences').innerHTML = shuffle([...learningData]).map((i, idx) => {
+                const html = i.example.replace(new RegExp(i.word, 'gi'), `<div class="drop-zone" data-answer="${i.word}"></div>`);
+                return `<div class="bg-slate-800/40 p-5 rounded-2xl border border-slate-800 text-slate-300"><span class="text-slate-600 font-black mr-2">${idx+1}.</span>${html}</div>`;
             }).join('');
-            setupDragEvents();
-        };
-
-        function setupDragEvents() {
-            document.querySelectorAll('.drop-zone').forEach(zone => {
-                zone.ondragover = (e) => e.preventDefault();
-                zone.ondrop = (e) => {
-                    e.preventDefault();
-                    zone.innerText = e.dataTransfer.getData('text');
-                    zone.style.background = "#4338ca";
-                    zone.style.color = "white";
-                };
+            
+            document.querySelectorAll('.drop-zone').forEach(z => {
+                z.ondragover = e => e.preventDefault();
+                z.ondrop = e => { e.preventDefault(); z.innerText = e.dataTransfer.getData('text'); z.style.background = "#4338ca"; z.style.color = "white"; z.style.borderColor = "transparent"; };
             });
-        }
+        };
 
         document.getElementById('checkDragDropBtn').onclick = () => {
             const zones = document.querySelectorAll('.drop-zone');
             let correct = 0;
-            zones.forEach(zone => {
-                const isCorrect = zone.innerText.trim().toLowerCase() === zone.dataset.answer.toLowerCase();
-                if(isCorrect) {
-                    correct++;
-                    zone.style.borderColor = "#10b981";
-                    zone.style.background = "#064e3b";
-                } else {
-                    zone.style.borderColor = "#ef4444";
-                    zone.style.background = "#450a0a";
-                    zone.innerHTML += ` <span class="text-[10px] opacity-50">[${zone.dataset.answer}]</span>`;
-                }
+            zones.forEach(z => {
+                const ok = z.innerText.trim().toLowerCase() === z.dataset.answer.toLowerCase();
+                if(ok) { correct++; z.style.background = "#064e3b"; z.style.borderColor = "#10b981"; }
+                else { z.style.background = "#450a0a"; z.style.borderColor = "#ef4444"; z.innerHTML += ` <span class="text-[9px] opacity-60">[${z.dataset.answer}]</span>`; }
             });
             const percent = Math.round((correct/zones.length)*100);
-            document.getElementById('dragDropScoreDisplay').innerHTML = `
-                <div class="p-4 rounded-xl bg-white/10 text-center border border-white/20">
-                    <p class="text-emerald-400 font-black">KẾT QUẢ: ${correct}/${zones.length} (${percent}%)</p>
-                </div>
-            `;
+            document.getElementById('dragDropScore').innerHTML = `<div class="bg-white/10 p-4 rounded-xl text-center text-emerald-400 font-bold border border-white/10">KẾT QUẢ: ${correct}/${zones.length} (${percent}%)</div>`;
         };
 
-        // 8. SMART REVIEW MODE (4 OPTIONS)
+        // 7. REVIEW LOGIC (IMPROVED FEEDBACK)
         async function startReviewQuiz() {
-            const snap = await db.collection('users').doc(currentUser.uid).collection('vocabulary')
-                                 .where('correct_count', '<', 10).limit(10).get();
-            reviewPool = snap.docs.map(doc => doc.data());
-            if(reviewPool.length < 4) return alert("Cần ít nhất 4 từ đang học để tạo trắc nghiệm!");
-            
-            reviewPool = shuffle(reviewPool);
+            const snap = await db.collection('users').doc(currentUser.uid).collection('vocabulary').where('correct_count', '<', 10).limit(10).get();
+            reviewPool = shuffle(snap.docs.map(doc => doc.data()));
+            if(reviewPool.length < 4) return alert("Cần tối thiểu 4 từ đang học!");
             currentReviewIdx = 0;
             document.getElementById('reviewStart').classList.add('hidden');
             document.getElementById('reviewQuizArea').classList.remove('hidden');
@@ -378,39 +374,55 @@
         }
 
         function showReviewQuestion() {
-            if(currentReviewIdx >= reviewPool.length) {
-                alert("Hoàn thành lượt ôn tập!");
-                switchTab('library');
-                return;
-            }
+            if(currentReviewIdx >= reviewPool.length) { alert("Xong! Quay lại Thư viện."); return switchTab('library'); }
+            
             const target = reviewPool[currentReviewIdx];
+            const overlay = document.getElementById('feedbackOverlay');
+            overlay.classList.add('hidden');
+            document.getElementById('nextReviewBtn').classList.add('hidden');
             document.getElementById('qWord').innerText = target.word;
             document.getElementById('qIpa').innerText = target.ipa;
-            document.getElementById('reviewProgress').style.width = `${(currentReviewIdx/reviewPool.length)*100}%`;
 
             const distractors = shuffle(reviewPool.filter(i => i.word !== target.word)).slice(0, 3).map(i => i.vn);
             const choices = shuffle([target.vn, ...distractors]);
             
             document.getElementById('qChoices').innerHTML = choices.map(c => `
-                <button onclick="checkReviewAnswer('${c}', '${target.vn}', '${target.word}')" 
-                    class="p-5 border-2 border-slate-100 rounded-2xl font-bold text-slate-700 hover:border-indigo-500 hover:bg-indigo-50 transition text-left">
+                <button onclick="checkReviewAnswer(this, '${c}', '${target.vn}', '${target.word}')" 
+                    class="choice-btn p-5 bg-white rounded-2xl font-bold text-slate-700 text-left hover:bg-slate-50">
                     ${c}
                 </button>
             `).join('');
         }
 
-        async function checkReviewAnswer(selected, correct, word) {
+        async function checkReviewAnswer(btn, selected, correct, word) {
+            const allBtns = document.querySelectorAll('.choice-btn');
+            const overlay = document.getElementById('feedbackOverlay');
             const ref = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(word.toLowerCase());
+            
+            // Khóa các nút
+            allBtns.forEach(b => b.disabled = true);
+            
             if(selected === correct) {
+                btn.classList.add('correct');
+                overlay.innerText = "Chính xác! 🎉";
+                overlay.className = "absolute inset-x-0 top-0 py-2 font-black text-sm uppercase tracking-widest bg-emerald-100 text-emerald-600 block";
                 await ref.update({ correct_count: firebase.firestore.FieldValue.increment(1) });
-                currentReviewIdx++;
             } else {
-                alert("Chưa đúng! Đáp án là: " + correct);
+                btn.classList.add('wrong');
+                allBtns.forEach(b => { if(b.innerText.trim() === correct) b.classList.add('correct'); });
+                overlay.innerText = "Chưa đúng rồi! ✍️";
+                overlay.className = "absolute inset-x-0 top-0 py-2 font-black text-sm uppercase tracking-widest bg-red-100 text-red-600 block";
                 await ref.update({ incorrect_count: firebase.firestore.FieldValue.increment(1) });
-                const item = reviewPool.splice(currentReviewIdx, 1)[0];
-                reviewPool.push(item); // Đố lại sau
+                // Đưa xuống cuối đố lại
+                reviewPool.push(reviewPool.splice(currentReviewIdx, 1)[0]);
+                currentReviewIdx--; // Giữ nguyên index vì pool đã thay đổi
             }
-            showReviewQuestion();
+            
+            document.getElementById('nextReviewBtn').onclick = () => {
+                currentReviewIdx++;
+                showReviewQuestion();
+            };
+            document.getElementById('nextReviewBtn').classList.remove('hidden');
         }
 
         // UTILS
