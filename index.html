@@ -2,1405 +2,236 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Be Heard | Vocab Extract</title>
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700&family=Righteous&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VocaFlow Pro - AI English Teacher Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --primary: #031383;
-            --primary-dark: #020c5e;
-            --primary-light: #1a2fa8;
-            --accent: #FFD93D;
-            --accent-dark: #f0c200;
-            --action: #FF6B6B;
-            --action-dark: #e04f4f;
-            --bg: #eef2ff;
-            --card-bg: #ffffff;
-            --success: #27ae60;
-            --success-bg: #eafaf1;
-            --danger: #e74c3c;
-            --danger-bg: #fdf2f1;
-            --text-muted: #7986b8;
-            --border: #dae1f5;
-        }
-
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-        body {
-            font-family: 'Nunito', sans-serif;
-            background: var(--bg);
-            background-image:
-                radial-gradient(circle at 15% 25%, rgba(3,19,131,0.06) 0%, transparent 50%),
-                radial-gradient(circle at 85% 75%, rgba(255,217,61,0.10) 0%, transparent 50%);
-            min-height: 100vh;
-            color: var(--primary);
-            padding: 16px;
-            touch-action: pan-y;
-            -webkit-user-select: none;
-            user-select: none;
-        }
-
-        .container {
-            max-width: 860px;
-            margin: 0 auto;
-            background: var(--card-bg);
-            border-radius: 28px;
-            box-shadow: 0 2px 0 #b0baf0, 0 8px 40px rgba(3,19,131,0.10);
-            border: 2px solid var(--border);
-        }
-
-        .hidden { display: none !important; }
-
-        /* ── HEADER ── */
-        .app-header {
-            overflow: hidden;
-            border-radius: 26px 26px 0 0;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 60%, #2d49d6 100%);
-            padding: 28px 30px 24px;
-            position: relative;
-        }
-        .app-header::before {
-            content: '';
-            position: absolute; inset: 0;
-            background-image: radial-gradient(ellipse at 80% 50%, rgba(255,217,61,0.18) 0%, transparent 60%);
-        }
-        .app-header::after {
-            content: '';
-            position: absolute; bottom: -8px; left: 0; right: 0;
-            height: 30px; background: var(--card-bg); border-radius: 28px 28px 0 0;
-        }
-        .app-header h1 {
-            font-family: 'Righteous', sans-serif; font-size: 2.2rem;
-            color: #fff; text-align: center; position: relative; z-index: 1;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        }
-        .app-header h1 span { color: var(--accent); }
-        .app-header .subtitle {
-            text-align: center; color: rgba(255,255,255,0.7);
-            font-size: 0.88rem; font-weight: 600; margin-top: 4px;
-            letter-spacing: 2px; text-transform: uppercase; position: relative; z-index: 1;
-        }
-
-        .inner { padding: 28px 28px 32px; }
-
-        .section-label {
-            font-size: 0.78rem; font-weight: 800; letter-spacing: 2px;
-            text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;
-        }
-
-        /* ── GEMINI KEY BOX ── */
-        .key-box {
-            background: linear-gradient(135deg, #f0fdf4 0%, #ecfeff 100%);
-            border: 2px solid #6ee7b7; border-radius: 18px;
-            padding: 16px 18px 14px; margin-bottom: 24px;
-        }
-        .key-box-header {
-            display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;
-        }
-        .key-box-title {
-            font-size: 0.76rem; font-weight: 800; letter-spacing: 1.5px; text-transform: uppercase;
-            color: #065f46; display: flex; align-items: center; gap: 7px;
-        }
-        .gemini-dot { display: inline-flex; align-items: center; gap: 3px; }
-        .gemini-dot span { display: inline-block; width: 7px; height: 7px; border-radius: 50%; }
-        .gemini-dot span:nth-child(1) { background: #4285F4; }
-        .gemini-dot span:nth-child(2) { background: #EA4335; }
-        .gemini-dot span:nth-child(3) { background: #FBBC05; }
-        .gemini-dot span:nth-child(4) { background: #34A853; }
-        .key-saved-badge {
-            font-size: 0.68rem; font-weight: 800; background: #d1fae5; color: #065f46;
-            border: 1.5px solid #6ee7b7; border-radius: 99px; padding: 2px 9px; display: none;
-        }
-        .key-saved-badge.visible { display: inline-block; }
-        .key-input-row { display: flex; gap: 8px; align-items: stretch; }
-        #gemini-key {
-            flex: 1; padding: 10px 14px; border-radius: 11px; border: 2px solid #6ee7b7;
-            background: #fff; font-family: 'Courier New', monospace; font-size: 0.88rem;
-            font-weight: 700; color: #0f2027; outline: none;
-            -webkit-user-select: text; user-select: text;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-        #gemini-key:focus { border-color: #059669; box-shadow: 0 0 0 3px rgba(5,150,105,0.12); }
-        #gemini-key.has-value { border-color: #34d399; background: #f0fdf4; }
-        .key-eye-btn {
-            padding: 10px 14px; border-radius: 11px; border: 2px solid #6ee7b7;
-            background: #d1fae5; font-size: 0.82rem; cursor: pointer;
-            font-weight: 800; color: #065f46; white-space: nowrap; flex-shrink: 0;
-        }
-        .key-eye-btn:hover { background: #a7f3d0; }
-        .key-save-btn {
-            padding: 10px 16px; border-radius: 11px; border: none;
-            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
-            color: #fff; font-family: 'Nunito', sans-serif; font-size: 0.82rem;
-            font-weight: 800; cursor: pointer; white-space: nowrap; flex-shrink: 0;
-            box-shadow: 0 3px 0 #047857;
-        }
-        .key-save-btn:active { transform: translateY(3px); box-shadow: none; }
-        .key-hint {
-            font-size: 0.74rem; color: #059669; font-weight: 600;
-            margin-top: 9px; line-height: 1.55; display: flex; align-items: flex-start; gap: 5px;
-        }
-        .key-hint a { color: #047857; font-weight: 800; text-decoration: underline; }
-
-        /* ── TEXTAREA ── */
-        #text-input {
-            width: 100%; min-height: 200px; padding: 16px 18px; border-radius: 16px;
-            border: 2.5px solid var(--border); font-family: 'Nunito', sans-serif;
-            font-size: 1rem; font-weight: 600; color: var(--primary); background: #f8faff;
-            outline: none; resize: vertical; line-height: 1.7;
-            -webkit-user-select: text; user-select: text;
-            transition: border-color 0.2s, box-shadow 0.2s; display: block; margin-bottom: 6px;
-        }
-        #text-input:focus {
-            border-color: var(--primary); box-shadow: 0 0 0 4px rgba(3,19,131,0.08); background: #fff;
-        }
-        .char-count { font-size: 0.78rem; color: var(--text-muted); font-weight: 600; text-align: right; margin-bottom: 18px; }
-
-        /* ── BUTTONS ── */
-        .btn {
-            width: 100%; padding: 15px 20px; border: none; border-radius: 14px;
-            font-family: 'Nunito', sans-serif; font-weight: 800; font-size: 1rem;
-            cursor: pointer; transition: transform 0.1s, box-shadow 0.1s;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            letter-spacing: 0.5px; text-transform: uppercase;
-        }
-        .btn:active { transform: translateY(3px); box-shadow: none !important; }
-        .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none !important; }
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-            color: white; box-shadow: 0 5px 0 var(--primary-dark), 0 8px 20px rgba(3,19,131,0.25);
-        }
-        .btn-action {
-            background: linear-gradient(135deg, var(--action) 0%, #ff8a65 100%);
-            color: white; box-shadow: 0 5px 0 var(--action-dark), 0 8px 20px rgba(255,107,107,0.3);
-        }
-        .btn-secondary {
-            background: #f0f2ff; color: var(--primary);
-            border: 2px solid var(--border); box-shadow: 0 4px 0 #c8d0f0;
-        }
-        .btn-row { display: flex; gap: 12px; flex-direction: column; }
-        .divider { display: flex; align-items: center; gap: 12px; margin: 4px 0; }
-        .divider::before, .divider::after { content: ''; flex: 1; height: 2px; background: var(--border); border-radius: 2px; }
-        .divider span { font-size: 0.78rem; color: var(--text-muted); font-weight: 700; letter-spacing: 2px; }
-
-        /* ── LOADING ── */
-        .loading-wrap {
-            padding: 60px 28px; display: flex; flex-direction: column; align-items: center; gap: 24px;
-        }
-        .spinner-ring {
-            width: 72px; height: 72px; border-radius: 50%; border: 5px solid var(--border);
-            border-top-color: #4285F4; border-right-color: #EA4335;
-            border-bottom-color: #FBBC05; border-left-color: #34A853;
-            animation: spin 0.9s cubic-bezier(0.5,0,0.5,1) infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .loading-msg { font-size: 1.05rem; font-weight: 800; color: var(--primary); text-align: center; }
-        .loading-sub { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); text-align: center; }
-
-        /* ── READING VIEW ── */
-        .reading-header {
-            padding: 16px 24px 14px; border-bottom: 2px solid var(--border);
-            background: #f8faff; border-radius: 0;
-        }
-        .reading-hint {
-            font-size: 0.82rem; font-weight: 600; color: var(--text-muted);
-            text-align: center; margin-bottom: 14px; line-height: 1.5;
-            display: flex; align-items: center; justify-content: center; gap: 7px;
-        }
-        .reading-hint strong { color: var(--primary); }
-
-        .study-list-label {
-            font-size: 0.72rem; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;
-            color: var(--text-muted); margin-bottom: 9px;
-            display: flex; align-items: center; gap: 7px;
-        }
-        .study-list-label::before {
-            content: ''; display: inline-block; width: 8px; height: 8px;
-            background: var(--accent); border-radius: 50%;
-        }
-        .study-list-label .count-badge {
-            background: var(--primary); color: #fff;
-            font-size: 0.65rem; padding: 1px 7px; border-radius: 99px;
-        }
-        .study-chips {
-            display: flex; flex-wrap: wrap; gap: 7px; min-height: 34px; align-items: center;
-        }
-        .study-chip {
-            display: inline-flex; align-items: center; gap: 5px;
-            padding: 5px 10px 5px 12px; border-radius: 99px;
-            background: var(--primary); color: #fff;
-            font-size: 0.82rem; font-weight: 800;
-            animation: chipIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
-        }
-        @keyframes chipIn {
-            from { transform: scale(0.4); opacity: 0; }
-            to   { transform: scale(1); opacity: 1; }
-        }
-        .study-chip .cefr-dot {
-            width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
-        }
-        .study-chip .remove-chip {
-            cursor: pointer; font-size: 0.82rem; opacity: 0.6; margin-left: 1px;
-            -webkit-user-select: none; user-select: none; line-height: 1;
-        }
-        .study-chip .remove-chip:hover { opacity: 1; }
-        .study-empty {
-            font-size: 0.8rem; color: var(--text-muted); font-weight: 600; font-style: italic;
-        }
-
-        /* ── PARAGRAPH INTERACTIVE ── */
-        .reading-body { padding: 24px 28px; }
-        .paragraph-display {
-            font-size: 1.05rem; font-weight: 600; line-height: 1.95; color: #1a1a3a;
-        }
-        .word-span {
-            cursor: pointer; border-radius: 4px; padding: 1px 2px;
-            transition: background 0.12s, color 0.12s;
-            -webkit-user-select: none; user-select: none;
-        }
-        .word-span:hover { background: rgba(3,19,131,0.07); }
-        .word-span.looking-up {
-            background: #ddd6fe; color: var(--primary);
-            animation: shimmer 0.7s ease-in-out infinite alternate;
-        }
-        @keyframes shimmer { from { opacity: 0.55; } to { opacity: 1; } }
-        .word-span.in-list {
-            background: var(--accent); color: var(--primary-dark);
-            font-weight: 800; border-radius: 5px;
-        }
-
-        .reading-footer { padding: 0 28px 28px; }
-        .exercise-btn-hint {
-            font-size: 0.8rem; color: var(--text-muted); font-weight: 600;
-            text-align: center; margin-bottom: 12px;
-        }
-
-        /* ── WORD INFO PANEL (bottom sheet) ── */
-        .panel-overlay {
-            position: fixed; inset: 0;
-            background: rgba(3,19,131,0.3); backdrop-filter: blur(2px);
-            z-index: 900; opacity: 0; pointer-events: none;
-            transition: opacity 0.25s;
-        }
-        .panel-overlay.visible { opacity: 1; pointer-events: all; }
-
-        .word-panel {
-            position: fixed; left: 0; right: 0; bottom: 0;
-            max-width: 860px; margin: 0 auto;
-            background: var(--card-bg); border-radius: 24px 24px 0 0;
-            padding: 0 24px 40px; z-index: 901;
-            box-shadow: 0 -10px 50px rgba(3,19,131,0.22);
-            transform: translateY(100%);
-            transition: transform 0.38s cubic-bezier(0.34,1.56,0.64,1);
-        }
-        .word-panel.open { transform: translateY(0); }
-
-        .panel-handle-row {
-            display: flex; justify-content: center; padding: 14px 0 6px;
-        }
-        .panel-handle {
-            width: 44px; height: 5px; background: var(--border); border-radius: 99px;
-        }
-
-        .panel-loading {
-            display: flex; flex-direction: column; align-items: center; gap: 14px;
-            padding: 28px 0 20px;
-        }
-        .mini-spinner {
-            width: 38px; height: 38px; border-radius: 50%; border: 4px solid var(--border);
-            border-top-color: #4285F4; border-right-color: #EA4335;
-            border-bottom-color: #FBBC05; border-left-color: #34A853;
-            animation: spin 0.8s linear infinite;
-        }
-        .panel-loading p { font-size: 0.88rem; font-weight: 700; color: var(--text-muted); }
-
-        .panel-body {}
-
-        /* Word title row */
-        .panel-title-row {
-            display: flex; align-items: flex-start; justify-content: space-between;
-            gap: 12px; margin-bottom: 4px;
-        }
-        .panel-word {
-            font-size: 2.2rem; font-weight: 900; color: var(--primary); line-height: 1.1;
-        }
-        .panel-phonetic {
-            font-size: 0.92rem; font-weight: 600; color: var(--text-muted);
-            font-family: 'Courier New', monospace; margin: 4px 0 6px;
-        }
-        .panel-pos {
-            display: inline-block; font-size: 0.7rem; font-weight: 800;
-            letter-spacing: 1.5px; text-transform: uppercase;
-            background: var(--bg); color: var(--text-muted);
-            border: 1.5px solid var(--border); border-radius: 7px; padding: 2px 9px;
-        }
-
-        /* CEFR badge */
-        .cefr-badge {
-            display: inline-flex; align-items: center; justify-content: center;
-            padding: 7px 16px; border-radius: 99px;
-            font-size: 1rem; font-weight: 900; letter-spacing: 1px;
-            flex-shrink: 0; margin-top: 6px;
-        }
-        .cefr-A1 { background: #dcfce7; color: #15803d; border: 2px solid #86efac; }
-        .cefr-A2 { background: #cffafe; color: #0e7490; border: 2px solid #67e8f9; }
-        .cefr-B1 { background: #ede9fe; color: #6d28d9; border: 2px solid #c4b5fd; }
-        .cefr-B2 { background: #ffedd5; color: #c2410c; border: 2px solid #fdba74; }
-        .cefr-C1 { background: #ffe4e6; color: #9f1239; border: 2px solid #fda4af; }
-        .cefr-C2 { background: #fdf4ff; color: #7e22ce; border: 2px solid #e9d5ff; }
-
-        /* Definitions box */
-        .panel-defs {
-            background: #f8faff; border: 1.5px solid var(--border);
-            border-radius: 14px; padding: 14px 16px; margin: 14px 0 16px;
-        }
-        .def-en {
-            font-size: 0.97rem; font-weight: 700; color: var(--primary);
-            line-height: 1.55; margin-bottom: 10px;
-            display: flex; gap: 7px; align-items: flex-start;
-        }
-        .def-en::before { content: '📖'; font-size: 0.9rem; flex-shrink: 0; margin-top: 1px; }
-        .def-vi {
-            font-size: 0.92rem; font-weight: 600; color: var(--text-muted);
-            line-height: 1.55; display: flex; gap: 7px; align-items: flex-start;
-        }
-        .def-vi::before { content: '🇻🇳'; font-size: 0.88rem; flex-shrink: 0; margin-top: 1px; }
-
-        /* Panel actions */
-        .panel-actions { display: flex; gap: 10px; }
-        .btn-add-word {
-            flex: 1; padding: 13px 16px; border-radius: 13px; border: none;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-            color: #fff; font-family: 'Nunito', sans-serif;
-            font-size: 0.92rem; font-weight: 800; cursor: pointer;
-            box-shadow: 0 4px 0 var(--primary-dark);
-            display: flex; align-items: center; justify-content: center; gap: 6px;
-            transition: opacity 0.15s, transform 0.1s;
-        }
-        .btn-add-word:active { transform: translateY(4px); box-shadow: none; }
-        .btn-add-word.added {
-            background: linear-gradient(135deg, var(--success) 0%, #2ecc71 100%);
-            box-shadow: 0 4px 0 #1e8449;
-        }
-        .btn-close-panel {
-            padding: 13px 16px; border-radius: 13px;
-            border: 2px solid var(--border); background: #f0f2ff;
-            color: var(--text-muted); font-family: 'Nunito', sans-serif;
-            font-size: 0.92rem; font-weight: 800; cursor: pointer;
-            flex-shrink: 0;
-        }
-
-        /* ── EXERCISE VIEW ── */
-        .word-bank-container {
-            position: sticky; top: 0; z-index: 100;
-            background: #fff; padding: 14px 20px 16px;
-            border-bottom: 3px solid var(--border);
-            box-shadow: 0 6px 20px rgba(3,19,131,0.08);
-        }
-        .bank-header {
-            display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;
-        }
-        .bank-label {
-            font-size: 0.72rem; font-weight: 800; letter-spacing: 2.5px; text-transform: uppercase;
-            color: var(--text-muted); display: flex; align-items: center; gap: 6px;
-        }
-        .bank-label::before {
-            content: ''; display: inline-block; width: 8px; height: 8px;
-            background: var(--accent); border-radius: 50%;
-        }
-        .word-bank {
-            display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
-        }
-        .draggable-word {
-            background: #fff; padding: 5px 14px;
-            border-radius: 99px; border: 2.5px solid var(--primary);
-            font-weight: 800; font-size: 0.88rem; color: var(--primary);
-            cursor: grab; transition: all 0.15s;
-            -webkit-user-select: none; user-select: none;
-            white-space: nowrap; box-shadow: 0 2px 0 rgba(3,19,131,0.15);
-        }
-        .draggable-word:hover { background: var(--bg); transform: translateY(-2px); }
-        .draggable-word.used { opacity: 0.22; pointer-events: none; border-style: dashed; }
-        .draggable-word.selected-word { background: var(--accent); }
-
-        .exercise-inner { padding: 24px 24px 28px; }
-        .exercise-progress { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }
-        .progress-bar-track { flex: 1; height: 8px; background: var(--border); border-radius: 99px; overflow: hidden; }
-        .progress-bar-fill {
-            height: 100%; background: linear-gradient(90deg, var(--primary), var(--primary-light));
-            border-radius: 99px; transition: width 0.4s ease;
-        }
-        .progress-label { font-size: 0.82rem; font-weight: 800; color: var(--text-muted); white-space: nowrap; }
-
-        /* Sentence cards */
-        .sentence-list { display: flex; flex-direction: column; gap: 14px; }
-        .sentence-card {
-            background: #f8faff; padding: 18px 20px 14px;
-            border-radius: 16px; border: 2px solid var(--border);
-            transition: border-color 0.2s;
-            animation: fadeUp 0.35s ease both;
-        }
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(12px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-        .sentence-card.correct { background: var(--success-bg); border-color: #a9dfbf; border-left: 5px solid var(--success); }
-        .sentence-card.wrong   { background: var(--danger-bg);  border-color: #f1aeb5; border-left: 5px solid var(--danger); }
-
-        .sentence-top {
-            display: flex; gap: 12px; align-items: flex-start;
-        }
-        .q-num {
-            background: var(--accent); color: var(--primary-dark);
-            min-width: 30px; height: 30px; border-radius: 8px;
-            display: flex; align-items: center; justify-content: center;
-            font-weight: 900; font-size: 0.9rem; flex-shrink: 0;
-            box-shadow: 0 2px 0 var(--accent-dark);
-        }
-        .sentence-text {
-            font-size: 1.05rem; font-weight: 700; line-height: 2.2; color: #1a1a3a;
-        }
-        .drop-zone {
-            display: inline-flex; justify-content: center; align-items: center;
-            min-width: 100px; height: 36px; border: 2px dashed rgba(3,19,131,0.3);
-            border-radius: 9px; margin: 0 4px; padding: 0 10px;
-            background: rgba(3,19,131,0.04); color: var(--action);
-            font-size: 0.9rem; font-weight: 800;
-            transition: all 0.15s; cursor: pointer; vertical-align: middle;
-        }
-        .drop-zone:empty::after { content: '· · ·'; color: #b0baf0; font-weight: 700; letter-spacing: 2px; }
-        .drop-zone.hovered { background: #fff9e0; border-color: var(--accent-dark); border-style: solid; transform: scale(1.06); }
-        .drop-zone:not(:empty) { background: rgba(3,19,131,0.07); border-style: solid; border-color: var(--primary); color: var(--primary); }
-
-        .sentence-hint {
-            margin-top: 8px; font-size: 0.8rem; color: #0891b2;
-            font-weight: 700; font-style: italic;
-            background: #ecfeff; border: 1.5px solid #a5f3fc;
-            border-radius: 8px; padding: 4px 10px;
-            display: inline-flex; gap: 5px; align-items: center;
-        }
-        .sentence-hint::before { content: '💡'; font-style: normal; }
-        .sentence-answer {
-            margin-top: 6px; font-size: 0.82rem; font-weight: 800;
-            color: var(--success); display: none;
-        }
-        .sentence-answer.show { display: block; }
-
-        /* ── RESULT ── */
-        .result-inner { padding: 24px 24px 32px; }
-        .score-banner {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 60%, #2d49d6 100%);
-            color: white; padding: 32px 24px; border-radius: 20px;
-            text-align: center; margin-bottom: 24px; position: relative; overflow: hidden;
-        }
-        .score-banner::before {
-            content: ''; position: absolute; inset: 0;
-            background: radial-gradient(ellipse at 80% 20%, rgba(255,217,61,0.2) 0%, transparent 60%);
-        }
-        .score-circle {
-            width: 110px; height: 110px; border-radius: 50%;
-            border: 4px solid rgba(255,255,255,0.3);
-            background: rgba(255,255,255,0.12);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            margin: 0 auto 16px; position: relative; z-index: 1;
-        }
-        .score-pct { font-family: 'Righteous', sans-serif; font-size: 2.4rem; color: var(--accent); line-height: 1; }
-        .score-circle-label { font-size: 0.65rem; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.7); font-weight: 700; }
-        .score-count { font-size: 1.05rem; font-weight: 700; color: rgba(255,255,255,0.9); margin-bottom: 8px; position: relative; z-index: 1; }
-        .score-msg   { font-size: 1.1rem; font-weight: 800; color: #fff; position: relative; z-index: 1; }
-
-        .result-cards { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
-        .result-actions { display: flex; gap: 12px; flex-direction: column; }
-
-        .res-correct-word { color: var(--success); font-weight: 900; }
-        .res-wrong-word   { color: var(--danger); text-decoration: line-through; opacity: 0.7; margin-right: 4px; }
-        .res-answer-word  { color: var(--success); font-weight: 900; border-bottom: 2.5px solid var(--success); padding-bottom: 1px; }
-
-        /* ── ERROR ── */
-        .error-box {
-            background: var(--danger-bg); border: 2px solid #f1aeb5; border-radius: 14px;
-            padding: 14px 18px; margin-top: 16px; font-weight: 700; font-size: 0.9rem;
-            color: var(--danger); display: flex; gap: 8px; align-items: flex-start; line-height: 1.5;
-        }
-
-        /* ── TOAST ── */
-        .toast {
-            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
-            background: var(--primary); color: #fff;
-            padding: 11px 24px; border-radius: 99px;
-            font-size: 0.9rem; font-weight: 700;
-            box-shadow: 0 8px 30px rgba(3,19,131,0.35);
-            transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
-            z-index: 9999; white-space: nowrap;
-        }
-        .toast.show { transform: translateX(-50%) translateY(0); }
-
-        @media (max-width: 600px) {
-            body { padding: 8px; }
-            .inner, .exercise-inner, .result-inner { padding: 16px 16px 24px; }
-            .reading-body { padding: 18px 16px; }
-            .reading-footer { padding: 0 16px 24px; }
-            .reading-header { padding: 14px 16px 12px; }
-            .app-header { padding: 22px 20px 22px; }
-            .app-header h1 { font-size: 1.7rem; }
-            .word-panel { padding: 0 16px 36px; }
-            .panel-word { font-size: 1.8rem; }
-            .key-input-row { flex-wrap: wrap; }
-            .key-save-btn { width: 100%; justify-content: center; }
-        }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        .editor-word { cursor: pointer; border-radius: 4px; padding: 0 2px; transition: 0.2s; }
+        .editor-word.is-bold { font-weight: 800; color: #1e40af; background-color: #fef08a; text-decoration: underline; }
+        .drop-zone { border-bottom: 2px dashed #94a3b8; min-width: 120px; display: inline-block; height: 1.6em; vertical-align: middle; margin: 0 4px; border-radius: 4px; }
+        .draggable-item { cursor: grab; padding: 6px 16px; background: white; border: 1px solid #e2e8f0; border-radius: 12px; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .cefr-badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 6px; font-weight: 800; }
+        .cefr-A1, .cefr-A2 { background: #dcfce7; color: #166534; }
+        .cefr-B1, .cefr-B2 { background: #fef9c3; color: #854d0e; }
+        .cefr-C1, .cefr-C2 { background: #fee2e2; color: #991b1b; }
+        .loading-spinner { border: 3px solid #f3f3f3; border-top: 3px solid #3b82f6; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
-<body>
+<body class="bg-slate-50 text-slate-900 pb-20">
 
-<div class="container">
-    <div class="app-header">
-        <h1>🔍 Vocab <span>Extract</span></h1>
-        <p class="subtitle">Be Heard · Smart CEFR Vocabulary</p>
-    </div>
+    <nav class="bg-white/80 backdrop-blur-md border-b sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-xl">V</div>
+                <span class="text-xl font-bold tracking-tight">VocaFlow <span class="text-indigo-600">AI</span></span>
+            </div>
+            <div class="flex items-center gap-4">
+                <input type="password" id="apiKey" class="text-xs border rounded-lg px-3 py-2 w-48 focus:ring-2 focus:ring-indigo-200 outline-none" placeholder="Paste Gemini API Key here...">
+                <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-[10px] text-indigo-500 underline uppercase font-bold">Get Key</a>
+            </div>
+        </div>
+    </nav>
 
-    <!-- ══ SETUP VIEW ══ -->
-    <div id="setup-view" class="inner">
-        <div class="key-box">
-            <div class="key-box-header">
-                <div class="key-box-title">
-                    <div class="gemini-dot">
-                        <span></span><span></span><span></span><span></span>
+    <main class="max-w-7xl mx-auto px-6 pt-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Left Section -->
+        <div class="lg:col-span-7 space-y-6">
+            <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-bold text-slate-800">1. Input Material</h3>
+                    <button onclick="document.getElementById('fileInput').click()" class="text-xs bg-slate-100 px-3 py-1.5 rounded-lg hover:bg-slate-200 transition">Upload .docx</button>
+                    <input type="file" id="fileInput" accept=".docx" class="hidden">
+                </div>
+                <textarea id="rawInput" class="w-full p-4 h-32 bg-slate-50 rounded-xl focus:outline-none resize-none border border-transparent focus:border-indigo-300 transition" placeholder="Paste English text..."></textarea>
+                <button id="loadBtn" class="w-full mt-4 bg-slate-800 text-white py-3 rounded-xl font-semibold hover:bg-slate-900 transition">Analyze Text</button>
+            </section>
+
+            <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-6">
+                    <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
+                        Active Reader 
+                        <span class="text-[10px] bg-indigo-100 text-indigo-600 px-2 py-0.5 rounded-full uppercase">Interactive</span>
+                    </h3>
+                    <div id="editor" class="min-h-[400px] text-lg leading-relaxed text-slate-700 p-2">
+                        <p class="text-slate-400 italic text-center pt-20">Văn bản sẽ hiển thị tại đây sau khi nhấn Analyze.</p>
                     </div>
-                    Google Gemini API Key
                 </div>
-                <span class="key-saved-badge" id="key-saved-badge">✓ Đã lưu</span>
-            </div>
-            <div class="key-input-row">
-                <input type="password" id="gemini-key" placeholder="AIza..."
-                    autocomplete="off" spellcheck="false" oninput="onKeyInput()">
-                <button class="key-eye-btn" onclick="toggleKey()">👁 Hiện</button>
-                <button class="key-save-btn" onclick="saveKey()">💾 Lưu</button>
-            </div>
-            <p class="key-hint">
-                🔗 Lấy key miễn phí (không cần thẻ ngân hàng) tại
-                <a href="https://aistudio.google.com/app/apikey" target="_blank">aistudio.google.com</a>
-                · Key chỉ lưu trong trình duyệt này
-            </p>
-        </div>
-
-        <p class="section-label">📄 Dán đoạn văn bất kỳ</p>
-        <textarea id="text-input"
-            placeholder="Paste any English text here — an article, story, or paragraph. You'll then double-click any word to look it up and build your own study list!"
-            oninput="updateCharCount()"></textarea>
-        <p class="char-count" id="char-count">0 ký tự</p>
-
-        <div class="btn-row">
-            <button class="btn btn-primary" onclick="loadText()">
-                📖 Bắt đầu đọc
-            </button>
-        </div>
-        <div id="error-display"></div>
-    </div>
-
-    <!-- ══ READING VIEW ══ -->
-    <div id="reading-view" class="hidden">
-        <div class="reading-header">
-            <p class="reading-hint">
-                👆 <strong>Đúp-click</strong> vào từ bất kỳ để tra nghĩa, phiên âm &amp; cấp độ CEFR
-            </p>
-            <div class="study-list-label">
-                Danh sách học
-                <span class="count-badge" id="word-count-badge">0</span>
-            </div>
-            <div class="study-chips" id="study-chips">
-                <span class="study-empty" id="study-empty">Chưa có từ nào — hãy đúp-click một từ!</span>
-            </div>
-        </div>
-
-        <div class="reading-body">
-            <div class="paragraph-display" id="paragraph-display"></div>
-        </div>
-
-        <div class="reading-footer">
-            <p class="exercise-btn-hint" id="exercise-hint">Chọn ít nhất 1 từ để tạo bài tập</p>
-            <div class="btn-row">
-                <button class="btn btn-action" id="create-ex-btn" onclick="createExercise()" disabled>
-                    ✏️ Tạo bài tập điền từ
-                </button>
-                <div class="divider"><span>hoặc</span></div>
-                <button class="btn btn-secondary" onclick="goSetup()">← Đổi đoạn văn</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- ══ LOADING VIEW ══ -->
-    <div id="loading-view" class="hidden">
-        <div class="loading-wrap">
-            <div class="spinner-ring"></div>
-            <p class="loading-msg" id="loading-msg">✍️ Đang soạn bài tập...</p>
-            <p class="loading-sub" id="loading-sub">Gemini đang tạo câu ví dụ từ từ điển</p>
-        </div>
-    </div>
-
-    <!-- ══ EXERCISE VIEW ══ -->
-    <div id="exercise-view" class="hidden">
-        <div class="word-bank-container">
-            <div class="bank-header">
-                <div class="bank-label">Word Bank</div>
-                <span style="font-size:0.75rem;font-weight:800;color:var(--text-muted)" id="ex-word-count"></span>
-            </div>
-            <div class="word-bank" id="bank-content"></div>
-        </div>
-        <div class="exercise-inner">
-            <div class="exercise-progress">
-                <div class="progress-bar-track">
-                    <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+                <div class="p-4 bg-indigo-50 flex items-center justify-between border-t border-indigo-100">
+                    <span class="text-xs text-indigo-600 font-medium">Double-click words to highlight for AI analysis</span>
+                    <button id="generateBtn" class="bg-indigo-600 text-white px-10 py-3 rounded-xl font-bold shadow-lg hover:bg-indigo-700 transition">Generate with Gemini</button>
                 </div>
-                <div class="progress-label" id="progress-label">0 / 0 đã điền</div>
-            </div>
-            <div class="sentence-list" id="sentence-list"></div>
-            <div class="btn-row" style="margin-top:26px;">
-                <button class="btn btn-action" onclick="submitExercise()">🏆 Kiểm tra đáp án</button>
-                <div class="divider"><span>hoặc</span></div>
-                <button class="btn btn-secondary" onclick="backToReading()">← Tiếp tục chọn từ</button>
-            </div>
+            </section>
         </div>
-    </div>
 
-    <!-- ══ RESULT VIEW ══ -->
-    <div id="result-view" class="hidden">
-        <div class="result-inner">
-            <div id="score-box" class="score-banner"></div>
-            <div class="result-cards" id="result-cards"></div>
-            <div class="result-actions">
-                <button class="btn btn-action" onclick="doItAgain()">🔁 Làm lại (cùng bài)</button>
-                <button class="btn btn-primary" onclick="createExercise()">🔀 Tạo bài tập mới</button>
-                <button class="btn btn-secondary" onclick="backToReading()">← Quay về đọc bài</button>
-            </div>
+        <!-- Right Section -->
+        <div class="lg:col-span-5 space-y-6">
+            <!-- Vocab List -->
+            <section id="vocabContainer" class="bg-white rounded-2xl shadow-md border border-slate-200 hidden overflow-hidden">
+                <div class="p-5 border-b flex justify-between items-center">
+                    <h3 class="font-bold">Vocabulary Bank</h3>
+                    <div id="aiStatus" class="hidden flex items-center gap-2 text-xs text-indigo-500 font-bold">
+                        <div class="loading-spinner"></div> AI Thinking...
+                    </div>
+                </div>
+                <div id="vocabList" class="divide-y divide-slate-50 max-h-[500px] overflow-y-auto"></div>
+                <div class="p-4 bg-slate-50">
+                    <button id="showQuizBtn" class="w-full py-4 bg-emerald-600 text-white rounded-xl font-bold shadow-md hover:bg-emerald-700 transition">Create Drag & Drop Quiz</button>
+                </div>
+            </section>
+
+            <!-- Quiz Section -->
+            <section id="quizContainer" class="bg-emerald-50 rounded-2xl shadow-md border border-emerald-100 hidden">
+                <div class="p-5 border-b border-emerald-100 flex justify-between items-center">
+                    <h3 class="font-bold text-emerald-800">Drag & Drop Practice</h3>
+                    <button id="closeQuiz" class="text-emerald-400 hover:text-emerald-600 text-xl">×</button>
+                </div>
+                <div class="p-6">
+                    <div id="quizSentences" class="space-y-6 mb-8 text-slate-700"></div>
+                    <div id="draggableContainer" class="flex flex-wrap gap-2 justify-center py-6 border-t border-emerald-200"></div>
+                    <button id="checkQuizBtn" class="w-full py-4 bg-emerald-600 text-white rounded-xl font-black uppercase tracking-widest shadow-lg">Check Results</button>
+                </div>
+            </section>
         </div>
-    </div>
-</div>
+    </main>
 
-<!-- ══ WORD PANEL OVERLAY ══ -->
-<div class="panel-overlay" id="panel-overlay" onclick="closePanel()"></div>
+    <script>
+        const editor = document.getElementById('editor');
+        const rawInput = document.getElementById('rawInput');
+        const vocabList = document.getElementById('vocabList');
+        const apiKeyInput = document.getElementById('apiKey');
+        const aiStatus = document.getElementById('aiStatus');
 
-<!-- ══ WORD INFO PANEL (bottom sheet) ══ -->
-<div class="word-panel" id="word-panel">
-    <div class="panel-handle-row">
-        <div class="panel-handle"></div>
-    </div>
+        let learningData = [];
 
-    <!-- Loading state -->
-    <div class="panel-loading" id="panel-loading">
-        <div class="mini-spinner"></div>
-        <p>Đang tra từ điển...</p>
-    </div>
+        // 1. INPUT HANDLING
+        document.getElementById('loadBtn').onclick = () => {
+            const text = rawInput.value.trim();
+            if(!text) return alert("Please enter text.");
+            renderToEditor(text);
+        };
 
-    <!-- Content state -->
-    <div id="panel-body" class="hidden">
-        <div class="panel-title-row">
-            <div>
-                <div class="panel-word" id="panel-word-text"></div>
-                <div class="panel-phonetic" id="panel-phonetic"></div>
-                <span class="panel-pos" id="panel-pos"></span>
-            </div>
-            <span class="cefr-badge" id="panel-cefr"></span>
-        </div>
-        <div class="panel-defs">
-            <div class="def-en" id="panel-def-en"></div>
-            <div class="def-vi" id="panel-def-vi"></div>
-        </div>
-        <div class="panel-actions">
-            <button class="btn-add-word" id="btn-add-word" onclick="addCurrentWord()">
-                ＋ Thêm vào danh sách học
-            </button>
-            <button class="btn-close-panel" onclick="closePanel()">✕</button>
-        </div>
-    </div>
-</div>
+        document.getElementById('fileInput').onchange = (e) => {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                mammoth.extractRawText({arrayBuffer: event.target.result})
+                    .then(result => {
+                        rawInput.value = result.value;
+                        renderToEditor(result.value);
+                    });
+            };
+            reader.readAsArrayBuffer(e.target.files[0]);
+        };
 
-<div class="toast" id="toast"></div>
-
-<script>
-// ─────────────────────────────────────────────────────────────────────────────
-// STATE
-// ─────────────────────────────────────────────────────────────────────────────
-let selectedWords   = [];    // [{ word, phonetic, cefr_level, pos, def_en, def_vi }]
-let exerciseData    = [];    // [{ word, sentence (with ___), answer, def_vi }]
-let currentWordInfo = null;  // info object currently open in panel
-let currentHighSpan = null;  // span being highlighted during lookup
-let selectedWordEl  = null;  // for click-to-fill on desktop
-let originalText    = '';
-
-// Touch double-tap
-let lastTapEl   = null;
-let lastTapTime = 0;
-
-const CEFR_COLORS = {
-    A1:'#16a34a', A2:'#0891b2', B1:'#7c3aed',
-    B2:'#ea580c', C1:'#be123c', C2:'#7e22ce'
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// KEY MANAGEMENT
-// ─────────────────────────────────────────────────────────────────────────────
-(function initKey() {
-    const saved = localStorage.getItem('gemini_api_key');
-    if (saved) {
-        const inp = document.getElementById('gemini-key');
-        inp.value = saved; inp.classList.add('has-value');
-        document.getElementById('key-saved-badge').classList.add('visible');
-    }
-})();
-
-function onKeyInput() {
-    const inp = document.getElementById('gemini-key');
-    inp.classList.toggle('has-value', inp.value.length > 0);
-    document.getElementById('key-saved-badge').classList.remove('visible');
-}
-function saveKey() {
-    const key = document.getElementById('gemini-key').value.trim();
-    if (!key) { showToast('⚠️ Chưa nhập key!'); return; }
-    if (!key.startsWith('AIza')) { showToast('⚠️ Key không đúng định dạng!'); return; }
-    localStorage.setItem('gemini_api_key', key);
-    document.getElementById('key-saved-badge').classList.add('visible');
-    showToast('✅ Đã lưu key!');
-}
-function toggleKey() {
-    const inp = document.getElementById('gemini-key');
-    const btn = document.querySelector('.key-eye-btn');
-    if (inp.type === 'password') { inp.type = 'text'; btn.textContent = '🙈 Ẩn'; }
-    else { inp.type = 'password'; btn.textContent = '👁 Hiện'; }
-}
-function getApiKey() {
-    return document.getElementById('gemini-key').value.trim()
-        || localStorage.getItem('gemini_api_key') || '';
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// UI HELPERS
-// ─────────────────────────────────────────────────────────────────────────────
-function showView(id) {
-    ['setup-view','reading-view','loading-view','exercise-view','result-view'].forEach(v =>
-        document.getElementById(v).classList.toggle('hidden', v !== id));
-}
-function goSetup()      { closePanel(); showView('setup-view'); }
-function backToReading() { showView('reading-view'); }
-
-function updateCharCount() {
-    const len = document.getElementById('text-input').value.length;
-    document.getElementById('char-count').textContent = len + ' ký tự';
-}
-function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg; t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2400);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// STEP 1: LOAD TEXT → READING VIEW
-// ─────────────────────────────────────────────────────────────────────────────
-function loadText() {
-    const text = document.getElementById('text-input').value.trim();
-    if (!text || text.length < 20) { showToast('⚠️ Đoạn văn quá ngắn!'); return; }
-    originalText = text;
-    selectedWords = [];
-    renderStudyChips();
-    renderParagraph(text);
-    showView('reading-view');
-}
-
-function renderParagraph(text) {
-    const container = document.getElementById('paragraph-display');
-    container.innerHTML = '';
-
-    // Tokenize into words and non-words
-    const tokens = text.match(/[a-zA-Z'\u2019\u2018-]+|[^a-zA-Z'\u2019\u2018-]+/g) || [];
-    tokens.forEach(token => {
-        const isWord = /[a-zA-Z]{2,}/.test(token);
-        if (isWord) {
-            const span = document.createElement('span');
-            span.className = 'word-span';
-            span.textContent = token;
-            span.addEventListener('dblclick', () => handleWordDblClick(span, token));
-            span.addEventListener('touchend', e => handleTouchTap(e, span, token));
-            container.appendChild(span);
-        } else {
-            container.appendChild(document.createTextNode(token));
+        function renderToEditor(text) {
+            editor.innerHTML = text.split(/(\s+)/).map(w => w.trim() === '' ? w : `<span class="editor-word" ondblclick="this.classList.toggle('is-bold')">${w}</span>`).join('');
+            document.getElementById('vocabContainer').classList.add('hidden');
         }
-    });
-}
 
-function handleTouchTap(e, span, token) {
-    const now = Date.now();
-    if (lastTapEl === span && now - lastTapTime < 450) {
-        e.preventDefault();
-        handleWordDblClick(span, token);
-        lastTapEl = null; lastTapTime = 0;
-    } else {
-        lastTapEl = span; lastTapTime = now;
-    }
-}
+        // 2. GEMINI AI INTEGRATION
+        document.getElementById('generateBtn').onclick = async () => {
+            const key = apiKeyInput.value.trim();
+            if(!key) return alert("Please enter your Gemini API Key.");
 
-// ─────────────────────────────────────────────────────────────────────────────
-// STEP 2: DOUBLE-CLICK WORD → FETCH INFO
-// ─────────────────────────────────────────────────────────────────────────────
-async function handleWordDblClick(span, rawToken) {
-    const apiKey = getApiKey();
-    if (!apiKey) { showToast('⚠️ Cần nhập Gemini API key!'); return; }
+            const selectedWords = Array.from(new Set(Array.from(editor.querySelectorAll('.is-bold')).map(el => el.innerText.replace(/[^a-zA-Z]/g, ''))));
+            if(selectedWords.length === 0) return alert("Double-click some words to select.");
 
-    // Clean word
-    const word = rawToken.replace(/^['\-\u2018\u2019]+|['\-\u2018\u2019]+$/g, '').toLowerCase();
-    if (!word || word.length < 2) return;
+            document.getElementById('vocabContainer').classList.remove('hidden');
+            aiStatus.classList.remove('hidden');
+            vocabList.innerHTML = '';
 
-    // Mark span as looking up (don't remove highlight if already in list)
-    if (currentHighSpan && !isInList(currentHighSpan.textContent)) {
-        currentHighSpan.classList.remove('looking-up');
-    }
-    currentHighSpan = span;
-    if (!span.classList.contains('in-list')) span.classList.add('looking-up');
+            const prompt = `Analyze these English words: [${selectedWords.join(', ')}]. 
+            Return ONLY a JSON array of objects with fields: 
+            "word", "ipa", "vn" (Vietnamese meaning), "level" (CEFR A1-C2), "example" (a natural sentence using the word).`;
 
-    openPanelLoading();
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
 
-    try {
-        const ctx = getContext(word);
-        const info = await fetchWordInfo(apiKey, word, ctx);
-        span.classList.remove('looking-up');
-        currentWordInfo = { ...info, rawToken };
-        showPanelContent(info);
-    } catch (err) {
-        span.classList.remove('looking-up');
-        closePanel();
-        showToast('⚠️ Lỗi tra từ: ' + err.message);
-    }
-}
-
-function getContext(word) {
-    const idx = originalText.toLowerCase().indexOf(word);
-    if (idx === -1) return '';
-    const start = Math.max(0, idx - 120);
-    const end   = Math.min(originalText.length, idx + 150);
-    return originalText.slice(start, end).replace(/"/g, "'");
-}
-
-function isInList(token) {
-    const clean = token.replace(/^['\-\u2018\u2019]+|['\-\u2018\u2019]+$/g, '').toLowerCase();
-    return selectedWords.some(w => w.word.toLowerCase() === clean);
-}
-
-async function fetchWordInfo(apiKey, word, context) {
-    const prompt = `Look up the English word "${word}" as used in this context:
-"${context}"
-
-Return ONLY a JSON object (no extra text) with exactly these fields:
-- word: the base/dictionary form (string)
-- phonetic: IPA phonetic transcription e.g. /wɜːrd/ (string)
-- cefr_level: one of A1, A2, B1, B2, C1, C2 (string)
-- pos: part of speech abbreviated, e.g. n., v., adj., adv. (string)
-- def_en: concise English definition, max 1 sentence (string)
-- def_vi: concise Vietnamese translation (string)`;
-
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
-    const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-                temperature: 0.1,
-                response_mime_type: 'application/json',
-                response_schema: {
-                    type: 'OBJECT',
-                    properties: {
-                        word:       { type: 'STRING' },
-                        phonetic:   { type: 'STRING' },
-                        cefr_level: { type: 'STRING' },
-                        pos:        { type: 'STRING' },
-                        def_en:     { type: 'STRING' },
-                        def_vi:     { type: 'STRING' }
-                    },
-                    required: ['word','phonetic','cefr_level','pos','def_en','def_vi']
-                }
+                const data = await response.json();
+                let textResult = data.candidates[0].content.parts[0].text;
+                // Clean JSON if AI returns markdown backticks
+                textResult = textResult.replace(/```json|```/g, '').trim();
+                learningData = JSON.parse(textResult);
+                
+                renderVocab();
+            } catch (error) {
+                console.error(error);
+                alert("AI Error. Check API Key or Console.");
+            } finally {
+                aiStatus.classList.add('hidden');
             }
-        })
-    });
-    if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message || 'Lỗi API'); }
-    const data = await res.json();
-    const raw  = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    return JSON.parse(raw);
-}
+        };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// PANEL
-// ─────────────────────────────────────────────────────────────────────────────
-function openPanelLoading() {
-    document.getElementById('panel-loading').classList.remove('hidden');
-    document.getElementById('panel-body').classList.add('hidden');
-    document.getElementById('word-panel').classList.add('open');
-    document.getElementById('panel-overlay').classList.add('visible');
-}
-
-function showPanelContent(info) {
-    document.getElementById('panel-loading').classList.add('hidden');
-    document.getElementById('panel-body').classList.remove('hidden');
-
-    document.getElementById('panel-word-text').textContent = info.word;
-    document.getElementById('panel-phonetic').textContent  = info.phonetic || '';
-    document.getElementById('panel-pos').textContent       = info.pos || '';
-    document.getElementById('panel-def-en').textContent    = info.def_en || '';
-    document.getElementById('panel-def-vi').textContent    = info.def_vi || '';
-
-    const badge = document.getElementById('panel-cefr');
-    badge.textContent  = info.cefr_level || '?';
-    badge.className    = 'cefr-badge cefr-' + (info.cefr_level || 'B1');
-
-    const addBtn = document.getElementById('btn-add-word');
-    if (selectedWords.some(w => w.word.toLowerCase() === info.word.toLowerCase())) {
-        addBtn.textContent = '✓ Đã có trong danh sách';
-        addBtn.classList.add('added');
-    } else {
-        addBtn.innerHTML = '＋ Thêm vào danh sách học';
-        addBtn.classList.remove('added');
-    }
-}
-
-function closePanel() {
-    document.getElementById('word-panel').classList.remove('open');
-    document.getElementById('panel-overlay').classList.remove('visible');
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ADD WORD TO STUDY LIST
-// ─────────────────────────────────────────────────────────────────────────────
-function addCurrentWord() {
-    if (!currentWordInfo) return;
-    const info = currentWordInfo;
-
-    if (selectedWords.some(w => w.word.toLowerCase() === info.word.toLowerCase())) {
-        showToast('📌 Từ này đã có trong danh sách!');
-        return;
-    }
-
-    selectedWords.push({ ...info });
-
-    // Highlight all matching spans
-    document.querySelectorAll('.word-span').forEach(s => {
-        const clean = s.textContent.replace(/^['\-\u2018\u2019]+|['\-\u2018\u2019]+$/g, '').toLowerCase();
-        if (clean === info.word.toLowerCase()) {
-            s.classList.remove('looking-up');
-            s.classList.add('in-list');
+        function renderVocab() {
+            vocabList.innerHTML = learningData.map(item => `
+                <div class="p-5 hover:bg-indigo-50/30 transition">
+                    <div class="flex justify-between items-start">
+                        <span class="font-bold text-lg">${item.word} <span class="text-xs text-slate-400 font-normal font-mono">${item.ipa}</span></span>
+                        <span class="cefr-badge cefr-${item.level}">${item.level}</span>
+                    </div>
+                    <p class="text-indigo-600 font-bold text-sm mt-1">${item.vn}</p>
+                    <p class="text-slate-500 text-xs italic mt-2">"${item.example}"</p>
+                </div>
+            `).join('');
         }
-    });
 
-    renderStudyChips();
-    updateExerciseBtn();
+        // 3. QUIZ LOGIC (DRAG & DROP)
+        document.getElementById('showQuizBtn').onclick = () => {
+            document.getElementById('vocabContainer').classList.add('hidden');
+            document.getElementById('quizContainer').classList.remove('hidden');
+            
+            const shuffled = [...learningData].sort(() => Math.random() - 0.5);
+            document.getElementById('draggableContainer').innerHTML = shuffled.map(item => 
+                `<div class="draggable-item" draggable="true" ondragstart="event.dataTransfer.setData('text','${item.word}')">${item.word}</div>`
+            ).join('');
 
-    const addBtn = document.getElementById('btn-add-word');
-    addBtn.textContent = '✓ Đã có trong danh sách';
-    addBtn.classList.add('added');
+            document.getElementById('quizSentences').innerHTML = learningData.map((item, i) => {
+                const displaySent = item.example.replace(new RegExp(item.word, 'gi'), `<div class="drop-zone" data-answer="${item.word}"></div>`);
+                return `<div class="bg-white p-4 rounded-xl shadow-sm border border-emerald-100"><span class="font-bold text-emerald-600 mr-2">${i+1}.</span>${displaySent}</div>`;
+            }).join('');
 
-    showToast(`✅ Đã thêm "${info.word}"!`);
-    setTimeout(closePanel, 600);
-}
+            setupDropZones();
+        };
 
-function removeWord(word) {
-    selectedWords = selectedWords.filter(w => w.word !== word);
-    document.querySelectorAll('.word-span').forEach(s => {
-        const clean = s.textContent.replace(/^['\-\u2018\u2019]+|['\-\u2018\u2019]+$/g, '').toLowerCase();
-        if (clean === word.toLowerCase()) s.classList.remove('in-list');
-    });
-    renderStudyChips();
-    updateExerciseBtn();
-}
-
-function renderStudyChips() {
-    const container = document.getElementById('study-chips');
-    const empty     = document.getElementById('study-empty');
-    document.getElementById('word-count-badge').textContent = selectedWords.length;
-
-    container.querySelectorAll('.study-chip').forEach(c => c.remove());
-
-    if (selectedWords.length === 0) {
-        empty.style.display = '';
-    } else {
-        empty.style.display = 'none';
-        selectedWords.forEach(w => {
-            const chip = document.createElement('span');
-            chip.className = 'study-chip';
-            const color = CEFR_COLORS[w.cefr_level] || '#7986b8';
-            chip.innerHTML = `
-                <span class="cefr-dot" style="background:${color}"></span>
-                ${w.word}
-                <span class="remove-chip" data-word="${w.word}">✕</span>
-            `;
-            chip.querySelector('.remove-chip').addEventListener('click', e => {
-                e.stopPropagation();
-                removeWord(w.word);
+        function setupDropZones() {
+            document.querySelectorAll('.drop-zone').forEach(zone => {
+                zone.ondragover = (e) => e.preventDefault();
+                zone.ondrop = (e) => {
+                    e.preventDefault();
+                    const word = e.dataTransfer.getData('text');
+                    zone.innerText = word;
+                    zone.className = "drop-zone border-b-2 border-indigo-500 text-indigo-600 font-bold text-center";
+                };
             });
-            container.appendChild(chip);
-        });
-    }
-}
-
-function updateExerciseBtn() {
-    const btn  = document.getElementById('create-ex-btn');
-    const hint = document.getElementById('exercise-hint');
-    btn.disabled = selectedWords.length === 0;
-    hint.textContent = selectedWords.length > 0
-        ? `${selectedWords.length} từ đã chọn — nhấn để tạo bài tập!`
-        : 'Chọn ít nhất 1 từ để tạo bài tập';
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// STEP 3: CREATE EXERCISE
-// ─────────────────────────────────────────────────────────────────────────────
-async function createExercise() {
-    if (selectedWords.length === 0) { showToast('⚠️ Chưa chọn từ nào!'); return; }
-    const apiKey = getApiKey();
-    if (!apiKey) { showToast('⚠️ Cần nhập Gemini API key!'); return; }
-
-    showView('loading-view');
-
-    const wordDescriptions = selectedWords.map(w =>
-        `"${w.word}" (${w.pos || ''} – ${w.def_en})`
-    ).join('\n');
-
-    const prompt = `Create fill-in-the-blank sentences for these English words:
-${wordDescriptions}
-
-Rules:
-- Provide exactly 1 sentence per word
-- Use clear, natural English sentences (B1-B2 level)
-- Base sentences on real dictionary example sentences when possible, or create similar ones
-- Replace the target word with exactly three underscores: ___
-- The "answer" field must be the EXACT word form as it appears in the blank (may be inflected, e.g. "runs" not "run")
-- Make sentences varied and meaningful`;
-
-    try {
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
-        const res = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: {
-                    temperature: 0.65,
-                    response_mime_type: 'application/json',
-                    response_schema: {
-                        type: 'ARRAY',
-                        items: {
-                            type: 'OBJECT',
-                            properties: {
-                                word:     { type: 'STRING' },
-                                sentence: { type: 'STRING' },
-                                answer:   { type: 'STRING' }
-                            },
-                            required: ['word','sentence','answer']
-                        }
-                    }
-                }
-            })
-        });
-        if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message || 'Lỗi API'); }
-        const data = await res.json();
-        const raw  = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-        const parsed = JSON.parse(raw);
-
-        // Validate: keep only items that have ___ in sentence
-        exerciseData = parsed.filter(s => s.sentence && s.sentence.includes('___')).map(s => {
-            const wordInfo = selectedWords.find(w => w.word.toLowerCase() === s.word.toLowerCase());
-            return { ...s, def_vi: wordInfo?.def_vi || '' };
-        });
-
-        if (exerciseData.length === 0) throw new Error('Không tạo được câu luyện tập hợp lệ.');
-
-        renderExercise();
-
-    } catch (err) {
-        showView('reading-view');
-        showToast('⚠️ ' + err.message);
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// RENDER EXERCISE
-// ─────────────────────────────────────────────────────────────────────────────
-function renderExercise() {
-    showView('exercise-view');
-
-    const bank = document.getElementById('bank-content');
-    const list = document.getElementById('sentence-list');
-    bank.innerHTML = ''; list.innerHTML = '';
-    selectedWordEl = null;
-
-    const answers = [...new Set(exerciseData.map(s => s.answer))];
-    document.getElementById('ex-word-count').textContent = answers.length + ' từ';
-
-    // Word bank (shuffled)
-    [...answers].sort(() => Math.random() - 0.5).forEach(w => {
-        const div = document.createElement('div');
-        div.className = 'draggable-word';
-        div.textContent = w;
-        div.setAttribute('draggable', 'true');
-        div.addEventListener('click',      () => handleBankWordClick(div));
-        div.addEventListener('dragstart',  onDragStart);
-        div.addEventListener('touchstart', onTouchStart, { passive: false });
-        div.addEventListener('touchmove',  onTouchMove,  { passive: false });
-        div.addEventListener('touchend',   onTouchEnd);
-        bank.appendChild(div);
-    });
-
-    // Sentence cards
-    exerciseData.forEach((sent, i) => {
-        const card = document.createElement('div');
-        card.className = 'sentence-card';
-        card.dataset.idx = i;
-
-        const top = document.createElement('div');
-        top.className = 'sentence-top';
-
-        const num = document.createElement('div');
-        num.className = 'q-num';
-        num.textContent = i + 1;
-        top.appendChild(num);
-
-        const textWrap = document.createElement('div');
-        textWrap.className = 'sentence-text';
-
-        const parts = sent.sentence.split('___');
-        parts.forEach((part, pi) => {
-            textWrap.appendChild(document.createTextNode(part));
-            if (pi < parts.length - 1) {
-                const zone = document.createElement('span');
-                zone.className = 'drop-zone';
-                zone.dataset.idx    = i;
-                zone.dataset.answer = sent.answer;
-                zone.addEventListener('click',     () => handleZoneClick(zone));
-                zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('hovered'); });
-                zone.addEventListener('dragleave', () => zone.classList.remove('hovered'));
-                zone.addEventListener('drop',      e => onDropZone(e, zone));
-                textWrap.appendChild(zone);
-            }
-        });
-        top.appendChild(textWrap);
-        card.appendChild(top);
-
-        if (sent.def_vi) {
-            const hint = document.createElement('div');
-            hint.className = 'sentence-hint';
-            hint.textContent = sent.def_vi;
-            card.appendChild(hint);
         }
 
-        list.appendChild(card);
-    });
-
-    updateProgress();
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// DRAG & DROP (desktop)
-// ─────────────────────────────────────────────────────────────────────────────
-let dragSrcWord = null;
-
-function onDragStart(e) {
-    const el = e.currentTarget;
-    if (el.classList.contains('used')) { e.preventDefault(); return; }
-    dragSrcWord = el.textContent;
-    e.dataTransfer.setData('text/plain', dragSrcWord);
-    setTimeout(() => el.style.opacity = '0.4', 0);
-    setTimeout(() => el.style.opacity = '', 200);
-}
-
-function onDropZone(e, zone) {
-    e.preventDefault();
-    zone.classList.remove('hovered');
-    const word = e.dataTransfer.getData('text/plain') || dragSrcWord;
-    if (!word) return;
-    if (zone.textContent.trim()) toggleBank(zone.textContent.trim(), false);
-    zone.textContent = word;
-    toggleBank(word, true);
-    dragSrcWord = null;
-    updateProgress();
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// TOUCH DRAG (mobile)
-// ─────────────────────────────────────────────────────────────────────────────
-let touchWord = null, ghostEl = null;
-
-function onTouchStart(e) {
-    const el = e.currentTarget;
-    if (el.classList.contains('used')) return;
-    touchWord = el.textContent;
-    const t = e.touches[0];
-    ghostEl = el.cloneNode(true);
-    ghostEl.style.cssText = `position:fixed;top:${t.clientY-20}px;left:${t.clientX-50}px;
-        opacity:0.88;pointer-events:none;z-index:9998;cursor:grabbing;
-        border-radius:99px;padding:5px 14px;background:var(--accent);
-        color:var(--primary-dark);font-weight:800;font-family:Nunito,sans-serif;
-        border:2.5px solid var(--accent-dark);font-size:0.88rem;`;
-    document.body.appendChild(ghostEl);
-    e.preventDefault();
-}
-function onTouchMove(e) {
-    if (!ghostEl) return;
-    const t = e.touches[0];
-    ghostEl.style.top  = (t.clientY - 20) + 'px';
-    ghostEl.style.left = (t.clientX - 50) + 'px';
-    e.preventDefault();
-}
-function onTouchEnd(e) {
-    if (ghostEl) { document.body.removeChild(ghostEl); ghostEl = null; }
-    if (!touchWord) return;
-    const t    = e.changedTouches[0];
-    const el   = document.elementFromPoint(t.clientX, t.clientY);
-    const zone = el?.closest('.drop-zone');
-    if (zone) {
-        if (zone.textContent.trim()) toggleBank(zone.textContent.trim(), false);
-        zone.textContent = touchWord;
-        toggleBank(touchWord, true);
-        updateProgress();
-    }
-    touchWord = null;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// CLICK-TO-FILL (fallback)
-// ─────────────────────────────────────────────────────────────────────────────
-function handleBankWordClick(el) {
-    if (el.classList.contains('used')) return;
-    if (selectedWordEl) selectedWordEl.classList.remove('selected-word');
-    if (selectedWordEl === el) { selectedWordEl = null; return; }
-    selectedWordEl = el;
-    el.classList.add('selected-word');
-}
-
-function handleZoneClick(zone) {
-    if (selectedWordEl) {
-        if (zone.textContent.trim()) toggleBank(zone.textContent.trim(), false);
-        zone.textContent = selectedWordEl.textContent;
-        toggleBank(selectedWordEl.textContent, true);
-        selectedWordEl.classList.remove('selected-word');
-        selectedWordEl = null;
-    } else if (zone.textContent.trim()) {
-        toggleBank(zone.textContent.trim(), false);
-        zone.textContent = '';
-    }
-    updateProgress();
-}
-
-function toggleBank(word, used) {
-    for (const it of document.querySelectorAll('.draggable-word')) {
-        if (it.textContent === word && it.classList.contains('used') === !used) {
-            if (used) it.classList.add('used');
-            else it.classList.remove('used');
-            break;
-        }
-    }
-}
-
-function updateProgress() {
-    const zones  = document.querySelectorAll('.drop-zone');
-    const filled = [...zones].filter(z => z.textContent.trim()).length;
-    const pct    = zones.length ? Math.round((filled / zones.length) * 100) : 0;
-    document.getElementById('progress-fill').style.width = pct + '%';
-    document.getElementById('progress-label').textContent = `${filled} / ${zones.length} đã điền`;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// SUBMIT & RESULTS
-// ─────────────────────────────────────────────────────────────────────────────
-function submitExercise() {
-    let correct = 0;
-
-    // Collect user answers
-    const zones = document.querySelectorAll('.drop-zone');
-    const answers = {};
-    zones.forEach(z => { answers[z.dataset.idx] = z.textContent.trim(); });
-
-    // Build result cards
-    const container = document.getElementById('result-cards');
-    container.innerHTML = '';
-
-    exerciseData.forEach((sent, i) => {
-        const userAns = answers[i] || '';
-        const isOk    = userAns.toLowerCase() === sent.answer.toLowerCase();
-        if (isOk) correct++;
-
-        const card = document.createElement('div');
-        card.className = 'sentence-card ' + (isOk ? 'correct' : 'wrong');
-
-        const top = document.createElement('div');
-        top.className = 'sentence-top';
-
-        const num = document.createElement('div');
-        num.className = 'q-num';
-        num.textContent = i + 1;
-        num.style.background = isOk ? 'var(--success)' : 'var(--danger)';
-        num.style.boxShadow  = isOk ? '0 2px 0 #1e8449'  : '0 2px 0 #c0392b';
-        num.style.color      = '#fff';
-        top.appendChild(num);
-
-        const textWrap = document.createElement('div');
-        textWrap.className = 'sentence-text';
-
-        const parts = sent.sentence.split('___');
-        parts.forEach((part, pi) => {
-            textWrap.appendChild(document.createTextNode(part));
-            if (pi < parts.length - 1) {
-                if (isOk) {
-                    const span = document.createElement('span');
-                    span.className = 'res-correct-word';
-                    span.textContent = sent.answer;
-                    textWrap.appendChild(span);
+        document.getElementById('checkQuizBtn').onclick = () => {
+            let score = 0;
+            document.querySelectorAll('.drop-zone').forEach(zone => {
+                if(zone.innerText.toLowerCase() === zone.dataset.answer.toLowerCase()) {
+                    zone.classList.replace('border-indigo-500', 'border-emerald-500');
+                    zone.classList.replace('text-indigo-600', 'text-emerald-600');
+                    score++;
                 } else {
-                    if (userAns) {
-                        const wspan = document.createElement('span');
-                        wspan.className = 'res-wrong-word';
-                        wspan.textContent = userAns;
-                        textWrap.appendChild(wspan);
-                    }
-                    const aspan = document.createElement('span');
-                    aspan.className = 'res-answer-word';
-                    aspan.textContent = sent.answer;
-                    textWrap.appendChild(aspan);
+                    zone.classList.replace('border-indigo-500', 'border-red-500');
+                    zone.classList.replace('text-indigo-600', 'text-red-600');
+                    zone.innerText += ` (${zone.dataset.answer})`;
                 }
-            }
-        });
-        top.appendChild(textWrap);
-        card.appendChild(top);
+            });
+            alert(`Result: ${score}/${learningData.length} correct!`);
+        };
 
-        if (sent.def_vi) {
-            const hint = document.createElement('div');
-            hint.className = 'sentence-hint';
-            hint.textContent = sent.def_vi;
-            card.appendChild(hint);
-        }
-
-        container.appendChild(card);
-    });
-
-    // Score banner
-    const total = exerciseData.length;
-    const pct   = total ? Math.round((correct / total) * 100) : 0;
-
-    let emoji, msg;
-    if      (pct >= 90) { emoji = '🏆'; msg = 'Xuất sắc!'; }
-    else if (pct >= 70) { emoji = '🎉'; msg = 'Tốt lắm!'; }
-    else if (pct >= 50) { emoji = '💪'; msg = 'Cố gắng thêm!'; }
-    else                { emoji = '📚'; msg = 'Cần ôn lại!'; }
-
-    document.getElementById('score-box').innerHTML = `
-        <div class="score-circle">
-            <span class="score-pct">${pct}%</span>
-            <span class="score-circle-label">Score</span>
-        </div>
-        <div class="score-count">${emoji} ${correct} / ${total} câu đúng</div>
-        <div class="score-msg">${msg}</div>
-    `;
-
-    showView('result-view');
-}
-
-function doItAgain() {
-    renderExercise();
-}
-</script>
+        document.getElementById('closeQuiz').onclick = () => {
+            document.getElementById('quizContainer').classList.add('hidden');
+            document.getElementById('vocabContainer').classList.remove('hidden');
+        };
+    </script>
 </body>
 </html>
