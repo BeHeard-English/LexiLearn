@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VocaFlow Ultra - Hệ Thống Soạn Bài & Học Tập AI</title>
+    <title>Be Heard | Lexi Learn</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -13,35 +13,25 @@
         .editor-word:hover { background-color: #e2e8f0; }
         .editor-word.is-bold { font-weight: 800; color: #1e40af; background-color: #fef08a; text-decoration: underline; }
         
-        /* Cải tiến Drop Zone */
         .drop-zone { border-bottom: 2px dashed #cbd5e1; min-width: 140px; display: inline-block; height: 1.8em; vertical-align: middle; margin: 0 6px; border-radius: 6px; background: #f1f5f9; transition: 0.3s; }
         .drop-zone.hover { background-color: #dbeafe; border-color: #3b82f6; }
 
-        /* Hiệu ứng kéo thả */
         .draggable-item { cursor: grab; padding: 8px 20px; background: white; border: 2px solid #e2e8f0; border-radius: 14px; font-weight: 700; color: #334155; transition: 0.2s; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
         .draggable-item:hover { border-color: #6366f1; transform: translateY(-2px); }
-        .draggable-item:active { cursor: grabbing; scale: 0.95; }
 
-        /* Badge độ khó */
-        .cefr-badge { font-size: 0.75rem; padding: 2px 10px; border-radius: 8px; font-weight: 900; box-shadow: inset 0 1px 0 rgba(255,255,255,0.4); }
+        .cefr-badge { font-size: 0.75rem; padding: 2px 10px; border-radius: 8px; font-weight: 900; }
         .cefr-A1, .cefr-A2 { background: #dcfce7; color: #15803d; }
         .cefr-B1, .cefr-B2 { background: #fef9c3; color: #a16207; }
         .cefr-C1, .cefr-C2 { background: #fee2e2; color: #b91c1c; }
-
-        /* Thanh cuộn mượt */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #f1f5f9; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
 <body class="min-h-screen">
 
-    <!-- Header tối ưu không gian -->
+    <!-- Header -->
     <nav class="bg-white/90 backdrop-blur-md border-b sticky top-0 z-[100] px-8 h-14 flex items-center justify-between shadow-sm">
         <div class="flex items-center gap-3">
             <div class="w-8 h-8 bg-gradient-to-br from-indigo-600 to-blue-500 rounded-lg flex items-center justify-center text-white font-black">V</div>
-            <span class="text-lg font-extrabold tracking-tight text-slate-800">VocaFlow <span class="text-indigo-600 underline decoration-indigo-200">Ultra</span></span>
+            <span class="text-lg font-extrabold tracking-tight text-slate-800">VocaFlow <span class="text-indigo-600">Ultra v2</span></span>
         </div>
         
         <div class="flex items-center gap-4">
@@ -57,70 +47,56 @@
         </div>
     </nav>
 
-    <!-- Main Layout: Tận dụng tối đa chiều rộng -->
+    <!-- Main Layout -->
     <main class="max-w-[1800px] mx-auto p-6 grid grid-cols-1 xl:grid-cols-12 gap-6">
         
-        <!-- Cột trái: Soạn thảo (7 columns) -->
+        <!-- Left Section -->
         <div class="xl:col-span-7 space-y-6">
-            <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="flex">
-                    <div class="flex-grow p-6">
-                        <div class="flex justify-between items-center mb-4">
-                            <h3 class="font-extrabold text-slate-800 flex items-center gap-2 uppercase text-xs tracking-wider">
-                                <span class="w-2 h-2 bg-indigo-500 rounded-full"></span> Source Material
-                            </h3>
-                            <button onclick="document.getElementById('fileInput').click()" class="text-xs font-bold text-slate-500 hover:text-indigo-600 transition flex items-center gap-1">
-                                📂 Upload .docx
-                            </button>
-                            <input type="file" id="fileInput" accept=".docx" class="hidden">
-                        </div>
-                        <textarea id="rawInput" class="w-full p-4 h-40 bg-slate-50/50 rounded-2xl focus:outline-none resize-none border-2 border-transparent focus:border-indigo-100 transition text-slate-600" placeholder="Paste your lesson content or English text here..."></textarea>
-                    </div>
+            <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="font-extrabold text-slate-800 uppercase text-xs tracking-wider flex items-center gap-2">
+                        <span class="w-2 h-2 bg-indigo-500 rounded-full"></span> Input Material
+                    </h3>
+                    <button onclick="document.getElementById('fileInput').click()" class="text-xs font-bold text-slate-500 hover:text-indigo-600 transition flex items-center gap-1">📂 Upload .docx</button>
+                    <input type="file" id="fileInput" accept=".docx" class="hidden">
                 </div>
-                <div class="px-6 py-4 bg-slate-50 border-t flex justify-end">
-                    <button id="loadBtn" class="bg-slate-900 text-white px-10 py-3 rounded-xl font-bold hover:bg-indigo-600 transition-all shadow-lg">Visualize Content</button>
-                </div>
+                <textarea id="rawInput" class="w-full p-4 h-36 bg-slate-50/50 rounded-2xl focus:outline-none resize-none border-2 border-transparent focus:border-indigo-100 transition text-slate-600" placeholder="Paste your English text..."></textarea>
+                <button id="loadBtn" class="w-full mt-4 bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-indigo-600 transition shadow-lg">Visualize Content</button>
             </section>
 
-            <section class="bg-white rounded-3xl shadow-sm border border-slate-200 min-h-[600px] flex flex-col">
-                <div class="p-6 border-b border-slate-50 flex justify-between items-center">
+            <section class="bg-white rounded-3xl shadow-sm border border-slate-200 min-h-[500px] flex flex-col">
+                <div class="p-6 border-b flex justify-between items-center">
                     <h3 class="font-extrabold text-slate-800 uppercase text-xs tracking-wider">Interactive Reading Space</h3>
-                    <div class="flex gap-4 items-center">
-                        <span class="text-[11px] font-medium text-slate-400 italic">Double-click words to mark for learning</span>
-                    </div>
+                    <span class="text-[11px] font-medium text-slate-400 italic">Double-click words to learn</span>
                 </div>
-                <div id="editor" class="flex-grow p-10 text-xl leading-[1.8] text-slate-700 bg-white">
-                    <div class="text-center text-slate-300 pt-40 flex flex-col items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mb-4 opacity-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                        </svg>
-                        <p>No content loaded. Import a file or paste text to begin.</p>
-                    </div>
-                </div>
+                <div id="editor" class="flex-grow p-10 text-xl leading-[1.8] text-slate-700 bg-white"></div>
                 <div class="p-6 bg-indigo-600 flex items-center justify-between shadow-2xl">
-                    <p class="text-sm text-indigo-100 font-medium">Ready to extract vocabulary using Gemini AI?</p>
+                    <p class="text-sm text-indigo-100 font-medium tracking-wide">Ready for AI extraction?</p>
                     <button id="generateBtn" class="bg-white text-indigo-600 px-12 py-4 rounded-2xl font-black shadow-xl hover:scale-105 transition-all">GENERATE VOCABULARY</button>
                 </div>
             </section>
         </div>
 
-        <!-- Cột phải: Vocab & Quiz (5 columns) -->
+        <!-- Right Section -->
         <div class="xl:col-span-5 space-y-6">
             
             <!-- Vocab List -->
             <section id="vocabContainer" class="bg-white rounded-3xl shadow-md border border-slate-200 hidden flex flex-col h-[850px]">
-                <div class="p-6 border-b flex justify-between items-center bg-white sticky top-0 z-10 rounded-t-3xl">
+                <div class="p-6 border-b flex justify-between items-center sticky top-0 bg-white z-10 rounded-t-3xl">
                     <h3 class="font-black text-slate-800 tracking-tight">AI VOCABULARY BANK</h3>
-                    <div id="aiStatus" class="hidden flex items-center gap-2">
+                    <button id="downloadBtn" class="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-xl text-xs font-bold hover:bg-indigo-100 transition flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg> Download List
+                    </button>
+                </div>
+                <div id="vocabList" class="flex-grow overflow-y-auto p-4 space-y-4 bg-slate-50/30"></div>
+                <div class="p-6 bg-white border-t space-y-3">
+                    <div id="aiStatus" class="hidden flex justify-center items-center gap-2 mb-2">
                         <span class="relative flex h-3 w-3"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span></span>
-                        <span class="text-xs font-black text-indigo-600 uppercase">AI Thinking...</span>
+                        <span class="text-xs font-black text-indigo-600 uppercase">Gemini is writing examples...</span>
                     </div>
-                </div>
-                <div id="vocabList" class="flex-grow overflow-y-auto p-4 space-y-4 bg-slate-50/30">
-                    <!-- Cards injected here -->
-                </div>
-                <div class="p-6 bg-white border-t">
-                    <button id="showQuizBtn" class="w-full py-5 bg-emerald-500 text-white rounded-2xl font-black text-lg shadow-lg hover:bg-emerald-600 transition-all transform active:scale-95">CREATE DRAG & DROP QUIZ</button>
+                    <button id="showQuizBtn" class="w-full py-5 bg-emerald-500 text-white rounded-2xl font-black text-lg shadow-lg hover:bg-emerald-600 transition-all">CREATE DRAG & DROP QUIZ</button>
                 </div>
             </section>
 
@@ -131,62 +107,50 @@
                     <button id="closeQuiz" class="text-slate-500 hover:text-white text-2xl">✕</button>
                 </div>
                 
-                <!-- WORD BANK - LUÔN HIỆN KHI CUỘN -->
-                <div class="p-4 bg-slate-800/50 border-b border-slate-800 sticky top-[73px] z-10 backdrop-blur-md">
-                    <p class="text-[10px] font-bold text-slate-500 uppercase mb-3 text-center tracking-widest">Word Bank (Drag these words)</p>
+                <!-- STICKY WORD BANK -->
+                <div class="p-5 bg-slate-800/80 border-b border-slate-800 sticky top-[73px] z-10 backdrop-blur-md shadow-lg">
+                    <p class="text-[10px] font-bold text-slate-500 uppercase mb-3 text-center tracking-widest">Random Word Bank</p>
                     <div id="draggableContainer" class="flex flex-wrap gap-2 justify-center"></div>
                 </div>
 
                 <div class="flex-grow overflow-y-auto p-8">
-                    <div id="quizSentences" class="space-y-8 text-slate-300 text-xl leading-loose">
-                        <!-- Sentences here -->
-                    </div>
+                    <div id="quizSentences" class="space-y-8 text-slate-300 text-xl leading-loose"></div>
                 </div>
 
                 <div class="p-6 bg-slate-900 border-t border-slate-800 sticky bottom-0">
-                    <button id="checkQuizBtn" class="w-full py-5 bg-emerald-500 text-white rounded-2xl font-black uppercase tracking-widest shadow-xl hover:bg-emerald-400 hover:text-slate-900 transition-all">Verify All Answers</button>
+                    <button id="checkQuizBtn" class="w-full py-5 bg-emerald-500 text-white rounded-2xl font-black uppercase tracking-widest shadow-xl hover:bg-emerald-400 transition-all">Verify All Answers</button>
                 </div>
             </section>
-
         </div>
     </main>
 
     <script>
-        // Các biến tham chiếu
         const editor = document.getElementById('editor');
         const rawInput = document.getElementById('rawInput');
         const apiKeyInput = document.getElementById('apiKey');
         const saveKeyBtn = document.getElementById('saveKeyBtn');
-        const keyStatus = document.getElementById('keyStatus');
         const vocabList = document.getElementById('vocabList');
         const aiStatus = document.getElementById('aiStatus');
-        const quizContainer = document.getElementById('quizContainer');
         const vocabContainer = document.getElementById('vocabContainer');
+        const quizContainer = document.getElementById('quizContainer');
 
         let learningData = [];
 
-        // 1. QUẢN LÝ API KEY
+        // 1. API KEY STORAGE
         window.onload = () => {
             const savedKey = localStorage.getItem('gemini_api_key');
-            if(savedKey) {
-                apiKeyInput.value = savedKey;
-                showKeyStatus();
-            }
+            if(savedKey) apiKeyInput.value = savedKey;
         };
 
         saveKeyBtn.onclick = () => {
             if(apiKeyInput.value.trim()) {
                 localStorage.setItem('gemini_api_key', apiKeyInput.value.trim());
-                showKeyStatus();
+                document.getElementById('keyStatus').classList.remove('hidden');
+                setTimeout(() => document.getElementById('keyStatus').classList.add('hidden'), 2000);
             }
         };
 
-        function showKeyStatus() {
-            keyStatus.classList.remove('hidden');
-            setTimeout(() => keyStatus.classList.add('hidden'), 3000);
-        }
-
-        // 2. XỬ LÝ TEXT
+        // 2. LOAD TEXT
         document.getElementById('loadBtn').onclick = () => {
             const text = rawInput.value.trim();
             if(!text) return;
@@ -195,32 +159,19 @@
             quizContainer.classList.add('hidden');
         };
 
-        document.getElementById('fileInput').onchange = (e) => {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                mammoth.extractRawText({arrayBuffer: event.target.result}).then(result => {
-                    rawInput.value = result.value;
-                    document.getElementById('loadBtn').click();
-                });
-            };
-            reader.readAsArrayBuffer(e.target.files[0]);
-        };
-
-        // 3. GEMINI AI
+        // 3. AI GENERATION
         document.getElementById('generateBtn').onclick = async () => {
             const key = apiKeyInput.value.trim();
-            if(!key) return alert("Please save your API Key first!");
+            if(!key) return alert("Please save your API Key!");
 
             const selected = Array.from(new Set(Array.from(editor.querySelectorAll('.is-bold')).map(el => el.innerText.replace(/[^a-zA-Z]/g, ''))));
-            if(selected.length === 0) return alert("Double-click words to select them first.");
+            if(selected.length === 0) return alert("Mark some words first!");
 
             vocabContainer.classList.remove('hidden');
             aiStatus.classList.remove('hidden');
             vocabList.innerHTML = '';
             
-            const prompt = `Bạn là một chuyên gia ngôn ngữ. Phân tích các từ sau: [${selected.join(', ')}]. 
-            Trả về DUY NHẤT một mảng JSON các object có cấu trúc: 
-            {"word": "từ", "ipa": "/phiên âm/", "vn": "nghĩa tiếng Việt", "level": "CEFR (A1-C2)", "example": "1 câu ví dụ tiếng Anh tự nhiên chứa từ đó"}`;
+            const prompt = `Return a JSON array of objects for these words: [${selected.join(', ')}]. Fields: "word", "ipa", "vn" (Vietnamese), "level" (CEFR A1-C2), "example" (natural sentence). Use Vietnamese for "vn".`;
 
             try {
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${key}`, {
@@ -234,8 +185,7 @@
                 learningData = JSON.parse(textResult);
                 renderVocab();
             } catch (e) {
-                alert("AI Error. Check your API Key.");
-                console.error(e);
+                alert("AI Error. Check Key.");
             } finally {
                 aiStatus.classList.add('hidden');
             }
@@ -243,26 +193,55 @@
 
         function renderVocab() {
             vocabList.innerHTML = learningData.map(item => `
-                <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all">
-                    <div class="flex justify-between items-center mb-2">
+                <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                    <div class="flex justify-between items-center mb-1">
                         <h4 class="text-xl font-extrabold text-slate-800">${item.word}</h4>
                         <span class="cefr-badge cefr-${item.level}">${item.level}</span>
                     </div>
                     <p class="text-slate-400 font-mono text-sm mb-3">${item.ipa}</p>
-                    <p class="text-indigo-600 font-bold text-base bg-indigo-50 p-3 rounded-xl mb-3">${item.vn}</p>
-                    <p class="text-slate-500 text-sm italic leading-relaxed">"${item.example}"</p>
+                    <p class="text-indigo-600 font-bold bg-indigo-50 p-3 rounded-xl mb-3">${item.vn}</p>
+                    <p class="text-slate-500 text-sm italic">"${item.example}"</p>
                 </div>
             `).join('');
-            vocabContainer.scrollIntoView({ behavior: 'smooth' });
         }
 
-        // 4. QUIZ LOGIC
+        // 4. DOWNLOAD CSV
+        document.getElementById('downloadBtn').onclick = () => {
+            if(learningData.length === 0) return;
+            
+            // \uFEFF là BOM để Excel đọc được tiếng Việt UTF-8
+            let csvContent = "\uFEFFTừ vựng,Phiên âm,Nghĩa tiếng Việt,Cấp độ (CEFR)\n";
+            learningData.forEach(item => {
+                csvContent += `"${item.word}","${item.ipa}","${item.vn}","${item.level}"\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", "VocaFlow_List.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+
+        // 5. SHUFFLE & QUIZ
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
         document.getElementById('showQuizBtn').onclick = () => {
             vocabContainer.classList.add('hidden');
             quizContainer.classList.remove('hidden');
             
-            const shuffled = [...learningData].sort(() => Math.random() - 0.5);
-            document.getElementById('draggableContainer').innerHTML = shuffled.map(item => 
+            // XÁO TRỘN TỪ VỰNG CHO WORD BANK
+            const shuffledWords = shuffleArray([...learningData]);
+            
+            document.getElementById('draggableContainer').innerHTML = shuffledWords.map(item => 
                 `<div class="draggable-item" draggable="true" ondragstart="event.dataTransfer.setData('text','${item.word}')">${item.word}</div>`
             ).join('');
 
@@ -291,17 +270,14 @@
         }
 
         document.getElementById('checkQuizBtn').onclick = () => {
-            let correct = 0;
             document.querySelectorAll('.drop-zone').forEach(zone => {
                 if(zone.innerText.toLowerCase() === zone.dataset.answer.toLowerCase()) {
                     zone.className = "drop-zone border-b-2 border-emerald-500 text-emerald-400 font-black px-4 bg-emerald-500/10";
-                    correct++;
                 } else {
                     zone.className = "drop-zone border-b-2 border-red-500 text-red-400 font-black px-4 bg-red-500/10";
                     zone.innerText += ` [${zone.dataset.answer}]`;
                 }
             });
-            alert(`Kết quả: ${correct}/${learningData.length} câu đúng!`);
         };
 
         document.getElementById('closeQuiz').onclick = () => {
