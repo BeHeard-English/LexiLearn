@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Be Heard | Lexi Learning</title>
+    <title>Be Heard|Lexi Learning</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
@@ -505,12 +505,12 @@
                         <div id="qWord" class="quiz-word">Word</div>
                     </div>
 
-                    <!-- Feedback bar (inline, không che phiên âm/từ) -->
-                    <div id="feedbackOverlay" style="display:none;padding:12px 18px;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;text-align:center;border-radius:12px;margin-bottom:14px;"></div>
-
                     <div id="qChoices" style="display:flex;flex-direction:column;gap:10px;"></div>
 
-                    <button id="nextReviewBtn" class="btn-primary wide" style="margin-top:20px;display:none;padding:14px;">
+                    <!-- Feedback bar (inline, sau đáp án) -->
+                    <div id="feedbackOverlay" style="display:none;padding:12px 18px;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;text-align:center;border-radius:12px;margin-top:14px;"></div>
+
+                    <button id="nextReviewBtn" class="btn-primary wide" style="margin-top:12px;display:none;padding:14px;">
                         Câu tiếp theo ➜
                     </button>
                 </div>
@@ -951,7 +951,7 @@
             btn.classList.add('wrong');
             allBtns.forEach(b => { if (b.innerText.trim().slice(2) === correct || b.innerText.includes(correct)) b.classList.add('correct'); });
             overlay.style.cssText = 'display:block;padding:12px 18px;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;text-align:center;border-radius:12px;margin-bottom:14px;background:linear-gradient(135deg,#fee2e2,#fecaca);color:#991b1b;';
-            overlay.innerText = '✍️ Chưa chính xác — Ôn lại sau!';
+            overlay.innerText = '✍️ Chưa đúng — Ôn lại sau!';
             await ref.update({ incorrect_count: firebase.firestore.FieldValue.increment(1) });
             reviewPool.push(reviewPool.splice(currentReviewIdx, 1)[0]);
             currentReviewIdx--;
