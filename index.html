@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Be Heard | Lexi Learn</title>
+    <title>Be Heard|Lexi Learn</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -13,11 +13,12 @@
         .editor-word:hover { background-color: #e2e8f0; }
         .editor-word.is-bold { font-weight: 800; color: #1e40af; background-color: #fef08a; text-decoration: underline; }
         
-        .drop-zone { border-bottom: 2px dashed #cbd5e1; min-width: 140px; display: inline-block; height: 1.8em; vertical-align: middle; margin: 0 6px; border-radius: 6px; background: #f1f5f9; transition: 0.3s; }
+        .drop-zone { border-bottom: 2px dashed #cbd5e1; min-width: 150px; display: inline-block; height: 1.8em; vertical-align: middle; margin: 0 6px; border-radius: 6px; background: #f1f5f9; transition: 0.3s; text-align: center; }
         .drop-zone.hover { background-color: #dbeafe; border-color: #3b82f6; }
 
-        .draggable-item { cursor: grab; padding: 8px 20px; background: white; border: 2px solid #e2e8f0; border-radius: 14px; font-weight: 700; color: #334155; transition: 0.2s; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+        .draggable-item { cursor: grab; padding: 8px 20px; background: white; border: 2px solid #e2e8f0; border-radius: 14px; font-weight: 700; color: #334155; transition: 0.2s; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); user-select: none; }
         .draggable-item:hover { border-color: #6366f1; transform: translateY(-2px); }
+        .draggable-item:active { cursor: grabbing; }
 
         .cefr-badge { font-size: 0.75rem; padding: 2px 10px; border-radius: 8px; font-weight: 900; }
         .cefr-A1, .cefr-A2 { background: #dcfce7; color: #15803d; }
@@ -31,19 +32,19 @@
     <nav class="bg-white/90 backdrop-blur-md border-b sticky top-0 z-[100] px-8 h-14 flex items-center justify-between shadow-sm">
         <div class="flex items-center gap-3">
             <div class="w-8 h-8 bg-gradient-to-br from-indigo-600 to-blue-500 rounded-lg flex items-center justify-center text-white font-black">V</div>
-            <span class="text-lg font-extrabold tracking-tight text-slate-800">VocaFlow <span class="text-indigo-600">Ultra v2</span></span>
+            <span class="text-lg font-extrabold tracking-tight text-slate-800">VocaFlow <span class="text-indigo-600">Ultra v2.1</span></span>
         </div>
         
         <div class="flex items-center gap-4">
             <div class="relative group">
                 <input type="password" id="apiKey" class="text-xs border-2 border-slate-100 rounded-xl px-4 py-2 w-72 focus:border-indigo-400 outline-none transition-all pr-12" placeholder="Gemini API Key...">
-                <button id="saveKeyBtn" class="absolute right-2 top-1.5 p-1 hover:bg-indigo-50 rounded-md text-indigo-500 transition-colors" title="Save Key">
+                <button id="saveKeyBtn" class="absolute right-2 top-1.5 p-1 hover:bg-indigo-50 rounded-md text-indigo-500 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
                     </svg>
                 </button>
             </div>
-            <span id="keyStatus" class="hidden text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Key Saved ✓</span>
+            <span id="keyStatus" class="hidden text-[10px] font-bold text-emerald-500 uppercase tracking-widest">Saved ✓</span>
         </div>
     </nav>
 
@@ -55,19 +56,19 @@
             <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="font-extrabold text-slate-800 uppercase text-xs tracking-wider flex items-center gap-2">
-                        <span class="w-2 h-2 bg-indigo-500 rounded-full"></span> Input Material
+                        <span class="w-2 h-2 bg-indigo-500 rounded-full"></span> Source Material
                     </h3>
                     <button onclick="document.getElementById('fileInput').click()" class="text-xs font-bold text-slate-500 hover:text-indigo-600 transition flex items-center gap-1">📂 Upload .docx</button>
                     <input type="file" id="fileInput" accept=".docx" class="hidden">
                 </div>
-                <textarea id="rawInput" class="w-full p-4 h-36 bg-slate-50/50 rounded-2xl focus:outline-none resize-none border-2 border-transparent focus:border-indigo-100 transition text-slate-600" placeholder="Paste your English text..."></textarea>
+                <textarea id="rawInput" class="w-full p-4 h-36 bg-slate-50/50 rounded-2xl focus:outline-none resize-none border-2 border-transparent focus:border-indigo-100 transition text-slate-600" placeholder="Paste your lesson content here..."></textarea>
                 <button id="loadBtn" class="w-full mt-4 bg-slate-900 text-white py-3 rounded-xl font-bold hover:bg-indigo-600 transition shadow-lg">Visualize Content</button>
             </section>
 
             <section class="bg-white rounded-3xl shadow-sm border border-slate-200 min-h-[500px] flex flex-col">
                 <div class="p-6 border-b flex justify-between items-center">
-                    <h3 class="font-extrabold text-slate-800 uppercase text-xs tracking-wider">Interactive Reading Space</h3>
-                    <span class="text-[11px] font-medium text-slate-400 italic">Double-click words to learn</span>
+                    <h3 class="font-extrabold text-slate-800 uppercase text-xs tracking-wider">Reading Space</h3>
+                    <span class="text-[11px] font-medium text-slate-400 italic italic">Double-click words to pick (supports "self-esteem")</span>
                 </div>
                 <div id="editor" class="flex-grow p-10 text-xl leading-[1.8] text-slate-700 bg-white"></div>
                 <div class="p-6 bg-indigo-600 flex items-center justify-between shadow-2xl">
@@ -87,29 +88,27 @@
                     <button id="downloadBtn" class="bg-indigo-50 text-indigo-600 px-4 py-2 rounded-xl text-xs font-bold hover:bg-indigo-100 transition flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                        </svg> Download List
+                        </svg> Download CSV
                     </button>
                 </div>
                 <div id="vocabList" class="flex-grow overflow-y-auto p-4 space-y-4 bg-slate-50/30"></div>
-                <div class="p-6 bg-white border-t space-y-3">
-                    <div id="aiStatus" class="hidden flex justify-center items-center gap-2 mb-2">
-                        <span class="relative flex h-3 w-3"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span><span class="relative inline-flex rounded-full h-3 w-3 bg-indigo-500"></span></span>
-                        <span class="text-xs font-black text-indigo-600 uppercase">Gemini is writing examples...</span>
+                <div class="p-6 bg-white border-t">
+                    <div id="aiStatus" class="hidden flex justify-center items-center gap-2 mb-4">
+                        <span class="animate-pulse text-xs font-black text-indigo-600 uppercase">AI is analyzing...</span>
                     </div>
-                    <button id="showQuizBtn" class="w-full py-5 bg-emerald-500 text-white rounded-2xl font-black text-lg shadow-lg hover:bg-emerald-600 transition-all">CREATE DRAG & DROP QUIZ</button>
+                    <button id="showQuizBtn" class="w-full py-5 bg-emerald-500 text-white rounded-2xl font-black text-lg shadow-lg hover:bg-emerald-600 transition-all">CREATE RANDOM QUIZ</button>
                 </div>
             </section>
 
             <!-- Quiz Section -->
             <section id="quizContainer" class="bg-slate-900 rounded-3xl shadow-2xl border border-slate-800 hidden flex flex-col max-h-[850px]">
                 <div class="p-6 border-b border-slate-800 flex justify-between items-center sticky top-0 bg-slate-900 z-20 rounded-t-3xl">
-                    <h3 class="font-black text-emerald-400 uppercase tracking-tighter">Practice Module</h3>
+                    <h3 class="font-black text-emerald-400 uppercase tracking-tighter">Interactive Practice</h3>
                     <button id="closeQuiz" class="text-slate-500 hover:text-white text-2xl">✕</button>
                 </div>
                 
                 <!-- STICKY WORD BANK -->
-                <div class="p-5 bg-slate-800/80 border-b border-slate-800 sticky top-[73px] z-10 backdrop-blur-md shadow-lg">
-                    <p class="text-[10px] font-bold text-slate-500 uppercase mb-3 text-center tracking-widest">Random Word Bank</p>
+                <div class="p-5 bg-slate-800/90 border-b border-slate-800 sticky top-[73px] z-10 backdrop-blur-md">
                     <div id="draggableContainer" class="flex flex-wrap gap-2 justify-center"></div>
                 </div>
 
@@ -118,7 +117,7 @@
                 </div>
 
                 <div class="p-6 bg-slate-900 border-t border-slate-800 sticky bottom-0">
-                    <button id="checkQuizBtn" class="w-full py-5 bg-emerald-500 text-white rounded-2xl font-black uppercase tracking-widest shadow-xl hover:bg-emerald-400 transition-all">Verify All Answers</button>
+                    <button id="checkQuizBtn" class="w-full py-5 bg-emerald-500 text-white rounded-2xl font-black shadow-xl hover:bg-emerald-400 transition-all">CHECK ANSWERS</button>
                 </div>
             </section>
         </div>
@@ -128,7 +127,6 @@
         const editor = document.getElementById('editor');
         const rawInput = document.getElementById('rawInput');
         const apiKeyInput = document.getElementById('apiKey');
-        const saveKeyBtn = document.getElementById('saveKeyBtn');
         const vocabList = document.getElementById('vocabList');
         const aiStatus = document.getElementById('aiStatus');
         const vocabContainer = document.getElementById('vocabContainer');
@@ -136,42 +134,51 @@
 
         let learningData = [];
 
-        // 1. API KEY STORAGE
+        // 1. API KEY
         window.onload = () => {
             const savedKey = localStorage.getItem('gemini_api_key');
             if(savedKey) apiKeyInput.value = savedKey;
         };
 
-        saveKeyBtn.onclick = () => {
-            if(apiKeyInput.value.trim()) {
-                localStorage.setItem('gemini_api_key', apiKeyInput.value.trim());
-                document.getElementById('keyStatus').classList.remove('hidden');
-                setTimeout(() => document.getElementById('keyStatus').classList.add('hidden'), 2000);
-            }
+        document.getElementById('saveKeyBtn').onclick = () => {
+            localStorage.setItem('gemini_api_key', apiKeyInput.value.trim());
+            document.getElementById('keyStatus').classList.remove('hidden');
+            setTimeout(() => document.getElementById('keyStatus').classList.add('hidden'), 2000);
         };
 
-        // 2. LOAD TEXT
+        // 2. TEXT PROCESSING (Support Hyphens)
         document.getElementById('loadBtn').onclick = () => {
             const text = rawInput.value.trim();
             if(!text) return;
-            editor.innerHTML = text.split(/(\s+)/).map(w => w.trim() === '' ? w : `<span class="editor-word" ondblclick="this.classList.toggle('is-bold')">${w}</span>`).join('');
+            // Tách từ nhưng giữ lại dấu gạch nối và khoảng trắng
+            editor.innerHTML = text.split(/(\s+)/).map(w => {
+                if(w.trim() === '') return w;
+                // Chỉ cho phép chữ cái và dấu gạch nối giữa các chữ
+                return `<span class="editor-word" ondblclick="this.classList.toggle('is-bold')">${w}</span>`;
+            }).join('');
             vocabContainer.classList.add('hidden');
             quizContainer.classList.add('hidden');
         };
 
-        // 3. AI GENERATION
+        // 3. AI EXTRACTION
         document.getElementById('generateBtn').onclick = async () => {
             const key = apiKeyInput.value.trim();
-            if(!key) return alert("Please save your API Key!");
+            if(!key) return alert("Save API Key first!");
 
-            const selected = Array.from(new Set(Array.from(editor.querySelectorAll('.is-bold')).map(el => el.innerText.replace(/[^a-zA-Z]/g, ''))));
-            if(selected.length === 0) return alert("Mark some words first!");
+            // REGEX CẬP NHẬT: Giữ lại dấu gạch nối (-)
+            const selected = Array.from(new Set(Array.from(editor.querySelectorAll('.is-bold')).map(el => {
+                return el.innerText.trim().replace(/[^a-zA-Z-]/g, '');
+            })));
+
+            if(selected.length === 0) return alert("Mark some words!");
 
             vocabContainer.classList.remove('hidden');
             aiStatus.classList.remove('hidden');
             vocabList.innerHTML = '';
             
-            const prompt = `Return a JSON array of objects for these words: [${selected.join(', ')}]. Fields: "word", "ipa", "vn" (Vietnamese), "level" (CEFR A1-C2), "example" (natural sentence). Use Vietnamese for "vn".`;
+            const prompt = `Return a JSON array of objects for: [${selected.join(', ')}]. 
+            Structure: {"word": "string", "ipa": "string", "vn": "tiếng Việt", "level": "A1-C2", "example": "English sentence"}. 
+            Important: The "word" field must exactly match the input including hyphens.`;
 
             try {
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${key}`, {
@@ -207,47 +214,44 @@
 
         // 4. DOWNLOAD CSV
         document.getElementById('downloadBtn').onclick = () => {
-            if(learningData.length === 0) return;
-            
-            // \uFEFF là BOM để Excel đọc được tiếng Việt UTF-8
-            let csvContent = "\uFEFFTừ vựng,Phiên âm,Nghĩa tiếng Việt,Cấp độ (CEFR)\n";
-            learningData.forEach(item => {
-                csvContent += `"${item.word}","${item.ipa}","${item.vn}","${item.level}"\n`;
-            });
-
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
+            let csv = "\uFEFFTừ vựng,Phiên âm,Định nghĩa,Cấp độ\n";
+            learningData.forEach(i => csv += `"${i.word}","${i.ipa}","${i.vn}","${i.level}"\n`);
             const link = document.createElement("a");
-            link.setAttribute("href", url);
-            link.setAttribute("download", "VocaFlow_List.csv");
-            document.body.appendChild(link);
+            link.href = URL.createObjectURL(new Blob([csv], {type: 'text/csv;charset=utf-8;'}));
+            link.download = "Vocab_List.csv";
             link.click();
-            document.body.removeChild(link);
         };
 
-        // 5. SHUFFLE & QUIZ
-        function shuffleArray(array) {
-            for (let i = array.length - 1; i > 0; i--) {
+        // 5. SHUFFLE LOGIC (Fisher-Yates)
+        function shuffle(array) {
+            let arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
+                [arr[i], arr[j]] = [arr[j], arr[i]];
             }
-            return array;
+            return arr;
         }
 
+        // 6. QUIZ GENERATION
         document.getElementById('showQuizBtn').onclick = () => {
             vocabContainer.classList.add('hidden');
             quizContainer.classList.remove('hidden');
             
-            // XÁO TRỘN TỪ VỰNG CHO WORD BANK
-            const shuffledWords = shuffleArray([...learningData]);
-            
+            // XÁO TRỘN TỪ (Word Bank)
+            const shuffledWords = shuffle(learningData);
             document.getElementById('draggableContainer').innerHTML = shuffledWords.map(item => 
                 `<div class="draggable-item" draggable="true" ondragstart="event.dataTransfer.setData('text','${item.word}')">${item.word}</div>`
             ).join('');
 
-            document.getElementById('quizSentences').innerHTML = learningData.map((item, i) => {
-                const displaySent = item.example.replace(new RegExp(item.word, 'gi'), `<div class="drop-zone" data-answer="${item.word}"></div>`);
-                return `<div class="bg-slate-800/40 p-6 rounded-2xl border border-slate-800 shadow-inner">
+            // XÁO TRỘN CÂU HỎI (Sentences)
+            const shuffledSentences = shuffle(learningData);
+            document.getElementById('quizSentences').innerHTML = shuffledSentences.map((item, i) => {
+                // Escape đặc biệt cho dấu gạch nối trong RegExp
+                const escapedWord = item.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const displaySent = item.example.replace(new RegExp(escapedWord, 'gi'), 
+                    `<div class="drop-zone" data-answer="${item.word}"></div>`);
+                
+                return `<div class="bg-slate-800/40 p-6 rounded-2xl border border-slate-800">
                     <span class="text-slate-600 font-black mr-4">${i+1}</span>${displaySent}
                 </div>`;
             }).join('');
@@ -264,7 +268,7 @@
                     zone.classList.remove('hover');
                     const word = e.dataTransfer.getData('text');
                     zone.innerText = word;
-                    zone.className = "drop-zone border-b-2 border-indigo-400 text-indigo-400 font-black px-4 bg-indigo-400/10 text-center";
+                    zone.className = "drop-zone border-b-2 border-indigo-400 text-indigo-400 font-black px-4 bg-indigo-400/10";
                 };
             });
         }
@@ -275,7 +279,7 @@
                     zone.className = "drop-zone border-b-2 border-emerald-500 text-emerald-400 font-black px-4 bg-emerald-500/10";
                 } else {
                     zone.className = "drop-zone border-b-2 border-red-500 text-red-400 font-black px-4 bg-red-500/10";
-                    zone.innerText += ` [${zone.dataset.answer}]`;
+                    zone.innerText += ` [Correct: ${zone.dataset.answer}]`;
                 }
             });
         };
