@@ -3,318 +3,285 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Voca Master: Đọc & Học Từ Vựng</title>
+    <title>VocaFlow - Học Từ Vựng Thông Minh</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
-        /* Phong cách cho vùng Editor và các từ được in đậm */
-        #editor { font-family: 'Georgia', serif; }
-        #editor span { cursor: pointer; border-radius: 2px; transition: all 0.2s; }
-        #editor span:hover { background-color: #dbeafe; } /* Màu nền khi di chuột qua */
-        #editor b { background-color: #fef08a; color: #1e40af; padding: 0 3px; font-weight: bold; }
-        .quiz-input { border-bottom: 2px solid #94a3b8; color: #2563eb; font-weight: bold; text-align: center; outline: none; padding: 0 4px; }
-        .quiz-input.correct { border-color: #10b981; color: #10b981; }
-        .quiz-input.incorrect { border-color: #ef4444; color: #ef4444; text-decoration: line-through; }
+        body { font-family: 'Inter', sans-serif; }
+        .editor-word { cursor: pointer; border-radius: 4px; padding: 0 2px; transition: 0.2s; }
+        .editor-word:hover { background-color: #e0e7ff; color: #4338ca; }
+        .editor-word.is-bold { font-weight: 800; color: #1e40af; background-color: #fef08a; text-decoration: underline; }
+        
+        /* Drag & Drop Styles */
+        .drop-zone { border-bottom: 2px dashed #94a3b8; min-width: 100px; display: inline-block; height: 1.5em; vertical-align: middle; transition: 0.3s; }
+        .drop-zone.hover { background-color: #dbeafe; border-color: #3b82f6; }
+        .draggable-item { cursor: grab; display: inline-block; padding: 4px 12px; background: white; border: 1px solid #e2e8f0; border-radius: 999px; font-weight: 600; box-shadow: 0 2px 4px rgba(0,0,0,0.05); user-select: none; }
+        .draggable-item:active { cursor: grabbing; }
+        
+        .cefr-badge { font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; text-transform: uppercase; }
+        .cefr-a { background: #dcfce7; color: #166534; } /* Green */
+        .cefr-b { background: #fef9c3; color: #854d0e; } /* Yellow */
+        .cefr-c { background: #fee2e2; color: #991b1b; } /* Red */
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <header class="bg-white shadow-sm sticky top-0 z-50">
-        <nav class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-            <h1 class="text-2xl font-bold text-blue-800">VOCA <span class="text-blue-500 font-light">Master</span></h1>
-            <p class="text-gray-500">Đọc, Chọn Từ, và Ôn Tập Thông Minh</p>
-        </nav>
-    </header>
+<body class="bg-slate-50 text-slate-900 pb-20">
 
-    <main class="max-w-7xl mx-auto p-6 md:p-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        <div class="lg:col-span-2 space-y-6">
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                <h2 class="text-lg font-semibold mb-4 text-gray-800 flex items-center gap-2">
-                    <span class="bg-blue-100 text-blue-700 w-7 h-7 rounded-full flex items-center justify-center text-sm">1</span>
-                    Nhập văn bản hoặc tải File
-                </h2>
-                <textarea id="rawInput" rows="5" class="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-100 focus:border-blue-300 outline-none resize-none transition mb-4" placeholder="Dán đoạn văn tiếng Anh của bạn tại đây..."></textarea>
-                <div class="flex items-center gap-3">
-                    <input type="file" id="fileInput" accept=".docx" class="hidden">
-                    <button onclick="document.getElementById('fileInput').click()" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2.5 rounded-xl text-sm font-medium transition flex items-center gap-2">
-                        📂 Tải File .docx
-                    </button>
-                    <button id="loadBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-medium transition flex-grow shadow-sm">
-                        Bắt đầu học
-                    </button>
-                </div>
+    <!-- Navigation -->
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold italic text-xl italic">V</div>
+                <span class="text-xl font-bold tracking-tight text-slate-800">VocaFlow <span class="text-blue-600">Pro</span></span>
             </div>
-
-            <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 relative">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-lg font-semibold text-gray-800">Vùng Đọc & Chọn Từ</h2>
-                    <span class="text-xs text-gray-400 italic">* Nhấn đúp (Double-click) vào từ để in đậm.</span>
-                </div>
-                <div id="editor" class="p-5 border border-gray-100 rounded-xl min-h-[350px] leading-relaxed text-xl overflow-y-auto max-h-[600px] text-gray-700 bg-gray-50">
-                    <div class="text-center text-gray-400 pt-20">Văn bản sẽ hiển thị tại đây. Bấm "Bắt đầu học" để bắt đầu.</div>
-                </div>
-                <button id="generateBtn" class="w-full mt-5 bg-green-600 hover:bg-green-700 text-white py-3.5 rounded-xl font-semibold shadow-lg transition-all transform hover:scale-[1.01]">
-                    TRA TỪ & TẠO BÀI TẬP
-                </button>
+            <div class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-500">
+                <span class="text-blue-600">Reading Mode</span>
+                <span>My Library</span>
+                <span>Teaching Dashboard</span>
             </div>
         </div>
+    </nav>
 
-        <div class="space-y-6">
-            <div id="vocabSection" class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 hidden">
-                <h2 class="text-lg font-semibold mb-5 text-gray-800 flex items-center gap-2">
-                    <span class="bg-blue-100 text-blue-700 w-7 h-7 rounded-full flex items-center justify-center text-sm">2</span>
-                    Từ vựng bạn đã chọn
-                </h2>
-                <div id="vocabList" class="space-y-5">
+    <main class="max-w-7xl mx-auto px-4 pt-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Left: Input & Reading (8 columns) -->
+        <div class="lg:col-span-7 space-y-6">
+            <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                    <h3 class="font-semibold text-slate-700">Source Text</h3>
+                    <div class="flex gap-2">
+                        <input type="file" id="fileInput" accept=".docx" class="hidden">
+                        <button onclick="document.getElementById('fileInput').click()" class="text-xs font-semibold px-3 py-1.5 bg-white border border-slate-200 rounded-md hover:bg-slate-50 transition">Upload Docx</button>
                     </div>
-            </div>
-
-            <div id="quizSection" class="bg-white p-6 rounded-2xl shadow-sm border border-t-4 border-t-green-500 border-gray-100 hidden">
-                <h2 class="text-lg font-semibold mb-4 text-green-800 flex items-center gap-2">
-                    <span class="bg-green-100 text-green-700 w-7 h-7 rounded-full flex items-center justify-center text-sm">3</span>
-                    Ôn tập: Điền vào chỗ trống
-                </h2>
-                <div id="quizContent" class="leading-loose italic text-gray-700 text-lg mb-5 p-4 bg-gray-50 rounded-lg border border-gray-100">
-                    </div>
-                <div class="flex gap-3">
-                    <button id="checkQuizBtn" class="flex-grow bg-green-100 hover:bg-green-200 text-green-700 py-2.5 rounded-lg font-medium transition">Kiểm tra đáp án</button>
-                    <button id="retryQuizBtn" class="bg-gray-100 hover:bg-gray-200 text-gray-600 py-2.5 px-4 rounded-lg transition">Làm lại</button>
                 </div>
-            </div>
+                <textarea id="rawInput" class="w-full p-4 h-32 focus:outline-none resize-none text-slate-600 border-none" placeholder="Paste your English text here..."></textarea>
+                <div class="p-3 bg-white flex justify-end">
+                    <button id="loadBtn" class="bg-slate-800 text-white px-6 py-2 rounded-xl text-sm font-semibold hover:bg-slate-900 transition">Start Processing</button>
+                </div>
+            </section>
+
+            <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-lg text-slate-800">Active Reading</h3>
+                        <span class="text-[11px] text-slate-400 uppercase tracking-widest">Double-click words to learn</span>
+                    </div>
+                    <div id="editor" class="min-h-[400px] text-lg leading-relaxed text-slate-700 bg-slate-50/30 p-6 rounded-xl border border-dashed border-slate-200">
+                        <!-- Content will be rendered here -->
+                        <p class="text-slate-400 italic">No text loaded yet.</p>
+                    </div>
+                </div>
+                <div class="p-4 bg-blue-50 flex items-center justify-between">
+                    <p class="text-xs text-blue-700 font-medium italic">Gemini AI is ready to analyze your selection.</p>
+                    <button id="generateBtn" class="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-blue-200 hover:bg-blue-700 transition transform hover:-translate-y-0.5">Generate Vocabulary</button>
+                </div>
+            </section>
+        </div>
+
+        <!-- Right: Vocab & Quiz (5 columns) -->
+        <div class="lg:col-span-5 space-y-6">
+            
+            <!-- Vocab List -->
+            <section id="vocabContainer" class="bg-white rounded-2xl shadow-md border border-slate-200 hidden overflow-hidden">
+                <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-white">
+                    <h3 class="font-bold text-slate-800">Learning List</h3>
+                    <span id="vocabCount" class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full font-bold">0 Words</span>
+                </div>
+                <div id="vocabList" class="divide-y divide-slate-50 max-h-[500px] overflow-y-auto p-2">
+                    <!-- Cards will be injected here -->
+                </div>
+                <div class="p-4 bg-slate-50">
+                    <button id="showQuizBtn" class="w-full py-3 bg-emerald-600 text-white rounded-xl font-bold shadow-md hover:bg-emerald-700 transition">Practice with Drag & Drop</button>
+                </div>
+            </section>
+
+            <!-- Quiz Section -->
+            <section id="quizContainer" class="bg-emerald-50 rounded-2xl shadow-md border border-emerald-100 hidden overflow-hidden">
+                <div class="p-5 border-b border-emerald-100 flex justify-between items-center">
+                    <h3 class="font-bold text-emerald-800">Practice Session</h3>
+                    <button id="closeQuiz" class="text-emerald-400 hover:text-emerald-600">✕</button>
+                </div>
+                <div class="p-6">
+                    <div id="quizSentences" class="space-y-6 mb-8 text-slate-700 leading-loose">
+                        <!-- Quiz sentences here -->
+                    </div>
+                    
+                    <div class="mt-8 pt-6 border-t border-emerald-200">
+                        <p class="text-xs font-bold text-emerald-600 uppercase mb-4 tracking-wider text-center">Drag words into blanks</p>
+                        <div id="draggableContainer" class="flex flex-wrap gap-3 justify-center">
+                            <!-- Draggable words here -->
+                        </div>
+                    </div>
+
+                    <button id="checkQuizBtn" class="w-full mt-10 py-4 bg-white text-emerald-700 border-2 border-emerald-600 rounded-2xl font-black uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all">Verify My Answers</button>
+                </div>
+            </section>
+
         </div>
     </main>
 
-    <footer class="text-center p-10 mt-10 border-t border-gray-100 text-gray-400 text-sm">
-        Công cụ hỗ trợ học từ vựng tiếng Anh cá nhân.
-    </footer>
-
     <script>
-        // Các biến tham chiếu đến các phần tử trên giao diện
         const editor = document.getElementById('editor');
         const rawInput = document.getElementById('rawInput');
         const fileInput = document.getElementById('fileInput');
         const loadBtn = document.getElementById('loadBtn');
         const generateBtn = document.getElementById('generateBtn');
+        const vocabContainer = document.getElementById('vocabContainer');
         const vocabList = document.getElementById('vocabList');
-        const quizContent = document.getElementById('quizContent');
-        
-        // Biến lưu trữ các từ gốc để kiểm tra bài tập
-        let currentAnswers = [];
+        const quizContainer = document.getElementById('quizContainer');
+        const draggableContainer = document.getElementById('draggableContainer');
+        const quizSentences = document.getElementById('quizSentences');
 
-        // 1. XỬ LÝ NHẬP LIỆU (Văn bản thuần hoặc File Word)
-        // Khi bấm nút "Bắt đầu học"
+        let learningData = [];
+
+        // 1. PROCESS TEXT
         loadBtn.onclick = () => {
             const text = rawInput.value.trim();
-            if (text) {
-                renderToEditor(text);
-            } else {
-                alert("Vui lòng dán đoạn văn vào ô trống.");
-            }
+            if(text) renderToEditor(text);
         };
 
-        // Khi chọn file Word (.docx)
         fileInput.onchange = (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            // Hiển thị trạng thái đang tải
-            editor.innerHTML = '<div class="text-center text-gray-400 pt-20">Đang đọc file Word...</div>';
-
             const reader = new FileReader();
             reader.onload = (event) => {
-                const arrayBuffer = event.target.result;
-                // Sử dụng thư viện mammoth để chuyển docx sang text thuần
-                mammoth.extractRawText({arrayBuffer: arrayBuffer})
-                    .then(result => {
-                        const text = result.value.trim();
-                        if (text) {
-                            rawInput.value = text; // Dán text vào ô nhập để người dùng thấy
-                            renderToEditor(text);
-                        } else {
-                            editor.innerHTML = '<div class="text-center text-red-400 pt-20">File Word không có nội dung text.</div>';
-                        }
-                    })
-                    .catch(err => {
-                        console.error(err);
-                        editor.innerHTML = '<div class="text-center text-red-400 pt-20">Lỗi khi đọc file Word. Hãy chắc chắn đó là file .docx.</div>';
-                    });
+                mammoth.extractRawText({arrayBuffer: event.target.result})
+                    .then(result => renderToEditor(result.value));
             };
-            reader.readAsArrayBuffer(file);
+            reader.readAsArrayBuffer(e.target.files[0]);
         };
 
-        // Hàm hiển thị văn bản vào vùng "Editor" và chia nhỏ từng từ
         function renderToEditor(text) {
-            // Chuẩn hóa văn bản: thay thế xuống dòng bằng <br>, chia nhỏ bằng khoảng trắng
-            const words = text.split(/(\s+)/); // Giữ lại khoảng trắng để không làm hỏng định dạng
+            const words = text.split(/(\s+)/);
             editor.innerHTML = '';
-            
             words.forEach(word => {
-                if (word.trim() === '') {
-                    // Nếu là khoảng trắng hoặc xuống dòng, chèn trực tiếp
+                if(word.trim() === '') {
                     editor.appendChild(document.createTextNode(word));
                 } else {
-                    // Nếu là từ, bọc nó trong thẻ <span> để bắt sự kiện dblclick
                     const span = document.createElement('span');
+                    span.className = 'editor-word';
                     span.innerText = word;
+                    span.ondblclick = (e) => {
+                        e.target.classList.toggle('is-bold');
+                    };
                     editor.appendChild(span);
                 }
             });
-            // Ẩn các phần kết quả cũ
-            document.getElementById('vocabSection').classList.add('hidden');
-            document.getElementById('quizSection').classList.add('hidden');
+            vocabContainer.classList.add('hidden');
+            quizContainer.classList.add('hidden');
         }
 
-        // 2. BẮT SỰ KIỆN DOUBLE CLICK ĐỂ IN ĐẬM/GỠ IN ĐẬM
-        editor.addEventListener('dblclick', (e) => {
-            if (e.target.tagName === 'SPAN') {
-                const span = e.target;
-                if (span.parentElement.tagName === 'B') {
-                    // Nếu đang in đậm (bọc bởi <b>), gỡ <b> ra
-                    const boldTag = span.parentElement;
-                    boldTag.replaceWith(span);
-                } else {
-                    // Nếu chưa in đậm, bọc thẻ <span> bằng thẻ <b>
-                    const b = document.createElement('b');
-                    span.parentNode.insertBefore(b, span);
-                    b.appendChild(span);
-                }
-            }
-        });
-
-        // 3. XỬ LÝ TRA TỪ & TẠO BÀI TẬP (Khi bấm nút "GENERATE")
+        // 2. ANALYZE VOCABULARY (MOCK GEMINI API)
         generateBtn.onclick = async () => {
-            // Lấy tất cả các từ đang được in đậm (thẻ <b>)
-            const boldElements = editor.querySelectorAll('b span');
+            const bolds = editor.querySelectorAll('.is-bold');
+            const words = Array.from(new Set(Array.from(bolds).map(el => el.innerText.replace(/[^a-zA-Z]/g, ''))));
             
-            // Làm sạch từ (bỏ dấu câu) và loại bỏ từ trùng
-            const selectedWords = Array.from(new Set(
-                Array.from(boldElements).map(el => 
-                    el.innerText.trim().replace(/^[.,!?;:"']+|[.,!?;:"']+$/g, '').toLowerCase()
-                )
-            )).filter(word => word.length > 0);
+            if(words.length === 0) return alert("Select some words first!");
 
-            if (selectedWords.length === 0) {
-                alert("Vui lòng nhấn đúp để chọn ít nhất một từ bạn muốn học!");
-                return;
-            }
+            vocabContainer.classList.remove('hidden');
+            vocabList.innerHTML = '<div class="p-10 text-center text-slate-400">Gemini is analyzing levels and meanings...</div>';
 
-            // --- PHẦN 1: TRA TỪ & HIỂN THỊ DANH SÁCH ---
-            vocabList.innerHTML = '<div class="text-sm text-gray-400">Đang tra từ điển...</div>';
-            document.getElementById('vocabSection').classList.remove('hidden');
-            // Cuộn xuống để người dùng thấy phần từ vựng
-            document.getElementById('vocabSection').scrollIntoView({ behavior: 'smooth' });
-
-            // Tra từ (sử dụng API miễn phí)
-            const vocabHTML = await Promise.all(selectedWords.map(async (word) => {
-                let phonetic = '';
-                let definition = 'Không tìm thấy định nghĩa.';
-                let audioUrl = '';
-
-                try {
-                    const response = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${word}`);
-                    if (response.ok) {
-                        const data = await response.json();
-                        if (data && data.length > 0) {
-                            const entry = data[0];
-                            // Lấy phiên âm
-                            phonetic = entry.phonetic || (entry.phonetics && entry.phonetics.find(p => p.text)?.text) || '';
-                            // Lấy định nghĩa đầu tiên
-                            if (entry.meanings && entry.meanings.length > 0) {
-                                definition = entry.meanings[0].definitions[0].definition;
-                            }
-                            // Lấy audio
-                            if (entry.phonetics) {
-                                const audioObj = entry.phonetics.find(p => p.audio && p.audio !== '');
-                                if (audioObj) audioUrl = audioObj.audio;
-                            }
-                        }
-                    }
-                } catch (error) {
-                    console.error("Lỗi khi tra từ:", word, error);
-                    definition = 'Lỗi kết nối từ điển.';
-                }
-
-                // Trả về HTML cho từng từ
-                return `
-                    <div class="border-b border-gray-100 pb-4 last:border-0 last:pb-0">
-                        <div class="flex items-center gap-3 mb-1">
-                            <span class="font-bold text-xl text-blue-700">${word}</span>
-                            ${phonetic ? `<span class="text-sm text-gray-400 font-mono bg-gray-100 px-2 py-0.5 rounded">${phonetic}</span>` : ''}
-                            ${audioUrl ? `<button onclick="new Audio('${audioUrl}').play()" class="text-gray-400 hover:text-blue-500 transition">🔊</button>` : ''}
-                        </div>
-                        <p class="text-gray-600 text-sm leading-relaxed">${definition}</p>
-                        <p class="text-xs text-gray-400 italic mt-1">(Bạn có thể tự điền nghĩa tiếng Việt tại đây nếu muốn)</p>
-                    </div>
-                `;
+            // Simulate AI Processing
+            learningData = await Promise.all(words.map(async (word) => {
+                // In real app, call Gemini API here
+                // Logic giả lập dữ liệu giáo dục
+                const cefrLevels = ['A1', 'A2', 'B1', 'B2', 'C1'];
+                const level = cefrLevels[Math.floor(Math.random() * 4)];
+                
+                return {
+                    word: word,
+                    ipa: '/ ' + word.length * 2 + ' /', // Fake IPA
+                    vn: "Nghĩa tiếng Việt của " + word,
+                    level: level,
+                    example: `This is a sample sentence using the word "${word}" in a professional context.`
+                };
             }));
-            vocabList.innerHTML = vocabHTML.join('');
 
-
-            // --- PHẦN 2: TẠO BÀI TẬP ĐIỀN TỪ ---
-            currentAnswers = []; // Xóa đáp án cũ
-            
-            // Lấy HTML hiện tại của editor (chứa các thẻ <b>)
-            let quizHTML = editor.innerHTML;
-
-            // Sử dụng Regex để thay thế toàn bộ thẻ <b>...</b> bằng ô <input>
-            // Ta cần dùng Regex phức tạp hơn một chút để lấy được từ gốc bên trong thẻ span bên trong thẻ b
-            quizHTML = quizHTML.replace(/<b><span.*?>([\s\S]*?)<\/span><\/b>/g, (match, wordWithPunctuation) => {
-                // wordWithPunctuation là từ gốc (có thể có dấu câu)
-                const word = wordWithPunctuation.trim();
-                // Làm sạch từ để lưu làm đáp án đúng (bỏ dấu câu, chuyển về chữ thường)
-                const cleanAnswer = word.replace(/^[.,!?;:"']+|[.,!?;:"']+$/g, '').toLowerCase();
-                currentAnswers.push(cleanAnswer);
-
-                // Ước tính chiều rộng của ô input dựa trên độ dài của từ
-                const width = Math.max(3, word.length);
-                // Trả về thẻ <input>
-                return `<input type="text" class="quiz-input" style="width: ${width}ch;" data-answer="${cleanAnswer}" placeholder="...">`;
-            });
-
-            // Thay thế các thẻ <span>...</span> thường bằng text thường
-            quizHTML = quizHTML.replace(/<span.*?>([\s\S]*?)<\/span>/g, '$1');
-
-            quizContent.innerHTML = quizHTML;
-            document.getElementById('quizSection').classList.remove('hidden');
+            renderVocabList();
         };
 
-        // 4. XỬ LÝ KIỂM TRA ĐÁP ÁN BÀI TẬP
+        function renderVocabList() {
+            document.getElementById('vocabCount').innerText = `${learningData.length} Words`;
+            vocabList.innerHTML = learningData.map((item, index) => `
+                <div class="p-4 hover:bg-slate-50 transition">
+                    <div class="flex justify-between items-start mb-1">
+                        <div>
+                            <span class="font-bold text-slate-900 text-lg">${item.word}</span>
+                            <span class="text-slate-400 text-sm ml-2 font-mono">${item.ipa}</span>
+                        </div>
+                        <span class="cefr-badge ${item.level.startsWith('A') ? 'cefr-a' : item.level.startsWith('B') ? 'cefr-b' : 'cefr-c'}">
+                            ${item.level}
+                        </span>
+                    </div>
+                    <p class="text-blue-600 font-semibold text-sm mb-1">${item.vn}</p>
+                    <p class="text-slate-400 text-xs italic">"${item.example}"</p>
+                </div>
+            `).join('');
+        }
+
+        // 3. DRAG & DROP QUIZ LOGIC
+        document.getElementById('showQuizBtn').onclick = () => {
+            vocabContainer.classList.add('hidden');
+            quizContainer.classList.remove('hidden');
+            renderQuiz();
+        };
+
+        function renderQuiz() {
+            draggableContainer.innerHTML = '';
+            quizSentences.innerHTML = '';
+
+            // Shuffle words for buttons
+            const shuffledWords = [...learningData].sort(() => Math.random() - 0.5);
+
+            shuffledWords.forEach(item => {
+                const btn = document.createElement('div');
+                btn.className = 'draggable-item';
+                btn.draggable = true;
+                btn.innerText = item.word;
+                btn.id = `drag-${item.word}`;
+                btn.ondragstart = (e) => e.dataTransfer.setData('text', item.word);
+                draggableContainer.appendChild(btn);
+            });
+
+            learningData.forEach((item, index) => {
+                const sentence = item.example.replace(new RegExp(item.word, 'gi'), `<div class="drop-zone" data-answer="${item.word}"></div>`);
+                const p = document.createElement('div');
+                p.className = 'bg-white p-3 rounded-lg border border-emerald-100 shadow-sm';
+                p.innerHTML = `<span class="text-emerald-500 font-bold mr-2">${index + 1}.</span> ${sentence}`;
+                quizSentences.appendChild(p);
+            });
+
+            // Add Drag & Drop Listeners
+            document.querySelectorAll('.drop-zone').forEach(zone => {
+                zone.ondragover = (e) => { e.preventDefault(); zone.classList.add('hover'); };
+                zone.ondragleave = () => zone.classList.remove('hover');
+                zone.ondrop = (e) => {
+                    e.preventDefault();
+                    zone.classList.remove('hover');
+                    const word = e.dataTransfer.getData('text');
+                    zone.innerText = word;
+                    zone.classList.add('font-bold', 'text-blue-600', 'border-blue-500');
+                };
+            });
+        }
+
         document.getElementById('checkQuizBtn').onclick = () => {
-            const inputs = quizContent.querySelectorAll('.quiz-input');
-            let correctCount = 0;
-
-            inputs.forEach(input => {
-                const userAnswer = input.value.trim().toLowerCase();
-                const correctAnswer = input.dataset.answer;
-
-                // Gỡ bỏ các class trạng thái cũ
-                input.classList.remove('correct', 'incorrect');
-
-                if (userAnswer === correctAnswer) {
-                    input.classList.add('correct');
-                    correctCount++;
-                } else if (userAnswer !== '') {
-                    input.classList.add('incorrect');
-                    // Hiển thị đáp án đúng bên cạnh nếu muốn (tùy chọn)
-                    // input.title = `Đáp án đúng: ${correctAnswer}`;
+            const zones = document.querySelectorAll('.drop-zone');
+            let correct = 0;
+            zones.forEach(zone => {
+                if(zone.innerText.toLowerCase() === zone.dataset.answer.toLowerCase()) {
+                    zone.className = "drop-zone border-b-2 border-emerald-500 text-emerald-600 font-bold px-2";
+                    correct++;
+                } else {
+                    zone.className = "drop-zone border-b-2 border-red-500 text-red-600 font-bold px-2";
                 }
             });
-
-            if (correctCount === inputs.length && inputs.length > 0) {
-                alert(`Chúc mừng! Bạn đã điền đúng tất cả ${correctCount}/${inputs.length} từ.`);
-            } else if (inputs.length > 0) {
-                alert(`Bạn đã điền đúng ${correctCount}/${inputs.length} từ. Hãy kiểm tra lại những chỗ màu đỏ.`);
-            }
+            alert(`You got ${correct}/${zones.length} correct!`);
         };
 
-        // 5. XỬ LÝ LÀM LẠI BÀI TẬP
-        document.getElementById('retryQuizBtn').onclick = () => {
-            const inputs = quizContent.querySelectorAll('.quiz-input');
-            inputs.forEach(input => {
-                input.value = '';
-                input.classList.remove('correct', 'incorrect');
-            });
+        document.getElementById('closeQuiz').onclick = () => {
+            quizContainer.classList.add('hidden');
+            vocabContainer.classList.remove('hidden');
         };
+
     </script>
 </body>
 </html>
