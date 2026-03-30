@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Be Heard | Lexi Learning</title>
+    <title>Be Heard |Lexi Learning</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
@@ -779,23 +779,28 @@ function srsChip(item) {
 
 // ══════════════════════════════════════════
 // TTS — Desktop: giọng gốc chất lượng cao
-//        Mobile/Tablet: ổn định, chọn giọng
+//        Mobile/Tablet: gọi đồng bộ (iOS bắt buộc)
 // ══════════════════════════════════════════
-let _ttsTimer = null;
+let _ttsTimer  = null;
+let _cachedVoices = [];
 
 // Detect mobile / tablet by UA (iPhone, iPad, Android)
 const _isMobileDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-function _loadVoices() {
-    return window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+// Pre-load và cache voices ngay khi trang load — để speak() dùng được ngay
+function _cacheVoices() {
+    const v = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+    if (v.length) _cachedVoices = v;
 }
 if (window.speechSynthesis) {
-    window.speechSynthesis.onvoiceschanged = _loadVoices;
-    _loadVoices();
+    window.speechSynthesis.onvoiceschanged = _cacheVoices;
+    _cacheVoices();
 }
 
 function speak(text, lang = 'en-US') {
     if (!window.speechSynthesis) return;
+
+    // Dừng bất kỳ phát âm nào đang chạy
     window.speechSynthesis.cancel();
     if (_ttsTimer) { clearInterval(_ttsTimer); _ttsTimer = null; }
 
@@ -808,54 +813,43 @@ function speak(text, lang = 'en-US') {
         return;
     }
 
-    // ── MOBILE / TABLET: ổn định trên iOS & Android ──
-    const _doSpeak = () => {
-        const u = new SpeechSynthesisUtterance(text);
-        u.lang   = lang;
-        u.rate   = 0.9;
-        u.pitch  = 1;
-        u.volume = 1;
+    // ── MOBILE / TABLET ──
+    // ⚠️ iOS Safari: speak() PHẢI gọi đồng bộ trong user-gesture handler.
+    // Bất kỳ setTimeout hay Promise nào sẽ khiến iOS im lặng hoàn toàn.
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang   = lang;
+    u.rate   = 0.9;
+    u.pitch  = 1;
+    u.volume = 1;
 
-        // Chọn giọng khớp ngôn ngữ tốt nhất có sẵn
-        const voices   = window.speechSynthesis.getVoices();
-        const langCode = lang.split('-')[0];
-        if (voices.length) {
-            const voice =
-                voices.find(v => v.lang === lang && !v.localService) || // remote exact
-                voices.find(v => v.lang === lang)                      || // local exact
-                voices.find(v => v.lang.startsWith(langCode) && !v.localService) ||
-                voices.find(v => v.lang.startsWith(langCode));
-            if (voice) u.voice = voice;
+    // Chọn giọng từ cache đã load sẵn (không delay)
+    const voices   = _cachedVoices.length ? _cachedVoices : window.speechSynthesis.getVoices();
+    const langCode = lang.split('-')[0];
+    if (voices.length) {
+        const voice =
+            voices.find(v => v.lang === lang && !v.localService) ||
+            voices.find(v => v.lang === lang)                      ||
+            voices.find(v => v.lang.startsWith(langCode) && !v.localService) ||
+            voices.find(v => v.lang.startsWith(langCode));
+        if (voice) u.voice = voice;
+    }
+
+    // iOS keep-alive: Safari tự pause sau ~15 s — cần ping đều để giữ
+    _ttsTimer = setInterval(() => {
+        if (!window.speechSynthesis.speaking) {
+            clearInterval(_ttsTimer); _ttsTimer = null; return;
         }
+        window.speechSynthesis.pause();
+        window.speechSynthesis.resume();
+    }, 10000);
 
-        // iOS Safari keep-alive: tự pause/resume để tránh bị cắt
-        _ttsTimer = setInterval(() => {
-            if (!window.speechSynthesis.speaking) {
-                clearInterval(_ttsTimer); _ttsTimer = null; return;
-            }
-            window.speechSynthesis.pause();
-            window.speechSynthesis.resume();
-        }, 10000);
-
-        u.onend = u.onerror = () => {
-            if (_ttsTimer) { clearInterval(_ttsTimer); _ttsTimer = null; }
-        };
-
-        if (window.speechSynthesis.paused) window.speechSynthesis.resume();
-        window.speechSynthesis.speak(u);
+    u.onend = u.onerror = () => {
+        if (_ttsTimer) { clearInterval(_ttsTimer); _ttsTimer = null; }
     };
 
-    // Đợi voices load xong rồi mới phát (iOS load voices chậm)
-    const voices = window.speechSynthesis.getVoices();
-    if (voices.length > 0) {
-        setTimeout(_doSpeak, 50); // delay nhỏ để cancel() hoàn tất
-    } else {
-        const handler = () => {
-            window.speechSynthesis.removeEventListener('voiceschanged', handler);
-            setTimeout(_doSpeak, 50);
-        };
-        window.speechSynthesis.addEventListener('voiceschanged', handler);
-    }
+    // Gọi đồng bộ — bắt buộc để giữ chuỗi user-gesture trên iOS
+    if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+    window.speechSynthesis.speak(u);
 }
 function speakCurrent() {
     if (!currentWord) return;
