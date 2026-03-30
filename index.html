@@ -499,6 +499,27 @@
                     <button id="nextReviewBtn" class="btn-primary wide" style="margin-top:12px;display:none;padding:14px;">Câu tiếp theo ➜</button>
                 </div>
             </div>
+           <style>
+    :root {
+        --primary: #4f46e5;
+        --muted: #64748b;
+        --bg-card: #ffffff;
+    }
+    /* Biểu đồ Progress */
+    .chart-container { display: flex; align-items: flex-end; gap: 8px; height: 150px; padding: 20px 0; }
+    .chart-bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; height: 100%; }
+    .chart-bar { width: 100%; background: #e2e8f0; border-radius: 4px; position: relative; transition: height 0.3s ease; }
+    .chart-today .chart-bar { background: var(--primary); }
+    .chart-bar-val { position: absolute; top: -20px; width: 100%; text-align: center; font-size: 10px; font-weight: bold; }
+    .chart-label { font-size: 10px; color: var(--muted); }
+
+    /* Flashcard Flip Effect */
+    .flashcard-container { perspective: 1000px; width: 100%; max-width: 400px; margin: 0 auto; height: 300px; }
+    .flashcard { position: relative; width: 100%; height: 100%; transition: transform 0.6s; transform-style: preserve-3d; cursor: pointer; }
+    .flashcard.flipped { transform: rotateY(180deg); }
+    .flashcard-front, .flashcard-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; padding: 20px; text-align: center; background: white;}
+    .flashcard-back { transform: rotateY(180deg); background: #f8fafc; }
+</style>
         </div>
     </div>
 
