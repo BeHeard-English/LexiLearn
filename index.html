@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Be Heard|Lexi Learning</title>
+    <title>Be Heard | Lexi Learning</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
@@ -591,14 +591,16 @@ function srsChip(item) {
 }
 
 // ══════════════════════════════════════════
-// TTS — cross-device (iOS/Android/Desktop)
+// TTS — Desktop: giọng gốc chất lượng cao
+//        Mobile/Tablet: ổn định, chọn giọng
 // ══════════════════════════════════════════
-let _ttsVoices = [];
-let _ttsTimer  = null;
+let _ttsTimer = null;
+
+// Detect mobile / tablet by UA (iPhone, iPad, Android)
+const _isMobileDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
 function _loadVoices() {
-    const v = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
-    if (v.length) _ttsVoices = v;
+    return window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
 }
 if (window.speechSynthesis) {
     window.speechSynthesis.onvoiceschanged = _loadVoices;
@@ -607,31 +609,39 @@ if (window.speechSynthesis) {
 
 function speak(text, lang = 'en-US') {
     if (!window.speechSynthesis) return;
-
-    // Stop any ongoing utterance
     window.speechSynthesis.cancel();
     if (_ttsTimer) { clearInterval(_ttsTimer); _ttsTimer = null; }
 
+    if (!_isMobileDevice) {
+        // ── DESKTOP: giữ nguyên cách cũ, chất lượng cao ──
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = lang;
+        u.rate = 0.9;
+        window.speechSynthesis.speak(u);
+        return;
+    }
+
+    // ── MOBILE / TABLET: ổn định trên iOS & Android ──
     const _doSpeak = () => {
         const u = new SpeechSynthesisUtterance(text);
-        u.lang  = lang;
-        u.rate  = 0.9;
-        u.pitch = 1;
+        u.lang   = lang;
+        u.rate   = 0.9;
+        u.pitch  = 1;
         u.volume = 1;
 
-        // Pick the best available voice for the requested language
-        const voices = window.speechSynthesis.getVoices();
+        // Chọn giọng khớp ngôn ngữ tốt nhất có sẵn
+        const voices   = window.speechSynthesis.getVoices();
+        const langCode = lang.split('-')[0];
         if (voices.length) {
-            const langCode = lang.split('-')[0];
             const voice =
-                voices.find(v => v.lang === lang && !v.localService) ||   // remote, exact
-                voices.find(v => v.lang === lang) ||                       // exact
+                voices.find(v => v.lang === lang && !v.localService) || // remote exact
+                voices.find(v => v.lang === lang)                      || // local exact
                 voices.find(v => v.lang.startsWith(langCode) && !v.localService) ||
                 voices.find(v => v.lang.startsWith(langCode));
             if (voice) u.voice = voice;
         }
 
-        // iOS keep-alive: Safari pauses synthesis after ~15 s of inactivity
+        // iOS Safari keep-alive: tự pause/resume để tránh bị cắt
         _ttsTimer = setInterval(() => {
             if (!window.speechSynthesis.speaking) {
                 clearInterval(_ttsTimer); _ttsTimer = null; return;
@@ -644,20 +654,16 @@ function speak(text, lang = 'en-US') {
             if (_ttsTimer) { clearInterval(_ttsTimer); _ttsTimer = null; }
         };
 
-        // Resume in case browser suspended synthesis
         if (window.speechSynthesis.paused) window.speechSynthesis.resume();
         window.speechSynthesis.speak(u);
     };
 
-    // Voices may not be available yet on first load (especially mobile)
+    // Đợi voices load xong rồi mới phát (iOS load voices chậm)
     const voices = window.speechSynthesis.getVoices();
     if (voices.length > 0) {
-        // Small delay so cancel() finishes before new utterance starts (iOS quirk)
-        setTimeout(_doSpeak, 50);
+        setTimeout(_doSpeak, 50); // delay nhỏ để cancel() hoàn tất
     } else {
-        // Wait for voices to load, then speak
         const handler = () => {
-            _loadVoices();
             window.speechSynthesis.removeEventListener('voiceschanged', handler);
             setTimeout(_doSpeak, 50);
         };
