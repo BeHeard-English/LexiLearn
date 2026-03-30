@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Be Heard | Lexi Learning</title>
+    <title>Be Heard|Lexi Learning</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-firestore-compat.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Sora:wght@700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Nunito:wght@700;800;900&family=Sora:wght@700;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary:#031383;--primary-hover:#0520b8;--primary-light:#e8ecff;--primary-mid:#3b52d4;
@@ -19,11 +19,11 @@
             --nav-h:64px;--gold:#f59e0b;
         }
         *{box-sizing:border-box;}html{scroll-behavior:smooth;}
-        body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+        body{font-family:'Be Vietnam Pro',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
 
         /* NAV */
         .nav-bar{position:sticky;top:0;z-index:200;height:var(--nav-h);background:var(--primary);display:flex;align-items:center;justify-content:space-between;padding:0 20px;box-shadow:0 2px 20px rgba(3,19,131,.35);}
-        .nav-logo{font-family:'Sora',sans-serif;font-size:1.15rem;font-weight:800;color:#fff;display:flex;align-items:center;gap:10px;}
+        .nav-logo{font-family:'Nunito',sans-serif;font-size:1.15rem;font-weight:800;color:#fff;display:flex;align-items:center;gap:10px;}
         .nav-logo-icon{width:34px;height:34px;background:rgba(255,255,255,.18);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:900;color:#fff;}
         .nav-logo span{color:#7eb8ff;}
         .desktop-tabs{display:none;}
@@ -47,7 +47,7 @@
 
         /* XP NAV */
         .xp-nav-wrap{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:5px 10px;}
-        .xp-level-badge{font-family:'Sora',sans-serif;font-size:.75rem;font-weight:800;color:var(--gold);white-space:nowrap;}
+        .xp-level-badge{font-family:'Nunito',sans-serif;font-size:.75rem;font-weight:800;color:var(--gold);white-space:nowrap;}
         .xp-mini-bar-wrap{width:56px;height:5px;background:rgba(255,255,255,.2);border-radius:99px;overflow:hidden;}
         .xp-mini-bar-fill{height:100%;background:var(--gold);border-radius:99px;transition:width .5s ease;}
         @media(max-width:600px){.xp-nav-wrap{display:none;}}
@@ -111,9 +111,9 @@
         /* DRAG DROP */
         .drop-zone{border:2px dashed #475569;min-width:120px;display:inline-block;height:2em;vertical-align:middle;margin:0 4px;border-radius:8px;background:#1e293b;text-align:center;transition:.3s;padding:2px 10px;color:#94a3b8;}
         .drop-zone.filled{background:var(--primary);border-color:transparent;color:#fff;}
-        .draggable-item{cursor:grab;padding:7px 16px;background:#1e293b;border:1px solid #334155;border-radius:10px;font-weight:700;font-size:.85rem;color:#e2e8f0;transition:.2s;}
+        .draggable-item{cursor:grab;padding:8px 16px;background:#1e293b;border:1px solid #334155;border-radius:10px;font-weight:700;font-size:.85rem;color:#e2e8f0;transition:.2s;user-select:none;-webkit-user-select:none;touch-action:manipulation;}
         .draggable-item:hover{background:var(--primary);border-color:var(--primary);color:#fff;}
-        .draggable-item:active{cursor:grabbing;}
+        .draggable-item:active{cursor:grabbing;transform:scale(.96);}
 
         /* REVIEW BUTTONS */
         .count-btn,.level-btn,.mode-btn{padding:8px 18px;border-radius:10px;font-weight:700;font-size:.85rem;border:2px solid var(--border);background:var(--card);color:var(--muted);cursor:pointer;transition:.2s;}
@@ -145,7 +145,7 @@
 
         /* QUIZ CARD */
         .quiz-card{background:var(--card);border-radius:22px;border:1px solid var(--border);padding:28px 24px;box-shadow:0 6px 32px rgba(3,19,131,.1);}
-        .quiz-word{font-family:'Sora',sans-serif;font-size:2.4rem;font-weight:800;color:var(--primary);letter-spacing:-.02em;margin:6px 0 16px;word-break:break-word;}
+        .quiz-word{font-family:'Nunito',sans-serif;font-size:2.4rem;font-weight:800;color:var(--primary);letter-spacing:-.02em;margin:6px 0 16px;word-break:break-word;}
         .quiz-prompt-label{font-size:.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;}
 
         /* LIBRARY */
@@ -167,7 +167,7 @@
         .stat-card.highlight .stat-label{color:rgba(255,255,255,.7);}
         .stat-card.highlight .stat-num{color:#fff;}
         .stat-label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:6px;}
-        .stat-num{font-family:'Sora',sans-serif;font-size:2.2rem;font-weight:800;color:var(--primary);}
+        .stat-num{font-family:'Nunito',sans-serif;font-size:2.2rem;font-weight:800;color:var(--primary);}
 
         /* INPUT */
         .txt-input{width:100%;padding:14px 16px;background:#f8faff;border:2px solid var(--border);border-radius:12px;font-family:inherit;font-size:.9rem;color:var(--text);outline:none;resize:none;transition:.2s;}
@@ -193,6 +193,19 @@
         .empty-state p{font-size:.9rem;font-weight:600;}
         ::-webkit-scrollbar{width:5px;}
         ::-webkit-scrollbar-thumb{background:#c7d2ee;border-radius:99px;}
+
+        /* MOBILE BOTTOM NAV */
+        .mobile-bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--primary);padding:6px 0;padding-bottom:calc(6px + env(safe-area-inset-bottom, 0px));z-index:300;border-top:1px solid rgba(255,255,255,.18);box-shadow:0 -4px 20px rgba(3,19,131,.25);}
+        @media(max-width:767px){.mobile-bottom-nav{display:flex;}}
+        .mbtab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 4px;background:none;border:none;cursor:pointer;color:rgba(255,255,255,.45);transition:color .2s;font-family:'Be Vietnam Pro',sans-serif;}
+        .mbtab.active{color:#fff;}
+        .mbtab:active{opacity:.7;}
+        .mbtab-icon{font-size:1.35rem;line-height:1;}
+        .mbtab-label{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
+        @media(max-width:767px){.main-wrap{padding-bottom:calc(72px + env(safe-area-inset-bottom, 0px))!important;}}
+
+        /* DRAG DROP WORD BANK STICKY */
+        .wordbank-sticky{position:sticky;top:var(--nav-h);z-index:50;background:#1e293b;border-bottom:1px solid #0f172a;border-radius:0;}
     </style>
 </head>
 <body>
@@ -290,17 +303,20 @@
                     <button id="showDragDropBtn" class="btn-primary btn-success wide">🎮 Tạo bài tập kéo thả</button>
                 </div>
             </div>
-            <div id="dragDropContainer" class="hidden" style="background:#0f172a;border-radius:20px;display:flex;flex-direction:column;min-height:500px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.3);">
-                <div style="padding:16px 20px;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between;align-items:center;">
+            <div id="dragDropContainer" class="hidden" style="background:#0f172a;border-radius:20px;display:flex;flex-direction:column;overflow:visible;box-shadow:0 8px 40px rgba(0,0,0,.3);">
+                <div style="padding:16px 20px;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between;align-items:center;background:#0f172a;border-radius:20px 20px 0 0;position:sticky;top:var(--nav-h);z-index:51;">
                     <div><div style="color:#7eb8ff;font-weight:800;font-size:.9rem;letter-spacing:.06em;text-transform:uppercase;">🎯 Practice Mode</div><div style="color:#475569;font-size:.75rem;margin-top:2px;">Kéo từ vào đúng chỗ trống</div></div>
                     <button onclick="closeDragDrop()" style="background:#1e293b;border:none;border-radius:8px;padding:6px 12px;color:#64748b;cursor:pointer;font-size:.8rem;" onmouseover="this.style.color='#e2e8f0'" onmouseout="this.style.color='#64748b'">✕ Đóng</button>
                 </div>
-                <div style="padding:14px 16px;background:#1e293b;border-bottom:1px solid #0f172a;">
-                    <div style="font-size:.7rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">Ngân hàng từ</div>
+                <div class="wordbank-sticky" style="padding:14px 16px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                        <div style="font-size:.7rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.07em;">📦 Ngân hàng từ</div>
+                        <div style="font-size:.65rem;color:#334155;display:none;" id="touchHint">👆 Chạm chọn → chạm ô trống</div>
+                    </div>
                     <div id="draggableContainer" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
                 </div>
-                <div id="quizSentences" style="flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px;"></div>
-                <div style="padding:14px 16px;background:#0f172a;border-top:1px solid #1e293b;">
+                <div id="quizSentences" style="padding:20px;display:flex;flex-direction:column;gap:14px;background:#0f172a;"></div>
+                <div style="padding:14px 16px;background:#0f172a;border-top:1px solid #1e293b;border-radius:0 0 20px 20px;">
                     <div id="dragDropScore" style="margin-bottom:10px;"></div>
                     <button id="checkDragDropBtn" class="btn-primary btn-success wide">Kiểm tra đáp án</button>
                 </div>
@@ -313,7 +329,7 @@
         <div class="card" style="overflow:hidden;">
             <div class="card-header" style="padding:24px 28px;">
                 <div>
-                    <div style="font-family:'Sora',sans-serif;font-size:1.5rem;font-weight:800;color:var(--primary);">Thư viện của tôi</div>
+                    <div style="font-family:'Nunito',sans-serif;font-size:1.5rem;font-weight:800;color:var(--primary);">Thư viện của tôi</div>
                     <div class="card-subtitle" style="margin-top:4px;">Tổng hợp từ vựng đã học</div>
                 </div>
                 <div style="display:flex;gap:8px;align-items:center;">
@@ -329,10 +345,10 @@
                     <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
                         <div>
                             <div style="font-size:.75rem;font-weight:700;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.07em;">Cấp độ của bạn</div>
-                            <div style="font-family:'Sora',sans-serif;font-size:1.5rem;font-weight:800;margin-top:4px;" id="xpLevelName">Lv.1 — Tập sự</div>
+                            <div style="font-family:'Nunito',sans-serif;font-size:1.5rem;font-weight:800;margin-top:4px;" id="xpLevelName">Lv.1 — Tập sự</div>
                         </div>
                         <div style="text-align:right;">
-                            <div style="font-family:'Sora',sans-serif;font-size:1.4rem;font-weight:800;color:var(--gold);" id="xpTotal">0 XP</div>
+                            <div style="font-family:'Nunito',sans-serif;font-size:1.4rem;font-weight:800;color:var(--gold);" id="xpTotal">0 XP</div>
                             <div style="font-size:.75rem;color:rgba(255,255,255,.5);margin-top:2px;" id="xpNextLabel">Còn 100 XP để lên cấp 2</div>
                         </div>
                     </div>
@@ -382,7 +398,7 @@
             <!-- Start card -->
             <div id="reviewStart" class="card slide-up" style="padding:32px 28px;text-align:center;">
                 <div style="font-size:2.8rem;margin-bottom:14px;">🎯</div>
-                <div style="font-family:'Sora',sans-serif;font-size:1.6rem;font-weight:800;color:var(--primary);margin-bottom:8px;">Ôn tập trắc nghiệm</div>
+                <div style="font-family:'Nunito',sans-serif;font-size:1.6rem;font-weight:800;color:var(--primary);margin-bottom:8px;">Ôn tập trắc nghiệm</div>
                 <p style="font-size:.9rem;color:var(--muted);margin-bottom:28px;">Từ đến hạn SRS được ưu tiên. Trả lời đúng +10 XP ⚡</p>
 
                 <!-- Mode -->
@@ -451,6 +467,22 @@
     </div>
 
 </main>
+
+<!-- MOBILE BOTTOM NAV -->
+<div id="mobileBottomNav" class="mobile-bottom-nav hidden">
+    <button onclick="switchTab('creator')" class="mbtab active" data-tab="creator">
+        <span class="mbtab-icon">📝</span>
+        <span class="mbtab-label">Soạn Bài</span>
+    </button>
+    <button onclick="switchTab('library')" class="mbtab" data-tab="library">
+        <span class="mbtab-icon">📚</span>
+        <span class="mbtab-label">Thư Viện</span>
+    </button>
+    <button onclick="switchTab('review')" class="mbtab" data-tab="review">
+        <span class="mbtab-icon">🎯</span>
+        <span class="mbtab-label">Ôn Tập</span>
+    </button>
+</div>
 
 <script>
 // ══════════════════════════════════════════
@@ -559,21 +591,85 @@ function srsChip(item) {
 }
 
 // ══════════════════════════════════════════
-// TTS
+// TTS — cross-device (iOS/Android/Desktop)
 // ══════════════════════════════════════════
-function speak(text, lang='en-US') {
+let _ttsVoices = [];
+let _ttsTimer  = null;
+
+function _loadVoices() {
+    const v = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+    if (v.length) _ttsVoices = v;
+}
+if (window.speechSynthesis) {
+    window.speechSynthesis.onvoiceschanged = _loadVoices;
+    _loadVoices();
+}
+
+function speak(text, lang = 'en-US') {
     if (!window.speechSynthesis) return;
+
+    // Stop any ongoing utterance
     window.speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(text);
-    u.lang = lang; u.rate = 0.9;
-    window.speechSynthesis.speak(u);
+    if (_ttsTimer) { clearInterval(_ttsTimer); _ttsTimer = null; }
+
+    const _doSpeak = () => {
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang  = lang;
+        u.rate  = 0.9;
+        u.pitch = 1;
+        u.volume = 1;
+
+        // Pick the best available voice for the requested language
+        const voices = window.speechSynthesis.getVoices();
+        if (voices.length) {
+            const langCode = lang.split('-')[0];
+            const voice =
+                voices.find(v => v.lang === lang && !v.localService) ||   // remote, exact
+                voices.find(v => v.lang === lang) ||                       // exact
+                voices.find(v => v.lang.startsWith(langCode) && !v.localService) ||
+                voices.find(v => v.lang.startsWith(langCode));
+            if (voice) u.voice = voice;
+        }
+
+        // iOS keep-alive: Safari pauses synthesis after ~15 s of inactivity
+        _ttsTimer = setInterval(() => {
+            if (!window.speechSynthesis.speaking) {
+                clearInterval(_ttsTimer); _ttsTimer = null; return;
+            }
+            window.speechSynthesis.pause();
+            window.speechSynthesis.resume();
+        }, 10000);
+
+        u.onend = u.onerror = () => {
+            if (_ttsTimer) { clearInterval(_ttsTimer); _ttsTimer = null; }
+        };
+
+        // Resume in case browser suspended synthesis
+        if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+        window.speechSynthesis.speak(u);
+    };
+
+    // Voices may not be available yet on first load (especially mobile)
+    const voices = window.speechSynthesis.getVoices();
+    if (voices.length > 0) {
+        // Small delay so cancel() finishes before new utterance starts (iOS quirk)
+        setTimeout(_doSpeak, 50);
+    } else {
+        // Wait for voices to load, then speak
+        const handler = () => {
+            _loadVoices();
+            window.speechSynthesis.removeEventListener('voiceschanged', handler);
+            setTimeout(_doSpeak, 50);
+        };
+        window.speechSynthesis.addEventListener('voiceschanged', handler);
+    }
 }
 function speakCurrent() {
     if (!currentWord) return;
     const btn = document.getElementById('ttsBtnQuiz');
     btn.classList.add('speaking');
     speak(reviewMode==='normal' ? currentWord.word : currentWord.vn, reviewMode==='normal' ? 'en-US' : 'vi-VN');
-    setTimeout(() => btn.classList.remove('speaking'), 1200);
+    setTimeout(() => btn.classList.remove('speaking'), 1800);
 }
 
 // ══════════════════════════════════════════
@@ -583,6 +679,11 @@ window.addEventListener('load', () => {
     const k = localStorage.getItem('vflow_api_key');
     if (k) { document.getElementById('apiKey').value = k; document.getElementById('apiKeyMobile').value = k; }
     if (window.innerWidth <= 480) document.getElementById('settingsToggle').style.display = 'flex';
+    // Show touch hint on touch devices
+    if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+        const hint = document.getElementById('touchHint');
+        if (hint) hint.style.display = 'block';
+    }
 });
 document.getElementById('saveKeyBtn').onclick = () => {
     const k = document.getElementById('apiKey').value.trim();
@@ -622,11 +723,13 @@ auth.onAuthStateChanged(async user => {
         document.getElementById('desktopTabs').classList.remove('hidden');
         document.getElementById('xpNavWrap').classList.remove('hidden');
         document.getElementById('xpProfileCard').classList.remove('hidden');
+        document.getElementById('mobileBottomNav').classList.remove('hidden');
         const xp = await getUserXP(); updateXPUI(xp);
         loadLibrary(); loadSRSDueCount();
     } else {
         ['loginBtn'].forEach(id=>document.getElementById(id).classList.remove('hidden'));
         ['userProfile','desktopTabs','xpNavWrap','xpProfileCard'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+        document.getElementById('mobileBottomNav').classList.add('hidden');
         switchTab('creator');
     }
 });
@@ -638,7 +741,10 @@ function switchTab(name) {
     const tab = document.getElementById('tab-'+name);
     tab.classList.remove('hidden');
     setTimeout(() => tab.classList.add('fade-in'), 10);
+    // Sync desktop tabs
     document.querySelectorAll('.dtab').forEach(b => { b.classList.remove('active'); if(b.dataset.tab===name) b.classList.add('active'); });
+    // Sync mobile bottom nav tabs
+    document.querySelectorAll('.mbtab').forEach(b => { b.classList.remove('active'); if(b.dataset.tab===name) b.classList.add('active'); });
     if (name==='library') loadLibrary();
     if (name==='review')  loadSRSDueCount();
 }
@@ -812,16 +918,81 @@ document.getElementById('showDragDropBtn').onclick = () => {
     document.getElementById('vocabContainer').classList.add('hidden');
     document.getElementById('dragDropContainer').classList.remove('hidden');
     document.getElementById('dragDropScore').innerHTML='';
-    document.getElementById('draggableContainer').innerHTML = shuffle([...learningData]).map(i=>`<div class="draggable-item" draggable="true" ondragstart="event.dataTransfer.setData('text','${i.word}')">${i.word}</div>`).join('');
-    document.getElementById('quizSentences').innerHTML = shuffle([...learningData]).map((i,idx) => {
+
+    const shuffledWords = shuffle([...learningData]);
+    const shuffledSentences = shuffle([...learningData]);
+
+    document.getElementById('draggableContainer').innerHTML = shuffledWords.map(i=>
+        `<div class="draggable-item" draggable="true"
+            data-word="${i.word}"
+            ondragstart="event.dataTransfer.setData('text','${i.word}');this.style.opacity='.4';"
+            ondragend="this.style.opacity='1';"
+            onclick="selectDragItem(this)"
+        >${i.word}</div>`
+    ).join('');
+
+    document.getElementById('quizSentences').innerHTML = shuffledSentences.map((i,idx) => {
         const html=i.example.replace(new RegExp(i.word,'gi'),`<span class="drop-zone" data-answer="${i.word}"></span>`);
         return `<div style="background:#1e293b;padding:14px 16px;border-radius:14px;border:1px solid #334155;color:#cbd5e1;font-size:.9rem;line-height:1.8;"><span style="color:#334155;font-weight:800;margin-right:8px;">${idx+1}.</span>${html}</div>`;
     }).join('');
+
     document.querySelectorAll('.drop-zone').forEach(z => {
-        z.ondragover=e=>e.preventDefault();
-        z.ondrop=e=>{e.preventDefault();z.innerText=e.dataTransfer.getData('text');z.classList.add('filled');};
+        // Mouse drag events
+        z.ondragover = e => { e.preventDefault(); z.style.borderColor='#7eb8ff'; };
+        z.ondragleave = () => { if(!z.classList.contains('filled')) z.style.borderColor=''; };
+        z.ondrop = e => {
+            e.preventDefault();
+            const word = e.dataTransfer.getData('text');
+            placeWordInZone(z, word);
+            z.style.borderColor='';
+        };
+        // Touch tap to place selected word
+        z.onclick = () => {
+            if (_selectedDragItem) {
+                placeWordInZone(z, _selectedDragItem.dataset.word);
+                _selectedDragItem.style.opacity = '1';
+                _selectedDragItem.style.outline = '';
+                _selectedDragItem = null;
+            }
+        };
     });
 };
+
+let _selectedDragItem = null;
+
+function selectDragItem(el) {
+    // Deselect previous
+    if (_selectedDragItem && _selectedDragItem !== el) {
+        _selectedDragItem.style.outline = '';
+        _selectedDragItem.style.opacity = '1';
+    }
+    if (_selectedDragItem === el) {
+        // Toggle off
+        el.style.outline = '';
+        el.style.opacity = '1';
+        _selectedDragItem = null;
+    } else {
+        _selectedDragItem = el;
+        el.style.outline = '2px solid #7eb8ff';
+        el.style.opacity = '0.7';
+    }
+}
+
+function placeWordInZone(zone, word) {
+    // If zone already has a word, return it to bank
+    if (zone.classList.contains('filled')) {
+        const prev = zone.innerText.trim();
+        const bank = document.getElementById('draggableContainer');
+        const existing = [...bank.querySelectorAll('.draggable-item')].find(el=>el.dataset.word===prev);
+        if (existing) { existing.style.opacity='1'; existing.style.display=''; }
+    }
+    zone.innerText = word;
+    zone.classList.add('filled');
+    // Hide used word from bank
+    const bank = document.getElementById('draggableContainer');
+    const used = [...bank.querySelectorAll('.draggable-item')].find(el=>el.dataset.word===word);
+    if (used) used.style.display = 'none';
+}
 document.getElementById('checkDragDropBtn').onclick = () => {
     const zones=document.querySelectorAll('.drop-zone'); let ok=0;
     zones.forEach(z=>{
@@ -831,7 +1002,7 @@ document.getElementById('checkDragDropBtn').onclick = () => {
     });
     document.getElementById('dragDropScore').innerHTML=`<div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px;text-align:center;color:#10b981;font-weight:800;">KẾT QUẢ: ${ok}/${zones.length} — ${Math.round(ok/zones.length*100)}% ✨</div>`;
 };
-function closeDragDrop(){document.getElementById('dragDropContainer').classList.add('hidden');document.getElementById('vocabContainer').classList.remove('hidden');}
+function closeDragDrop(){_selectedDragItem=null;document.getElementById('dragDropContainer').classList.add('hidden');document.getElementById('vocabContainer').classList.remove('hidden');}
 
 // ══════════════════════════════════════════
 // REVIEW SETTINGS BUTTONS
