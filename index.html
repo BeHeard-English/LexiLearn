@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Be Heard|Lexi Learning</title>
+    <title>Be Heard | Lexi Learning</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
@@ -642,7 +642,7 @@
     <div class="game-modal-topbar">
         <span class="game-modal-title" id="gameModalTitle">🎮 Game</span>
         <div class="game-modal-actions">
-            <button class="gm-btn highlight" onclick="copyVocabAgain()" title="Copy lại từ vựng vào clipboard">
+            <button class="gm-btn" id="copyVocabBtn" onclick="copyVocabAgain()" title="Copy từ vựng ra clipboard (dùng khi cần nhập lại)">
                 <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
                 Copy từ vựng
             </button>
@@ -650,17 +650,25 @@
                 <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                 Tab mới
             </button>
-            <button class="gm-btn" onclick="closeGameModal()" title="Đóng">
+            <button class="gm-btn" onclick="closeGameModal()">
                 <svg xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 Đóng
             </button>
         </div>
     </div>
-    <div class="vocab-banner" id="vocabBanner">
-        <svg xmlns="http://www.w3.org/2000/svg" style="width:15px;height:15px;flex-shrink:0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-        <span id="vocabBannerText">✅ Đã copy từ vựng vào clipboard — Paste vào ô nhập liệu trong game!</span>
+    <!-- Status banner: loading / success / fallback -->
+    <div id="vocabBanner" class="vocab-banner hidden">
+        <span id="vocabBannerText"></span>
     </div>
-    <iframe id="gameFrame" class="game-modal-frame" allow="autoplay; microphone" allowfullscreen></iframe>
+    <!-- Loading overlay (sits on top of iframe while fetching) -->
+    <div id="gameLoadingOverlay" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0f172a;gap:16px;">
+        <div style="font-size:3rem;">🎮</div>
+        <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:1.1rem;color:#7eb8ff;">Đang tải game...</div>
+        <div style="display:flex;gap:6px;">
+            <span class="ldot" style="color:#7eb8ff;">●</span><span class="ldot" style="color:#7eb8ff;">●</span><span class="ldot" style="color:#7eb8ff;">●</span>
+        </div>
+    </div>
+    <iframe id="gameFrame" class="game-modal-frame" allow="autoplay; microphone" allowfullscreen style="display:none;"></iframe>
 </div>
 
 <script>
@@ -1469,49 +1477,141 @@ function legacyCopy(text) {
 function openGame(url, name) {
     if (!currentUser) { showToast('⚠️ Vui lòng đăng nhập để sử dụng Games!'); return; }
     const list = getGameVocab();
-    if (list.length < 4) {
-        showToast('⚠️ Cần tối thiểu 4 từ trong thư viện để chơi game!');
-        return;
-    }
+    if (list.length < 4) { showToast('⚠️ Cần tối thiểu 4 từ trong thư viện để chơi game!'); return; }
 
     _gameUrl   = url;
     _vocabText = buildVocabText(list);
 
-    // Copy to clipboard
-    copyVocabToClipboard(_vocabText).then(ok => {
-        const banner = document.getElementById('vocabBanner');
-        const bannerText = document.getElementById('vocabBannerText');
-        if (ok) {
-            bannerText.textContent = `✅ Đã copy ${list.length} từ vào clipboard — Paste vào ô nhập liệu trong game!`;
-            banner.classList.remove('hidden');
-        } else {
-            bannerText.textContent = `⚠️ Không thể tự copy — hãy dùng nút "Copy từ vựng" trong game.`;
+    // Open modal with loading screen
+    document.getElementById('gameModalTitle').textContent = name;
+    document.getElementById('gameModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+
+    const frame   = document.getElementById('gameFrame');
+    const overlay = document.getElementById('gameLoadingOverlay');
+    const banner  = document.getElementById('vocabBanner');
+    const bannerText = document.getElementById('vocabBannerText');
+
+    frame.style.display  = 'none';
+    overlay.style.display = 'flex';
+    banner.classList.add('hidden');
+
+    // ── Script injected INTO the game page ──────────────────────────
+    // Runs inside the iframe: finds every <textarea> and fills it once DOM is ready.
+    // Retries a few times to handle dynamically-rendered UIs.
+    const VOCAB_JSON = JSON.stringify(_vocabText);
+    const injectScript = `
+<script>
+(function(){
+  var VOCAB = ${VOCAB_JSON};
+  var filled = false;
+
+  function fill() {
+    if (filled) return;
+    var areas = Array.from(document.querySelectorAll('textarea'));
+    if (!areas.length) return;
+
+    // Score each textarea — prefer the one most likely to be the vocab input
+    var scored = areas.map(function(ta) {
+      var score = 0;
+      var txt   = ((ta.id||'')+(ta.className||'')+(ta.placeholder||'')+(ta.name||'')).toLowerCase();
+      if (txt.match(/vocab|word|list|content|input|paste|câu|question|answer/)) score += 10;
+      if (ta.rows > 3 || ta.offsetHeight > 80) score += 5;
+      if (ta.readOnly || ta.disabled) score -= 99;
+      return { ta: ta, score: score };
+    });
+    scored.sort(function(a,b){ return b.score - a.score; });
+    var target = scored[0].ta;
+
+    target.value = VOCAB;
+    target.dispatchEvent(new Event('input',  {bubbles:true}));
+    target.dispatchEvent(new Event('change', {bubbles:true}));
+    // Also try React-style setter in case the game uses a JS framework
+    var nativeSet = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype,'value');
+    if (nativeSet && nativeSet.set) {
+      nativeSet.set.call(target, VOCAB);
+      target.dispatchEvent(new Event('input',  {bubbles:true}));
+    }
+    filled = true;
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', fill);
+  } else { fill(); }
+
+  // Retry in case textarea is rendered late by JS
+  setTimeout(fill, 400);
+  setTimeout(fill, 1200);
+  setTimeout(fill, 2500);
+})();
+<\/script>`;
+
+    // ── Fetch game HTML, inject script, load via srcdoc ──────────────
+    fetch(url, { cache: 'no-store' })
+        .then(function(res) {
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return res.text();
+        })
+        .then(function(html) {
+            // Add <base> so all relative assets (CSS/JS/images) resolve correctly
+            var baseUrl = url.endsWith('/') ? url : url.substring(0, url.lastIndexOf('/') + 1);
+            var baseTag = '<base href="' + baseUrl + '">';
+
+            // Insert base tag + inject script right after <head>
+            html = html.replace(/(<head[^>]*>)/i, '$1' + baseTag + injectScript);
+            // Fallback if <head> not found
+            if (!html.includes(baseTag)) {
+                html = baseTag + injectScript + html;
+            }
+
+            frame.srcdoc = html;
+            frame.onload = function() {
+                overlay.style.display = 'none';
+                frame.style.display   = 'block';
+                // Show success banner briefly
+                bannerText.textContent = '✅ Đã tự động điền ' + list.length + ' từ vựng vào game!';
+                banner.style.background = '';
+                banner.style.color = '';
+                banner.classList.remove('hidden');
+                setTimeout(() => banner.classList.add('hidden'), 4000);
+            };
+        })
+        .catch(function(err) {
+            console.warn('Auto-inject failed, falling back to direct URL:', err);
+            // Fallback: load game directly + copy vocab to clipboard as backup
+            frame.removeAttribute('srcdoc');
+            frame.src = url;
+            frame.onload = function() {
+                overlay.style.display = 'none';
+                frame.style.display   = 'block';
+            };
+            copyVocabToClipboard(_vocabText);
+            bannerText.textContent = '⚠️ Không thể tự điền — đã copy ' + list.length + ' từ vào clipboard, hãy paste vào game!';
             banner.style.background = 'linear-gradient(90deg,#7c2d12,#9a3412)';
             banner.style.color = '#fca5a5';
             banner.classList.remove('hidden');
-        }
-        // Auto-hide banner after 6s
-        setTimeout(() => banner.classList.add('hidden'), 6000);
-    });
-
-    // Open modal
-    document.getElementById('gameModalTitle').textContent = name;
-    document.getElementById('gameFrame').src = url;
-    document.getElementById('gameModal').classList.add('open');
-    document.body.style.overflow = 'hidden';
+        });
 }
 
 function closeGameModal() {
+    const frame = document.getElementById('gameFrame');
     document.getElementById('gameModal').classList.remove('open');
-    document.getElementById('gameFrame').src = '';
     document.body.style.overflow = '';
+    // Small delay before clearing so browser doesn't stutter on close animation
+    setTimeout(() => {
+        frame.removeAttribute('srcdoc');
+        frame.removeAttribute('src');
+        frame.style.display = 'none';
+        document.getElementById('gameLoadingOverlay').style.display = 'flex';
+        document.getElementById('vocabBanner').classList.add('hidden');
+    }, 200);
 }
 
 function copyVocabAgain() {
     if (!_vocabText) { showToast('⚠️ Chưa có từ vựng nào!'); return; }
     copyVocabToClipboard(_vocabText).then(ok => {
-        if (ok) showToast('📋 Đã copy từ vựng vào clipboard!');
-        else    showToast('⚠️ Trình duyệt không cho phép tự copy, hãy copy thủ công.');
+        if (ok) showToast('📋 Đã copy ' + getGameVocab().length + ' từ vựng vào clipboard!');
+        else    showToast('⚠️ Trình duyệt chặn tự copy — hãy copy thủ công.');
     });
 }
 
