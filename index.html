@@ -1621,6 +1621,230 @@ renderLibrary = function() {
 };
 
 function shuffle(arr){ return [...arr].sort(()=>Math.random()-.5); }
+    // (Tiếp nối đoạn mã bị cắt của bạn)
+                <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M12 6v12m-3.536-9.536a5 5 0 000 7.072M6.343 9.657a8 8 0 000 4.686"/></svg>
+                    </button>
+                </div>
+                <div style="font-size:0.85rem; color:var(--muted); margin-bottom:4px;">${item.vn}</div>
+                <div style="font-size:0.75rem; color:var(--muted); font-style:italic;">${item.example || ''}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Giả lập hàm lưu từ vựng vào DB (nếu có Firebase)
+async function saveVocabToDb(data) {
+    if (!currentUser) return;
+    const batch = db.batch();
+    data.forEach(item => {
+        const docRef = db.collection('users').doc(currentUser.uid).collection('library').doc();
+        item.id = docRef.id;
+        item.srs_interval = 1;
+        item.srs_ease = 2.5;
+        item.srs_reps = 0;
+        item.srs_next_review = firebase.firestore.Timestamp.fromDate(new Date());
+        batch.set(docRef, item);
+    });
+    await batch.commit();
+}
+
+// ══════════════════════════════════════════
+// TÍNH NĂNG 1: LEADERBOARD & PROGRESS CHART
+// ══════════════════════════════════════════
+
+// Ghi nhận tiến độ mỗi khi người dùng ôn tập xong 1 từ
+async function logReviewActivity() {
+    if (!currentUser) return;
+    const todayStr = new Date().toISOString().split('T')[0];
+    await db.collection('users').doc(currentUser.uid).set({
+        [`reviewHistory.${todayStr}`]: firebase.firestore.FieldValue.increment(1)
+    }, { merge: true });
+}
+
+// Hàm vẽ biểu đồ đường/cột thể hiện số từ học được trong 7 ngày
+async function renderProgressChart() {
+    if (!currentUser) return;
+    const doc = await db.collection('users').doc(currentUser.uid).get();
+    const data = doc.data() || {};
+    const history = data.reviewHistory || {}; 
+    
+    const chartEl = document.getElementById('progressChart');
+    chartEl.innerHTML = '';
+    
+    let maxCount = 0;
+    let totalWeek = 0;
+    let todayStr = new Date().toISOString().split('T')[0];
+    let todayCount = history[todayStr] || 0;
+    let bestDay = 0;
+    const days = [];
+
+    // Lấy dữ liệu 7 ngày gần nhất
+    for (let i = 6; i >= 0; i--) {
+        let d = new Date();
+        d.setDate(d.getDate() - i);
+        let dStr = d.toISOString().split('T')[0];
+        let count = history[dStr] || 0;
+        
+        days.push({ 
+            label: d.getDate() + '/' + (d.getMonth() + 1), 
+            count: count, 
+            isToday: i === 0 
+        });
+        
+        if (count > maxCount) maxCount = count;
+        if (count > bestDay) bestDay = count;
+        totalWeek += count;
+    }
+
+    // Cập nhật text thống kê
+    document.getElementById('chartTotalWeek').innerText = totalWeek;
+    document.getElementById('chartTotalToday').innerText = todayCount;
+    document.getElementById('chartBestDay').innerText = bestDay;
+
+    // Render các cột biểu đồ
+    days.forEach(d => {
+        // Chiều cao tối thiểu 5% để luôn nhìn thấy thanh bar
+        let heightPct = maxCount === 0 ? 5 : Math.max(5, (d.count / maxCount) * 100);
+        let colClass = d.isToday ? 'chart-bar-col chart-today' : 'chart-bar-col chart-other';
+        
+        chartEl.innerHTML += `
+            <div class="${colClass}">
+                <div style="flex:1; display:flex; align-items:flex-end; width:100%;">
+                    <div class="chart-bar" style="height:${heightPct}%">
+                        <div class="chart-bar-val">${d.count > 0 ? d.count : ''}</div>
+                    </div>
+                </div>
+                <div class="chart-label">${d.label}</div>
+            </div>
+        `;
+    });
+
+    document.getElementById('progressChartCard').classList.remove('hidden');
+}
+
+// ══════════════════════════════════════════
+// TÍNH NĂNG 2: FLASHCARD MODE KẾT HỢP SRS
+// ══════════════════════════════════════════
+
+let studyMode = 'quiz'; // 'quiz' hoặc 'flash'
+let isFlipped = false;
+
+// Bắt sự kiện chọn hình thức học
+document.querySelectorAll('.mode-btn[data-study]').forEach(btn => {
+    btn.onclick = (e) => {
+        document.querySelectorAll('.mode-btn[data-study]').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        studyMode = e.target.getAttribute('data-study');
+    };
+});
+
+// Hàm khởi tạo phiên ôn tập (tích hợp chọn chế độ)
+function startReviewQuiz() {
+    // Giả sử reviewPool đã được lấy từ DB trước đó dựa vào số câu và level
+    if (!reviewPool || reviewPool.length === 0) {
+        showToast('⚠️ Không có từ vựng nào để ôn tập!');
+        return;
+    }
+    
+    currentReviewIdx = 0;
+    totalReviewCount = reviewPool.length;
+    
+    document.getElementById('reviewStart').classList.add('hidden');
+    
+    if (studyMode === 'flash') {
+        document.getElementById('flashcardArea').style.display = 'block';
+        document.getElementById('reviewQuizArea').style.display = 'none';
+        nextFlashcard();
+    } else {
+        document.getElementById('reviewQuizArea').style.display = 'block';
+        document.getElementById('flashcardArea').style.display = 'none';
+        // Gọi hàm hiển thị quiz trắc nghiệm cũ của bạn ở đây...
+    }
+}
+
+// Load thẻ lật tiếp theo
+function nextFlashcard() {
+    if (currentReviewIdx >= totalReviewCount) {
+        endReviewSession();
+        return;
+    }
+    
+    currentWord = reviewPool[currentReviewIdx];
+    isFlipped = false;
+    
+    // Reset UI thẻ
+    const flashcard = document.getElementById('theFlashcard');
+    flashcard.classList.remove('flipped');
+    document.getElementById('fcRatingWrap').style.display = 'none';
+    
+    // Đổ dữ liệu
+    document.getElementById('fcWord').innerText = currentWord.word;
+    document.getElementById('fcIpa').innerText = currentWord.ipa || '';
+    document.getElementById('fcMeaning').innerText = currentWord.vn;
+    document.getElementById('fcExample').innerText = currentWord.example || 'Không có ví dụ';
+    
+    // Cập nhật thanh tiến độ
+    let progressPct = (currentReviewIdx / totalReviewCount) * 100;
+    document.getElementById('fcProgressFill').style.width = progressPct + '%';
+    document.getElementById('fcProgressText').innerText = `${currentReviewIdx} / ${totalReviewCount}`;
+}
+
+// Lật thẻ
+function flipCard() {
+    if (isFlipped) return;
+    isFlipped = true;
+    document.getElementById('theFlashcard').classList.add('flipped');
+    
+    // Hiện nút đánh giá sau khi lật 0.3s để tạo hiệu ứng mượt
+    setTimeout(() => {
+        document.getElementById('fcRatingWrap').style.display = 'block';
+    }, 300);
+}
+
+// Xử lý đánh giá Dễ / Ổn / Khó và cập nhật thuật toán SRS
+async function rateFC(rating) {
+    if(event) event.stopPropagation(); // Ngăn việc click lật thẻ lại
+    
+    let isCorrect = (rating === 'easy' || rating === 'ok');
+    let xpEarned = rating === 'easy' ? 15 : (rating === 'ok' ? 10 : 5);
+    
+    // Thuật toán cập nhật SRS
+    let updatedSRS = srsUpdate(currentWord, isCorrect);
+    Object.assign(currentWord, updatedSRS);
+    
+    // Cập nhật dữ liệu trên Firebase
+    if (currentUser) {
+        await db.collection('users').doc(currentUser.uid).collection('library').doc(currentWord.id).update({
+            srs_interval: updatedSRS.srs_interval,
+            srs_ease: updatedSRS.srs_ease,
+            srs_reps: updatedSRS.srs_reps,
+            srs_next_review: updatedSRS.srs_next_review
+        });
+        
+        addXP(xpEarned);
+        logReviewActivity(); 
+    }
+    
+    currentReviewIdx++;
+    nextFlashcard();
+}
+
+function endReviewSession() {
+    document.getElementById('flashcardArea').style.display = 'none';
+    document.getElementById('reviewQuizArea').style.display = 'none';
+    document.getElementById('reviewStart').classList.remove('hidden');
+    showToast('🎉 Bạn đã hoàn thành phiên ôn tập!');
+    if (currentUser) renderProgressChart(); // Cập nhật lại biểu đồ ngay sau khi ôn xong
+}
+
+// Tích hợp việc load biểu đồ khi mở tab Thư viện
+const originalSwitchTab = switchTab;
+switchTab = function(name) {
+    originalSwitchTab(name);
+    if (name === 'library' && currentUser) {
+        renderProgressChart();
+    }
+};
 </script>
 </body>
 </html>
