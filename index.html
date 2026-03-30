@@ -205,6 +205,37 @@
         @media(max-width:767px){.main-wrap{padding-bottom:calc(72px + env(safe-area-inset-bottom, 0px))!important;}}
 
         /* DRAG DROP WORD BANK STICKY — handled via single sticky wrapper block in HTML */
+
+        /* GAME CARDS */
+        .game-card{background:var(--card);border:1px solid var(--border);border-radius:22px;overflow:hidden;transition:.25s;cursor:pointer;display:flex;flex-direction:column;}
+        .game-card:hover{transform:translateY(-4px);box-shadow:0 12px 36px rgba(3,19,131,.14);border-color:#c7d2ff;}
+        .game-card-thumb{height:190px;display:flex;align-items:center;justify-content:center;font-size:5rem;position:relative;overflow:hidden;}
+        .game-card-thumb iframe{position:absolute;inset:0;width:100%;height:100%;border:none;pointer-events:none;transform:scale(1);transform-origin:top left;}
+        .game-card-thumb-fallback{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;width:100%;gap:8px;}
+        .game-card-body{padding:20px 22px 22px;flex:1;display:flex;flex-direction:column;gap:10px;}
+        .game-card-title{font-family:'Nunito',sans-serif;font-size:1.2rem;font-weight:800;color:var(--text);}
+        .game-card-desc{font-size:.83rem;color:var(--muted);line-height:1.6;flex:1;}
+        .game-card-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+        .game-tag{font-size:.7rem;font-weight:700;padding:3px 9px;border-radius:6px;background:var(--primary-light);color:var(--primary-mid);}
+        .game-play-btn{width:100%;padding:13px;border:none;border-radius:14px;background:linear-gradient(135deg,var(--primary),var(--primary-mid));color:#fff;font-family:'Be Vietnam Pro',sans-serif;font-weight:800;font-size:.95rem;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px;}
+        .game-play-btn:hover{filter:brightness(1.12);transform:translateY(-1px);box-shadow:0 6px 20px rgba(3,19,131,.3);}
+        .game-play-btn:active{transform:none;}
+
+        /* GAME IFRAME MODAL */
+        .game-modal{display:none;position:fixed;inset:0;z-index:500;flex-direction:column;background:#0f172a;}
+        .game-modal.open{display:flex;}
+        .game-modal-topbar{height:52px;background:#1e293b;border-bottom:1px solid #334155;display:flex;align-items:center;justify-content:space-between;padding:0 16px;gap:12px;flex-shrink:0;}
+        .game-modal-title{font-family:'Nunito',sans-serif;font-weight:800;font-size:1rem;color:#f1f5f9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+        .game-modal-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+        .gm-btn{background:#334155;border:none;border-radius:9px;padding:7px 13px;color:#94a3b8;font-family:'Be Vietnam Pro',sans-serif;font-size:.78rem;font-weight:700;cursor:pointer;transition:.2s;white-space:nowrap;display:flex;align-items:center;gap:6px;}
+        .gm-btn:hover{background:#475569;color:#f1f5f9;}
+        .gm-btn.highlight{background:var(--primary);color:#fff;}
+        .gm-btn.highlight:hover{background:var(--primary-hover);}
+        .game-modal-frame{flex:1;border:none;background:#fff;}
+
+        /* VOCAB COPY BANNER */
+        .vocab-banner{background:linear-gradient(90deg,#064e3b,#065f46);color:#6ee7b7;font-size:.78rem;font-weight:700;padding:8px 16px;display:flex;align-items:center;gap:8px;flex-shrink:0;border-bottom:1px solid #047857;}
+        .vocab-banner.hidden{display:none;}
     </style>
 </head>
 <body>
@@ -220,6 +251,7 @@
             <button onclick="switchTab('creator')" class="dtab active" data-tab="creator">Soạn Bài</button>
             <button onclick="switchTab('library')" class="dtab" data-tab="library">Thư Viện</button>
             <button onclick="switchTab('review')" class="dtab" data-tab="review">Ôn Tập</button>
+            <button onclick="switchTab('games')" class="dtab" data-tab="games">🎮 Games</button>
         </div>
     </div>
     <div class="nav-right">
@@ -470,6 +502,119 @@
         </div>
     </div>
 
+    <!-- ═══════════════ TAB: GAMES ═══════════════ -->
+    <div id="tab-games" class="hidden fade-in">
+        <!-- Header -->
+        <div style="margin-bottom:24px;">
+            <div style="font-family:'Nunito',sans-serif;font-size:1.6rem;font-weight:800;color:var(--primary);">🎮 Games</div>
+            <div style="font-size:.85rem;color:var(--muted);margin-top:4px;">Học từ vựng qua trò chơi — từ vựng lấy thẳng từ thư viện của bạn</div>
+        </div>
+
+        <!-- Vocab source selector -->
+        <div class="card" style="padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:200px;">
+                <div style="font-size:.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">Nguồn từ vựng cho game</div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;" id="gameLevelFilter">
+                    <button class="lib-filter-btn active" data-gf="ALL">Tất cả</button>
+                    <button class="lib-filter-btn" data-gf="A1">A1</button>
+                    <button class="lib-filter-btn" data-gf="A2">A2</button>
+                    <button class="lib-filter-btn" data-gf="B1">B1</button>
+                    <button class="lib-filter-btn" data-gf="B2">B2</button>
+                    <button class="lib-filter-btn" data-gf="C1">C1</button>
+                    <button class="lib-filter-btn" data-gf="C2">C2</button>
+                </div>
+            </div>
+            <div style="text-align:center;background:var(--primary-light);border-radius:14px;padding:12px 20px;min-width:120px;">
+                <div style="font-family:'Nunito',sans-serif;font-size:1.8rem;font-weight:800;color:var(--primary);" id="gameWordCount">0</div>
+                <div style="font-size:.72rem;font-weight:700;color:var(--muted);">từ sẵn sàng</div>
+            </div>
+        </div>
+
+        <!-- Game cards grid -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px;">
+
+            <!-- Game 1: Space Voyage -->
+            <div class="game-card">
+                <div class="game-card-thumb" style="background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 50%,#0f172a 100%);">
+                    <div class="game-card-thumb-fallback">
+                        <div style="font-size:4.5rem;filter:drop-shadow(0 0 20px rgba(126,184,255,.6));">🚀</div>
+                        <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:.9rem;color:#7eb8ff;letter-spacing:.12em;text-transform:uppercase;">Space Voyage</div>
+                        <div style="display:flex;gap:6px;margin-top:4px;">
+                            <span style="width:6px;height:6px;border-radius:50%;background:#7eb8ff;opacity:.6;animation:pulseDot 1.2s infinite;"></span>
+                            <span style="width:6px;height:6px;border-radius:50%;background:#7eb8ff;opacity:.6;animation:pulseDot 1.2s .2s infinite;"></span>
+                            <span style="width:6px;height:6px;border-radius:50%;background:#7eb8ff;opacity:.6;animation:pulseDot 1.2s .4s infinite;"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="game-card-body">
+                    <div class="game-card-title">🚀 Space Voyage</div>
+                    <div class="game-card-desc">Bắn tàu vũ trụ để tiêu diệt đáp án đúng! Tốc độ tăng dần theo cấp độ. Phù hợp luyện nhớ từ vựng theo dạng trắc nghiệm hành động.</div>
+                    <div class="game-card-meta">
+                        <span class="game-tag">🎯 Bắn súng</span>
+                        <span class="game-tag">👤 1 người</span>
+                        <span class="game-tag">⚡ Phản xạ</span>
+                    </div>
+                    <button class="game-play-btn" onclick="openGame('https://beheard-english.github.io/SpaceVoyage/','🚀 Space Voyage')">
+                        <svg xmlns="http://www.w3.org/2000/svg" style="width:18px;height:18px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Chơi ngay
+                    </button>
+                </div>
+            </div>
+
+            <!-- Game 2: Move and Pose -->
+            <div class="game-card">
+                <div class="game-card-thumb" style="background:linear-gradient(135deg,#1a0533 0%,#3b0764 50%,#1a0533 100%);">
+                    <div class="game-card-thumb-fallback">
+                        <div style="font-size:4.5rem;filter:drop-shadow(0 0 20px rgba(192,132,252,.7));">🕺</div>
+                        <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:.9rem;color:#c084fc;letter-spacing:.12em;text-transform:uppercase;">Move &amp; Pose</div>
+                        <div style="display:flex;gap:6px;margin-top:4px;">
+                            <span style="width:6px;height:6px;border-radius:50%;background:#c084fc;opacity:.6;animation:pulseDot 1.2s infinite;"></span>
+                            <span style="width:6px;height:6px;border-radius:50%;background:#c084fc;opacity:.6;animation:pulseDot 1.2s .2s infinite;"></span>
+                            <span style="width:6px;height:6px;border-radius:50%;background:#c084fc;opacity:.6;animation:pulseDot 1.2s .4s infinite;"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="game-card-body">
+                    <div class="game-card-title">🕺 Move &amp; Pose</div>
+                    <div class="game-card-desc">Di chuyển vào đúng ô chứa đáp án trước khi hết giờ đếm ngược! Hỗ trợ 2 người chơi — đỏ vs xanh. Học từ vựng theo dạng thể chất và vận động.</div>
+                    <div class="game-card-meta">
+                        <span class="game-tag">🏃 Vận động</span>
+                        <span class="game-tag">👥 1-2 người</span>
+                        <span class="game-tag">⏱ Đếm ngược</span>
+                    </div>
+                    <button class="game-play-btn" style="background:linear-gradient(135deg,#6d28d9,#9333ea);" onclick="openGame('https://beheard-english.github.io/MoveandPose/','🕺 Move &amp; Pose')">
+                        <svg xmlns="http://www.w3.org/2000/svg" style="width:18px;height:18px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Chơi ngay
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Instruction card -->
+        <div class="card" style="margin-top:20px;padding:20px 24px;">
+            <div style="font-weight:800;font-size:.92rem;margin-bottom:12px;color:var(--text);">📋 Cách sử dụng</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;">
+                <div style="display:flex;gap:12px;align-items:flex-start;">
+                    <div style="width:28px;height:28px;border-radius:8px;background:var(--primary-light);color:var(--primary);font-weight:800;font-size:.85rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</div>
+                    <div style="font-size:.83rem;color:var(--muted);line-height:1.5;">Chọn cấp độ từ vựng muốn luyện ở trên</div>
+                </div>
+                <div style="display:flex;gap:12px;align-items:flex-start;">
+                    <div style="width:28px;height:28px;border-radius:8px;background:var(--primary-light);color:var(--primary);font-weight:800;font-size:.85rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</div>
+                    <div style="font-size:.83rem;color:var(--muted);line-height:1.5;">Nhấn <strong>Chơi ngay</strong> — từ vựng tự động copy vào clipboard</div>
+                </div>
+                <div style="display:flex;gap:12px;align-items:flex-start;">
+                    <div style="width:28px;height:28px;border-radius:8px;background:var(--primary-light);color:var(--primary);font-weight:800;font-size:.85rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</div>
+                    <div style="font-size:.83rem;color:var(--muted);line-height:1.5;">Trong game, paste vào ô nhập liệu rồi bắt đầu chơi!</div>
+                </div>
+                <div style="display:flex;gap:12px;align-items:flex-start;">
+                    <div style="width:28px;height:28px;border-radius:8px;background:#fef3c7;color:var(--warn);font-weight:800;font-size:.85rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;">💡</div>
+                    <div style="font-size:.83rem;color:var(--muted);line-height:1.5;">Nhấn <strong>Copy từ vựng</strong> ở top bar game để copy lại bất cứ lúc nào</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </main>
 
 <!-- MOBILE BOTTOM NAV -->
@@ -486,6 +631,36 @@
         <span class="mbtab-icon">🎯</span>
         <span class="mbtab-label">Ôn Tập</span>
     </button>
+    <button onclick="switchTab('games')" class="mbtab" data-tab="games">
+        <span class="mbtab-icon">🎮</span>
+        <span class="mbtab-label">Games</span>
+    </button>
+</div>
+
+<!-- GAME IFRAME MODAL -->
+<div id="gameModal" class="game-modal">
+    <div class="game-modal-topbar">
+        <span class="game-modal-title" id="gameModalTitle">🎮 Game</span>
+        <div class="game-modal-actions">
+            <button class="gm-btn highlight" onclick="copyVocabAgain()" title="Copy lại từ vựng vào clipboard">
+                <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                Copy từ vựng
+            </button>
+            <button class="gm-btn" onclick="openGameNewTab()" title="Mở trong tab mới">
+                <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                Tab mới
+            </button>
+            <button class="gm-btn" onclick="closeGameModal()" title="Đóng">
+                <svg xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                Đóng
+            </button>
+        </div>
+    </div>
+    <div class="vocab-banner" id="vocabBanner">
+        <svg xmlns="http://www.w3.org/2000/svg" style="width:15px;height:15px;flex-shrink:0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        <span id="vocabBannerText">✅ Đã copy từ vựng vào clipboard — Paste vào ô nhập liệu trong game!</span>
+    </div>
+    <iframe id="gameFrame" class="game-modal-frame" allow="autoplay; microphone" allowfullscreen></iframe>
 </div>
 
 <script>
@@ -1242,6 +1417,115 @@ const finalData = JSON.parse(jsonStr);
 // ══════════════════════════════════════════
 // UTILS
 // ══════════════════════════════════════════
+// ══════════════════════════════════════════
+// GAMES TAB
+// ══════════════════════════════════════════
+let _gameLevel  = 'ALL';
+let _gameUrl    = '';
+let _vocabText  = '';
+
+// Filter buttons in Games tab
+document.getElementById('gameLevelFilter').onclick = e => {
+    const btn = e.target.closest('.lib-filter-btn');
+    if (!btn) return;
+    document.querySelectorAll('#gameLevelFilter .lib-filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    _gameLevel = btn.dataset.gf;
+    updateGameWordCount();
+};
+
+function getGameVocab() {
+    let list = fullLibrary;
+    if (_gameLevel !== 'ALL') list = list.filter(i => i.level === _gameLevel);
+    return list;
+}
+
+function updateGameWordCount() {
+    document.getElementById('gameWordCount').textContent = getGameVocab().length;
+}
+
+function buildVocabText(list) {
+    // Format: "word: meaning" — accepted by both SpaceVoyage and MoveAndPose
+    return list.map(i => `${i.word}: ${i.vn}`).join('\n');
+}
+
+function copyVocabToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        return navigator.clipboard.writeText(text).then(() => true).catch(() => legacyCopy(text));
+    }
+    return Promise.resolve(legacyCopy(text));
+}
+
+function legacyCopy(text) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0;';
+    document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    try { document.execCommand('copy'); ta.remove(); return true; }
+    catch { ta.remove(); return false; }
+}
+
+function openGame(url, name) {
+    if (!currentUser) { showToast('⚠️ Vui lòng đăng nhập để sử dụng Games!'); return; }
+    const list = getGameVocab();
+    if (list.length < 4) {
+        showToast('⚠️ Cần tối thiểu 4 từ trong thư viện để chơi game!');
+        return;
+    }
+
+    _gameUrl   = url;
+    _vocabText = buildVocabText(list);
+
+    // Copy to clipboard
+    copyVocabToClipboard(_vocabText).then(ok => {
+        const banner = document.getElementById('vocabBanner');
+        const bannerText = document.getElementById('vocabBannerText');
+        if (ok) {
+            bannerText.textContent = `✅ Đã copy ${list.length} từ vào clipboard — Paste vào ô nhập liệu trong game!`;
+            banner.classList.remove('hidden');
+        } else {
+            bannerText.textContent = `⚠️ Không thể tự copy — hãy dùng nút "Copy từ vựng" trong game.`;
+            banner.style.background = 'linear-gradient(90deg,#7c2d12,#9a3412)';
+            banner.style.color = '#fca5a5';
+            banner.classList.remove('hidden');
+        }
+        // Auto-hide banner after 6s
+        setTimeout(() => banner.classList.add('hidden'), 6000);
+    });
+
+    // Open modal
+    document.getElementById('gameModalTitle').textContent = name;
+    document.getElementById('gameFrame').src = url;
+    document.getElementById('gameModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeGameModal() {
+    document.getElementById('gameModal').classList.remove('open');
+    document.getElementById('gameFrame').src = '';
+    document.body.style.overflow = '';
+}
+
+function copyVocabAgain() {
+    if (!_vocabText) { showToast('⚠️ Chưa có từ vựng nào!'); return; }
+    copyVocabToClipboard(_vocabText).then(ok => {
+        if (ok) showToast('📋 Đã copy từ vựng vào clipboard!');
+        else    showToast('⚠️ Trình duyệt không cho phép tự copy, hãy copy thủ công.');
+    });
+}
+
+function openGameNewTab() {
+    if (_gameUrl) window.open(_gameUrl, '_blank');
+}
+
+// Keep game word count in sync when library changes
+const _origRenderLibrary = renderLibrary;
+renderLibrary = function() {
+    _origRenderLibrary.apply(this, arguments);
+    updateGameWordCount();
+};
+
 function shuffle(arr){ return [...arr].sort(()=>Math.random()-.5); }
 </script>
 </body>
