@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Be Heard | Lexi Learning</title>
+    <title>Be Heard|Lexi Learning</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
@@ -204,8 +204,7 @@
         .mbtab-label{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;}
         @media(max-width:767px){.main-wrap{padding-bottom:calc(72px + env(safe-area-inset-bottom, 0px))!important;}}
 
-        /* DRAG DROP WORD BANK STICKY */
-        .wordbank-sticky{position:sticky;top:var(--nav-h);z-index:50;background:#1e293b;border-bottom:1px solid #0f172a;border-radius:0;}
+        /* DRAG DROP WORD BANK STICKY — handled via single sticky wrapper block in HTML */
     </style>
 </head>
 <body>
@@ -304,16 +303,21 @@
                 </div>
             </div>
             <div id="dragDropContainer" class="hidden" style="background:#0f172a;border-radius:20px;display:flex;flex-direction:column;overflow:visible;box-shadow:0 8px 40px rgba(0,0,0,.3);">
-                <div style="padding:16px 20px;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between;align-items:center;background:#0f172a;border-radius:20px 20px 0 0;position:sticky;top:var(--nav-h);z-index:51;">
-                    <div><div style="color:#7eb8ff;font-weight:800;font-size:.9rem;letter-spacing:.06em;text-transform:uppercase;">🎯 Practice Mode</div><div style="color:#475569;font-size:.75rem;margin-top:2px;">Kéo từ vào đúng chỗ trống</div></div>
-                    <button onclick="closeDragDrop()" style="background:#1e293b;border:none;border-radius:8px;padding:6px 12px;color:#64748b;cursor:pointer;font-size:.8rem;" onmouseover="this.style.color='#e2e8f0'" onmouseout="this.style.color='#64748b'">✕ Đóng</button>
-                </div>
-                <div class="wordbank-sticky" style="padding:14px 16px;">
-                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-                        <div style="font-size:.7rem;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.07em;">📦 Ngân hàng từ</div>
-                        <div style="font-size:.65rem;color:#334155;display:none;" id="touchHint">👆 Chạm chọn → chạm ô trống</div>
+                <!-- Header + Word bank = 1 khối sticky duy nhất -->
+                <div style="position:sticky;top:var(--nav-h);z-index:51;background:#0f172a;border-radius:20px 20px 0 0;box-shadow:0 4px 16px rgba(0,0,0,.4);">
+                    <!-- Header bar -->
+                    <div style="padding:14px 20px;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between;align-items:center;">
+                        <div><div style="color:#7eb8ff;font-weight:800;font-size:.9rem;letter-spacing:.06em;text-transform:uppercase;">🎯 Practice Mode</div><div style="color:#475569;font-size:.75rem;margin-top:2px;">Kéo từ vào đúng chỗ trống</div></div>
+                        <button onclick="closeDragDrop()" style="background:#1e293b;border:none;border-radius:8px;padding:6px 12px;color:#64748b;cursor:pointer;font-size:.8rem;" onmouseover="this.style.color='#e2e8f0'" onmouseout="this.style.color='#64748b'">✕ Đóng</button>
                     </div>
-                    <div id="draggableContainer" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+                    <!-- Word bank (luôn hiển thị, không bao giờ bị cắt) -->
+                    <div style="padding:12px 16px 14px;background:#1e293b;border-bottom:2px solid #0f172a;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                            <div style="font-size:.7rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.07em;">📦 Ngân hàng từ</div>
+                            <div style="font-size:.65rem;color:#475569;display:none;" id="touchHint">👆 Chạm chọn → chạm ô trống</div>
+                        </div>
+                        <div id="draggableContainer" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+                    </div>
                 </div>
                 <div id="quizSentences" style="padding:20px;display:flex;flex-direction:column;gap:14px;background:#0f172a;"></div>
                 <div style="padding:14px 16px;background:#0f172a;border-top:1px solid #1e293b;border-radius:0 0 20px 20px;">
