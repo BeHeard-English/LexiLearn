@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Be Heard |Lexi Learning</title>
+    <title>Be Heard|Lexi Learning</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
@@ -206,6 +206,61 @@
 
         /* DRAG DROP WORD BANK STICKY — handled via single sticky wrapper block in HTML */
 
+        /* ── FLASHCARD ── */
+        .flashcard-scene{perspective:1000px;width:100%;max-width:480px;margin:0 auto 24px;height:220px;cursor:pointer;}
+        .flashcard{width:100%;height:100%;position:relative;transform-style:preserve-3d;transition:transform .5s cubic-bezier(.4,0,.2,1);}
+        .flashcard.flipped{transform:rotateY(180deg);}
+        .flashcard-face{position:absolute;inset:0;border-radius:22px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 24px;backface-visibility:hidden;-webkit-backface-visibility:hidden;}
+        .fc-front{background:linear-gradient(135deg,var(--primary),var(--primary-mid));box-shadow:0 8px 32px rgba(3,19,131,.25);}
+        .fc-back{background:var(--card);border:2px solid var(--border);box-shadow:0 8px 32px rgba(3,19,131,.12);transform:rotateY(180deg);}
+        .fc-word{font-family:'Nunito',sans-serif;font-size:2rem;font-weight:900;color:#fff;text-align:center;word-break:break-word;}
+        .fc-ipa{font-family:monospace;font-size:.9rem;color:rgba(255,255,255,.6);margin-top:6px;}
+        .fc-hint{font-size:.72rem;font-weight:700;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.08em;position:absolute;bottom:14px;}
+        .fc-meaning{font-family:'Nunito',sans-serif;font-size:1.5rem;font-weight:800;color:var(--primary);text-align:center;word-break:break-word;}
+        .fc-example{font-size:.8rem;color:var(--muted);font-style:italic;text-align:center;margin-top:10px;line-height:1.6;}
+        .fc-back-hint{font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;position:absolute;bottom:14px;}
+        .fc-rating{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+        .fc-btn{flex:1;min-width:90px;max-width:140px;padding:13px 8px;border:none;border-radius:14px;font-family:'Be Vietnam Pro',sans-serif;font-weight:800;font-size:.88rem;cursor:pointer;transition:.2s;display:flex;flex-direction:column;align-items:center;gap:3px;}
+        .fc-btn:hover{transform:translateY(-2px);}
+        .fc-btn:active{transform:none;}
+        .fc-btn-easy{background:#d1fae5;color:#065f46;}
+        .fc-btn-easy:hover{background:#a7f3d0;}
+        .fc-btn-ok{background:#e0e7ff;color:#3730a3;}
+        .fc-btn-ok:hover{background:#c7d2fe;}
+        .fc-btn-hard{background:#fee2e2;color:#991b1b;}
+        .fc-btn-hard:hover{background:#fecaca;}
+        .fc-btn-xp{font-size:.68rem;font-weight:700;opacity:.7;}
+
+        /* ── LEADERBOARD / PROGRESS CHART ── */
+        .chart-bar-wrap{display:flex;align-items:flex-end;gap:6px;height:100px;padding:0 4px;}
+        .chart-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
+        .chart-bar{width:100%;border-radius:6px 6px 0 0;transition:height .6s cubic-bezier(.4,0,.2,1);min-height:4px;position:relative;}
+        .chart-bar-val{font-size:.6rem;font-weight:800;color:var(--primary);position:absolute;top:-16px;width:100%;text-align:center;}
+        .chart-label{font-size:.62rem;font-weight:700;color:var(--muted);}
+        .chart-today .chart-bar{background:linear-gradient(180deg,var(--accent),var(--primary));}
+        .chart-today .chart-label{color:var(--primary);font-weight:800;}
+        .chart-other .chart-bar{background:var(--primary-light);}
+        .chart-other .chart-bar-val{color:var(--muted);}
+
+        /* ── BADGES ── */
+        @keyframes badgeUnlock{0%{transform:scale(.5) rotate(-10deg);opacity:0;}60%{transform:scale(1.15) rotate(3deg);}100%{transform:scale(1) rotate(0);opacity:1;}}
+        .badge-item{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;border-radius:16px;border:1px solid var(--border);background:var(--card);transition:.2s;text-align:center;position:relative;}
+        .badge-item.unlocked{border-color:#fde68a;background:linear-gradient(135deg,#fffbeb,#fef3c7);}
+        .badge-item.unlocked .badge-icon{filter:none;animation:badgeUnlock .5s ease both;}
+        .badge-item.locked .badge-icon{filter:grayscale(1) opacity(.3);}
+        .badge-icon{font-size:2rem;line-height:1;}
+        .badge-name{font-size:.72rem;font-weight:800;color:var(--text);}
+        .badge-item.locked .badge-name{color:var(--muted);}
+        .badge-desc{font-size:.65rem;color:var(--muted);line-height:1.4;}
+        .badge-new{position:absolute;top:-6px;right:-6px;background:var(--danger);color:#fff;font-size:.58rem;font-weight:800;padding:2px 6px;border-radius:99px;}
+
+        /* Badge unlock modal */
+        @keyframes badgeModalPop{0%{transform:scale(.6);opacity:0;}70%{transform:scale(1.05);}100%{transform:scale(1);opacity:1;}}
+        .badge-modal{display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);}
+        .badge-modal.open{display:flex;align-items:center;justify-content:center;}
+        .badge-modal-box{background:var(--card);border-radius:24px;padding:36px 32px;text-align:center;max-width:320px;width:90%;box-shadow:0 24px 64px rgba(0,0,0,.25);animation:badgeModalPop .45s cubic-bezier(.4,0,.2,1) both;}
+        .badge-modal-icon{font-size:4.5rem;margin-bottom:8px;display:block;}
+
         /* GAME CARDS */
         .game-card{background:var(--card);border:1px solid var(--border);border-radius:22px;overflow:hidden;transition:.25s;cursor:pointer;display:flex;flex-direction:column;}
         .game-card:hover{transform:translateY(-4px);box-shadow:0 12px 36px rgba(3,19,131,.14);border-color:#c7d2ff;}
@@ -390,6 +445,40 @@
                     </div>
                     <div class="xp-bar-outer"><div class="xp-bar-inner" id="xpBarInner" style="width:0%"></div></div>
                 </div>
+
+                <!-- LEADERBOARD — 7-day progress chart -->
+                <div id="progressChartCard" class="hidden" style="background:var(--card);border:1px solid var(--border);border-radius:18px;padding:20px 22px;margin-bottom:20px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+                        <div>
+                            <div style="font-weight:800;font-size:.95rem;color:var(--text);">📈 Tiến độ 7 ngày</div>
+                            <div style="font-size:.72rem;color:var(--muted);margin-top:2px;">Số từ ôn tập mỗi ngày</div>
+                        </div>
+                        <div style="display:flex;gap:16px;">
+                            <div style="text-align:center;">
+                                <div style="font-family:'Nunito',sans-serif;font-size:1.4rem;font-weight:800;color:var(--primary);" id="chartTotalWeek">0</div>
+                                <div style="font-size:.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;">7 ngày</div>
+                            </div>
+                            <div style="text-align:center;">
+                                <div style="font-family:'Nunito',sans-serif;font-size:1.4rem;font-weight:800;color:var(--success);" id="chartTotalToday">0</div>
+                                <div style="font-size:.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;">Hôm nay</div>
+                            </div>
+                            <div style="text-align:center;">
+                                <div style="font-family:'Nunito',sans-serif;font-size:1.4rem;font-weight:800;color:var(--gold);" id="chartBestDay">0</div>
+                                <div style="font-size:.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;">Kỷ lục</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="progressChart" class="chart-bar-wrap"></div>
+                </div>
+
+                <!-- BADGES -->
+                <div id="badgesCard" class="hidden" style="background:var(--card);border:1px solid var(--border);border-radius:18px;padding:20px 22px;margin-bottom:20px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+                        <div style="font-weight:800;font-size:.95rem;color:var(--text);">🏅 Huy hiệu thành tích</div>
+                        <div style="font-size:.8rem;font-weight:700;color:var(--muted);" id="badgeCountLabel">0 / 0</div>
+                    </div>
+                    <div id="badgesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:10px;"></div>
+                </div>
                 <!-- Stats -->
                 <div id="libraryStats" style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;"></div>
                 <!-- Search + Level filter -->
@@ -434,12 +523,21 @@
             <!-- Start card -->
             <div id="reviewStart" class="card slide-up" style="padding:32px 28px;text-align:center;">
                 <div style="font-size:2.8rem;margin-bottom:14px;">🎯</div>
-                <div style="font-family:'Nunito',sans-serif;font-size:1.6rem;font-weight:800;color:var(--primary);margin-bottom:8px;">Ôn tập trắc nghiệm</div>
+                <div style="font-family:'Nunito',sans-serif;font-size:1.6rem;font-weight:800;color:var(--primary);margin-bottom:8px;">Ôn tập từ vựng</div>
                 <p style="font-size:.9rem;color:var(--muted);margin-bottom:28px;">Từ đến hạn SRS được ưu tiên. Trả lời đúng +10 XP ⚡</p>
+
+                <!-- Study type -->
+                <div style="text-align:left;margin-bottom:22px;">
+                    <div class="section-label" style="margin-bottom:10px;">Hình thức học</div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                        <button class="mode-btn active" data-study="quiz" style="gap:6px;">🎯 Trắc nghiệm</button>
+                        <button class="mode-btn" data-study="flash" style="gap:6px;">🃏 Flashcard</button>
+                    </div>
+                </div>
 
                 <!-- Mode -->
                 <div style="text-align:left;margin-bottom:22px;">
-                    <div class="section-label" style="margin-bottom:10px;">Chế độ học</div>
+                    <div class="section-label" style="margin-bottom:10px;">Chiều học</div>
                     <div style="display:flex;gap:8px;flex-wrap:wrap;">
                         <button class="mode-btn active" data-mode="normal">🇬🇧 Từ → Nghĩa</button>
                         <button class="mode-btn" data-mode="reverse">🇻🇳 Nghĩa → Từ</button>
@@ -497,6 +595,56 @@
                     <div id="qChoices" style="display:flex;flex-direction:column;gap:10px;"></div>
                     <div id="feedbackOverlay" style="display:none;padding:12px 18px;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;text-align:center;border-radius:12px;margin-top:14px;"></div>
                     <button id="nextReviewBtn" class="btn-primary wide" style="margin-top:12px;display:none;padding:14px;">Câu tiếp theo ➜</button>
+                </div>
+            </div>
+
+            <!-- Flashcard area -->
+            <div id="flashcardArea" style="display:none;">
+                <div style="margin-bottom:16px;padding:0 4px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <span style="font-size:.8rem;font-weight:700;color:var(--muted);">Tiến độ</span>
+                        <span id="fcProgressText" style="font-size:.8rem;font-weight:800;color:var(--primary);">0 / 0</span>
+                    </div>
+                    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="fcProgressFill" style="width:0%"></div></div>
+                </div>
+
+                <!-- Flip card -->
+                <div class="flashcard-scene" onclick="flipCard()">
+                    <div class="flashcard" id="theFlashcard">
+                        <div class="flashcard-face fc-front">
+                            <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+                                <div class="quiz-prompt-label" id="fcPromptLabel" style="color:rgba(255,255,255,.6);">Từ tiếng Anh</div>
+                                <button class="tts-btn" id="fcTtsBtn" onclick="event.stopPropagation();speakFC()" style="border-color:rgba(255,255,255,.3);color:rgba(255,255,255,.7);background:rgba(255,255,255,.1);">
+                                    <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M12 6v12m-3.536-9.536a5 5 0 000 7.072"/></svg>
+                                </button>
+                            </div>
+                            <div class="fc-word" id="fcWord">Word</div>
+                            <div class="fc-ipa" id="fcIpa"></div>
+                            <span class="fc-hint">Nhấn để lật xem nghĩa 👆</span>
+                        </div>
+                        <div class="flashcard-face fc-back">
+                            <div class="quiz-prompt-label" id="fcBackLabel" style="color:var(--muted);">Nghĩa tiếng Việt</div>
+                            <div class="fc-meaning" id="fcMeaning">Nghĩa</div>
+                            <div class="fc-example" id="fcExample"></div>
+                            <span class="fc-back-hint">Tự đánh giá bên dưới ↓</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rating buttons (hidden until card flipped) -->
+                <div id="fcRatingWrap" style="display:none;">
+                    <div style="text-align:center;font-size:.75rem;font-weight:700;color:var(--muted);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em;">Bạn nhớ từ này ở mức nào?</div>
+                    <div class="fc-rating">
+                        <button class="fc-btn fc-btn-hard" onclick="rateFC('hard')">
+                            😓 Khó<div class="fc-btn-xp">+5 XP · Ôn sớm</div>
+                        </button>
+                        <button class="fc-btn fc-btn-ok" onclick="rateFC('ok')">
+                            🤔 Ổn<div class="fc-btn-xp">+10 XP · Bình thường</div>
+                        </button>
+                        <button class="fc-btn fc-btn-easy" onclick="rateFC('easy')">
+                            😄 Dễ<div class="fc-btn-xp">+15 XP · Ôn muộn hơn</div>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -671,6 +819,17 @@
     <iframe id="gameFrame" class="game-modal-frame" allow="autoplay; microphone" allowfullscreen style="display:none;"></iframe>
 </div>
 
+<!-- BADGE UNLOCK MODAL -->
+<div id="badgeModal" class="badge-modal" onclick="closeBadgeModal()">
+    <div class="badge-modal-box" onclick="event.stopPropagation()">
+        <span class="badge-modal-icon" id="badgeModalIcon">🏆</span>
+        <div style="font-family:'Nunito',sans-serif;font-size:.8rem;font-weight:800;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Huy hiệu mới mở khóa!</div>
+        <div style="font-family:'Nunito',sans-serif;font-size:1.3rem;font-weight:800;color:var(--text);margin-bottom:8px;" id="badgeModalName"></div>
+        <div style="font-size:.85rem;color:var(--muted);line-height:1.6;margin-bottom:20px;" id="badgeModalDesc"></div>
+        <button onclick="closeBadgeModal()" style="background:var(--primary);color:#fff;border:none;border-radius:12px;padding:12px 28px;font-family:'Be Vietnam Pro',sans-serif;font-weight:800;font-size:.9rem;cursor:pointer;width:100%;">Tuyệt vời! 🎉</button>
+    </div>
+</div>
+
 <script>
 // ══════════════════════════════════════════
 // FIREBASE
@@ -726,6 +885,8 @@ async function addXP(amount) {
     const xp = await getUserXP();
     updateXPUI(xp);
     showXPPop(amount);
+    // Kiểm tra badge XP ngay sau mỗi lần earn XP
+    if (typeof checkAndAwardBadges === 'function') checkAndAwardBadges(xp);
 }
 function updateXPUI(xp) {
     const lv = lvFromXP(xp);
@@ -917,6 +1078,8 @@ auth.onAuthStateChanged(async user => {
         ['loginBtn'].forEach(id=>document.getElementById(id).classList.remove('hidden'));
         ['userProfile','desktopTabs','xpNavWrap','xpProfileCard'].forEach(id=>document.getElementById(id).classList.add('hidden'));
         document.getElementById('mobileBottomNav').classList.add('hidden');
+        document.getElementById('progressChartCard').classList.add('hidden');
+        document.getElementById('badgesCard').classList.add('hidden');
         switchTab('creator');
     }
 });
@@ -1032,6 +1195,8 @@ async function loadLibrary() {
     fullLibrary = snap.docs.map(d=>d.data());
     renderLibrary();
     const xp = await getUserXP(); updateXPUI(xp);
+    renderProgressChart();
+    loadBadges(xp);
 }
 
 function renderLibrary() {
@@ -1194,7 +1359,18 @@ function closeDragDrop(){_selectedDragItem=null;document.getElementById('dragDro
 // ══════════════════════════════════════════
 // REVIEW SETTINGS BUTTONS
 // ══════════════════════════════════════════
-document.querySelectorAll('.mode-btn').forEach(btn=>btn.onclick=()=>{document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');reviewMode=btn.dataset.mode;});
+let studyType = 'quiz'; // 'quiz' | 'flash'
+
+document.querySelectorAll('.mode-btn[data-study]').forEach(btn => btn.onclick = () => {
+    document.querySelectorAll('.mode-btn[data-study]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    studyType = btn.dataset.study;
+});
+document.querySelectorAll('.mode-btn[data-mode]').forEach(btn => btn.onclick = () => {
+    document.querySelectorAll('.mode-btn[data-mode]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    reviewMode = btn.dataset.mode;
+});
 document.querySelectorAll('.count-btn').forEach(btn=>btn.onclick=()=>{document.querySelectorAll('.count-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');});
 document.querySelectorAll('.level-btn').forEach(btn=>btn.onclick=()=>btn.classList.toggle('active'));
 
@@ -1213,7 +1389,8 @@ async function loadSRSDueCount() {
 async function startReviewQuiz() {
     const count  = parseInt(document.querySelector('.count-btn.active')?.dataset.count||'10');
     const levels = Array.from(document.querySelectorAll('.level-btn.active')).map(b=>b.dataset.level);
-    reviewMode   = document.querySelector('.mode-btn.active')?.dataset.mode||'normal';
+    reviewMode   = document.querySelector('.mode-btn[data-mode].active')?.dataset.mode||'normal';
+    studyType    = document.querySelector('.mode-btn[data-study].active')?.dataset.study||'quiz';
     if(!levels.length){ showToast('⚠️ Hãy chọn ít nhất 1 cấp độ!'); return; }
 
     const snap = await db.collection('users').doc(currentUser.uid).collection('vocabulary').where('correct_count','<',10).get();
@@ -1228,8 +1405,16 @@ async function startReviewQuiz() {
     currentReviewIdx = 0;
 
     document.getElementById('reviewStart').classList.add('hidden');
-    document.getElementById('reviewQuizArea').style.display = 'block';
-    showReviewQuestion();
+
+    if (studyType === 'flash') {
+        document.getElementById('flashcardArea').style.display = 'block';
+        document.getElementById('reviewQuizArea').style.display = 'none';
+        showFlashcard();
+    } else {
+        document.getElementById('reviewQuizArea').style.display = 'block';
+        document.getElementById('flashcardArea').style.display = 'none';
+        showReviewQuestion();
+    }
 }
 
 // ══════════════════════════════════════════
@@ -1246,6 +1431,7 @@ function esc(s){ return (s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
 function showReviewQuestion() {
     if(currentReviewIdx>=reviewPool.length){
         document.getElementById('reviewQuizArea').style.display='none';
+        document.getElementById('flashcardArea').style.display='none';
         document.getElementById('reviewStart').classList.remove('hidden');
         updateProgress();
         showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} câu.`);
@@ -1301,16 +1487,18 @@ async function checkAnswer(btn, selected, correct, word) {
         btn.classList.add('correct');
         overlay.style.cssText='display:block;padding:12px 18px;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;text-align:center;border-radius:12px;margin-top:14px;background:linear-gradient(135deg,#d1fae5,#a7f3d0);color:#065f46;';
         overlay.innerText='✅ Chính xác!';
-        await ref.update({ correct_count:firebase.firestore.FieldValue.increment(1), ...srs });
+        await ref.set({ correct_count:firebase.firestore.FieldValue.increment(1), ...srs }, {merge:true});
         await addXP(10);
+        await recordDailyActivity(1, 1);
         if(reviewMode==='reverse') speak(word,'en-US');
     } else {
         btn.classList.add('wrong');
         allBtns.forEach(b=>{ if(b.innerText.includes(correct)) b.classList.add('correct'); });
         overlay.style.cssText='display:block;padding:12px 18px;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;text-align:center;border-radius:12px;margin-top:14px;background:linear-gradient(135deg,#fee2e2,#fecaca);color:#991b1b;';
         overlay.innerText='✍️ Chưa chính xác — Ôn lại sau!';
-        await ref.update({ incorrect_count:firebase.firestore.FieldValue.increment(1), ...srs });
+        await ref.set({ incorrect_count:firebase.firestore.FieldValue.increment(1), ...srs }, {merge:true});
         await addXP(2);
+        await recordDailyActivity(1, 0);
         reviewPool.push(reviewPool.splice(currentReviewIdx,1)[0]);
         currentReviewIdx--;
     }
@@ -1613,7 +1801,243 @@ function openGameNewTab() {
     if (_gameUrl) window.open(_gameUrl, '_blank');
 }
 
-// Keep game word count in sync when library changes
+// ══════════════════════════════════════════
+// FLASHCARD MODE
+// ══════════════════════════════════════════
+let _fcFlipped = false;
+
+function updateFCProgress() {
+    const pct = Math.round((currentReviewIdx / totalReviewCount) * 100);
+    document.getElementById('fcProgressFill').style.width = pct + '%';
+    document.getElementById('fcProgressText').innerText = `${currentReviewIdx} / ${totalReviewCount}`;
+}
+
+function showFlashcard() {
+    if (currentReviewIdx >= reviewPool.length) {
+        document.getElementById('flashcardArea').style.display = 'none';
+        document.getElementById('reviewStart').classList.remove('hidden');
+        showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} thẻ.`);
+        loadSRSDueCount(); switchTab('library'); return;
+    }
+    updateFCProgress();
+    _fcFlipped = false;
+    const card = document.getElementById('theFlashcard');
+    card.classList.remove('flipped');
+    document.getElementById('fcRatingWrap').style.display = 'none';
+
+    const target = reviewPool[currentReviewIdx];
+    currentWord  = target;
+
+    if (reviewMode === 'normal') {
+        document.getElementById('fcPromptLabel').innerText = 'Từ tiếng Anh';
+        document.getElementById('fcWord').innerText = target.word;
+        document.getElementById('fcIpa').innerText  = target.ipa || '';
+        document.getElementById('fcBackLabel').innerText  = 'Nghĩa tiếng Việt';
+        document.getElementById('fcMeaning').innerText    = target.vn;
+        document.getElementById('fcTtsBtn').style.display = 'flex';
+    } else {
+        document.getElementById('fcPromptLabel').innerText = 'Nghĩa tiếng Việt';
+        document.getElementById('fcWord').innerText = target.vn;
+        document.getElementById('fcIpa').innerText  = '';
+        document.getElementById('fcBackLabel').innerText  = 'Từ tiếng Anh';
+        document.getElementById('fcMeaning').innerText    = target.word;
+        document.getElementById('fcTtsBtn').style.display = 'none';
+    }
+    document.getElementById('fcExample').innerText = target.example || '';
+}
+
+function flipCard() {
+    if (_fcFlipped) return;
+    _fcFlipped = true;
+    document.getElementById('theFlashcard').classList.add('flipped');
+    setTimeout(() => {
+        document.getElementById('fcRatingWrap').style.display = 'block';
+        if (reviewMode === 'reverse') speak(currentWord.word, 'en-US');
+    }, 280);
+}
+
+function speakFC() {
+    if (!currentWord) return;
+    speak(reviewMode === 'normal' ? currentWord.word : currentWord.vn,
+          reviewMode === 'normal' ? 'en-US' : 'vi-VN');
+}
+
+async function rateFC(rating) {
+    const xpMap  = { easy: 15, ok: 10, hard: 5 };
+    const target = reviewPool[currentReviewIdx];
+    const ref    = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(target.word.toLowerCase());
+    const snap   = await ref.get();
+    const item   = snap.exists ? snap.data() : {};
+
+    const isCorrect = (rating !== 'hard');
+    const srs = srsUpdate(item, isCorrect);
+    if (isCorrect) {
+        // set+merge thay vì update để tránh lỗi nếu doc chưa tồn tại
+        await ref.set({ correct_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
+    } else {
+        await ref.set({ incorrect_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
+        reviewPool.push(reviewPool.splice(currentReviewIdx, 1)[0]);
+        currentReviewIdx--;
+    }
+    await addXP(xpMap[rating]);
+    await recordDailyActivity(1, isCorrect ? 1 : 0);
+    currentReviewIdx++;
+    showFlashcard();
+}
+
+// ══════════════════════════════════════════
+// LEADERBOARD — DAILY ACTIVITY TRACKING
+// ══════════════════════════════════════════
+function todayKey() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+async function recordDailyActivity(reviewed = 1, correct = 0) {
+    if (!currentUser) return;
+    const key = todayKey();
+    const ref = db.collection('users').doc(currentUser.uid).collection('activity').doc(key);
+    await ref.set({
+        reviewed: firebase.firestore.FieldValue.increment(reviewed),
+        correct:  firebase.firestore.FieldValue.increment(correct),
+        date: key
+    }, { merge: true });
+    if (document.getElementById('tab-library') && !document.getElementById('tab-library').classList.contains('hidden')) {
+        renderProgressChart();
+    }
+}
+
+async function renderProgressChart() {
+    if (!currentUser) return;
+    const today = todayKey();
+    const days  = [];
+    for (let i = 6; i >= 0; i--) {
+        const d = new Date(); d.setDate(d.getDate() - i);
+        days.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`);
+    }
+    const snap = await db.collection('users').doc(currentUser.uid).collection('activity')
+        .where('date', 'in', days).get();
+    const dataMap = {};
+    snap.docs.forEach(d => { dataMap[d.id] = d.data(); });
+
+    const values = days.map(d => (dataMap[d]?.reviewed) || 0);
+    const maxVal = Math.max(...values, 1);
+    const weekTotal = values.reduce((a, b) => a + b, 0);
+    const todayVal  = dataMap[today]?.reviewed || 0;
+    const bestDay   = Math.max(...values);
+
+    document.getElementById('chartTotalWeek').textContent  = weekTotal;
+    document.getElementById('chartTotalToday').textContent = todayVal;
+    document.getElementById('chartBestDay').textContent    = bestDay;
+
+    const dayLabels = ['CN','T2','T3','T4','T5','T6','T7'];
+    const chart = document.getElementById('progressChart');
+    chart.innerHTML = days.map((d, i) => {
+        const val = values[i];
+        const isToday = d === today;
+        const heightPct = Math.max(Math.round((val / maxVal) * 100), val > 0 ? 6 : 0);
+        const dow = new Date(d + 'T00:00:00').getDay();
+        return `<div class="chart-bar-col ${isToday ? 'chart-today' : 'chart-other'}">
+            <div style="position:relative;width:100%;display:flex;align-items:flex-end;height:100px;">
+                <div class="chart-bar" style="height:${heightPct}%;width:100%;">
+                    ${val > 0 ? `<span class="chart-bar-val">${val}</span>` : ''}
+                </div>
+            </div>
+            <div class="chart-label">${isToday ? 'Hôm nay' : dayLabels[dow]}</div>
+        </div>`;
+    }).join('');
+
+    document.getElementById('progressChartCard').classList.remove('hidden');
+}
+
+// ══════════════════════════════════════════
+// BADGES — ACHIEVEMENT SYSTEM
+// ══════════════════════════════════════════
+const BADGES = [
+    { id:'first_word',   icon:'🌱', name:'Bước đầu tiên',    desc:'Thêm từ vựng đầu tiên vào thư viện',          check: lib => lib.length >= 1 },
+    { id:'words_10',     icon:'📚', name:'Học sinh chăm chỉ', desc:'Có 10 từ trong thư viện',                     check: lib => lib.length >= 10 },
+    { id:'words_50',     icon:'🎓', name:'Sinh viên xuất sắc', desc:'Có 50 từ trong thư viện',                    check: lib => lib.length >= 50 },
+    { id:'words_100',    icon:'🏛️', name:'Bách khoa từ điển', desc:'Đạt 100 từ trong thư viện',                  check: lib => lib.length >= 100 },
+    { id:'mastered_5',   icon:'⭐', name:'Ngôi sao đang lên', desc:'Thuộc hoàn toàn 5 từ (correct ≥ 10)',         check: lib => lib.filter(i=>(i.correct_count||0)>=10).length >= 5 },
+    { id:'mastered_20',  icon:'🌟', name:'Ngôi sao sáng',     desc:'Thuộc hoàn toàn 20 từ',                       check: lib => lib.filter(i=>(i.correct_count||0)>=10).length >= 20 },
+    { id:'mastered_50',  icon:'💫', name:'Siêu sao',          desc:'Thuộc hoàn toàn 50 từ',                       check: lib => lib.filter(i=>(i.correct_count||0)>=10).length >= 50 },
+    { id:'level_b1',     icon:'🔵', name:'B1 Bứt phá',        desc:'Có ít nhất 10 từ cấp B1 trong thư viện',      check: lib => lib.filter(i=>i.level==='B1').length >= 10 },
+    { id:'level_b2',     icon:'🟣', name:'B2 Chuyên nghiệp',  desc:'Có ít nhất 10 từ cấp B2 trong thư viện',      check: lib => lib.filter(i=>i.level==='B2').length >= 10 },
+    { id:'level_c',      icon:'🔴', name:'C-Level Warrior',   desc:'Có ít nhất 5 từ cấp C1 hoặc C2',              check: lib => lib.filter(i=>i.level==='C1'||i.level==='C2').length >= 5 },
+    { id:'xp_500',       icon:'⚡', name:'Năng lượng dồi dào', desc:'Tích lũy 500 XP',                             check: (lib, xp) => xp >= 500 },
+    { id:'xp_2000',      icon:'🔥', name:'Ngọn lửa bùng cháy', desc:'Tích lũy 2000 XP',                            check: (lib, xp) => xp >= 2000 },
+];
+
+let _unlockedBadges = new Set();
+
+async function loadBadges(xp) {
+    if (!currentUser) return;
+    const doc = await db.collection('users').doc(currentUser.uid).get();
+    const saved = (doc.exists && doc.data().badges) || [];
+    _unlockedBadges = new Set(saved);
+    await checkAndAwardBadges(xp);
+    renderBadges();
+}
+
+async function checkAndAwardBadges(xp) {
+    if (!currentUser) return;
+    const newlyUnlocked = [];
+    for (const badge of BADGES) {
+        if (_unlockedBadges.has(badge.id)) continue;
+        if (badge.check(fullLibrary, xp || 0)) {
+            _unlockedBadges.add(badge.id);
+            newlyUnlocked.push(badge);
+        }
+    }
+    if (newlyUnlocked.length) {
+        await db.collection('users').doc(currentUser.uid).set(
+            { badges: [..._unlockedBadges] }, { merge: true }
+        );
+        // Show popup for each new badge (queue them)
+        for (const badge of newlyUnlocked) {
+            await showBadgePopup(badge);
+        }
+        renderBadges();
+    }
+}
+
+function showBadgePopup(badge) {
+    return new Promise(resolve => {
+        document.getElementById('badgeModalIcon').textContent = badge.icon;
+        document.getElementById('badgeModalName').textContent = badge.name;
+        document.getElementById('badgeModalDesc').textContent = badge.desc;
+        document.getElementById('badgeModal').classList.add('open');
+        // Auto-close after 5s if user doesn't click
+        const timer = setTimeout(() => { closeBadgeModal(); resolve(); }, 5000);
+        document.getElementById('badgeModal').dataset.resolver = timer;
+        window._badgeResolve = resolve;
+    });
+}
+
+function closeBadgeModal() {
+    const modal = document.getElementById('badgeModal');
+    const timer = modal.dataset.resolver;
+    if (timer) clearTimeout(Number(timer));
+    modal.classList.remove('open');
+    if (window._badgeResolve) { window._badgeResolve(); window._badgeResolve = null; }
+}
+
+function renderBadges() {
+    const grid = document.getElementById('badgesGrid');
+    const unlocked = _unlockedBadges.size;
+    document.getElementById('badgeCountLabel').textContent = `${unlocked} / ${BADGES.length}`;
+    grid.innerHTML = BADGES.map(badge => {
+        const isUnlocked = _unlockedBadges.has(badge.id);
+        return `<div class="badge-item ${isUnlocked ? 'unlocked' : 'locked'}" title="${badge.desc}">
+            <div class="badge-icon">${badge.icon}</div>
+            <div class="badge-name">${badge.name}</div>
+            <div class="badge-desc">${badge.desc}</div>
+        </div>`;
+    }).join('');
+    document.getElementById('badgesCard').classList.remove('hidden');
+}
+
+
 const _origRenderLibrary = renderLibrary;
 renderLibrary = function() {
     _origRenderLibrary.apply(this, arguments);
