@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Be Heard|Lexi Learning</title>
+    <title>Be Heard |Lexi Learning</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
@@ -256,8 +256,8 @@
 
         /* Badge unlock modal */
         @keyframes badgeModalPop{0%{transform:scale(.6);opacity:0;}70%{transform:scale(1.05);}100%{transform:scale(1);opacity:1;}}
-        .badge-modal{display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);}
-        .badge-modal.open{display:flex;align-items:center;justify-content:center;}
+        .badge-modal{display:none;position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);pointer-events:none;}
+        .badge-modal.open{display:flex;align-items:center;justify-content:center;pointer-events:auto;}
         .badge-modal-box{background:var(--card);border-radius:24px;padding:36px 32px;text-align:center;max-width:320px;width:90%;box-shadow:0 24px 64px rgba(0,0,0,.25);animation:badgeModalPop .45s cubic-bezier(.4,0,.2,1) both;}
         .badge-modal-icon{font-size:4.5rem;margin-bottom:8px;display:block;}
 
@@ -291,6 +291,31 @@
         /* VOCAB COPY BANNER */
         .vocab-banner{background:linear-gradient(90deg,#064e3b,#065f46);color:#6ee7b7;font-size:.78rem;font-weight:700;padding:8px 16px;display:flex;align-items:center;gap:8px;flex-shrink:0;border-bottom:1px solid #047857;}
         .vocab-banner.hidden{display:none;}
+
+        /* MASTERED WORDS MODAL */
+        .mastered-modal{display:none;position:fixed;inset:0;z-index:8000;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);pointer-events:none;}
+        .mastered-modal.open{display:flex;align-items:flex-end;justify-content:center;pointer-events:auto;}
+        @media(min-width:600px){.mastered-modal.open{align-items:center;}}
+        .mastered-modal-box{background:var(--card);border-radius:24px 24px 0 0;padding:0;width:100%;max-width:640px;max-height:82vh;display:flex;flex-direction:column;box-shadow:0 -8px 40px rgba(0,0,0,.2);}
+        @media(min-width:600px){.mastered-modal-box{border-radius:24px;max-height:78vh;}}
+        .mastered-modal-header{padding:18px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+        .mastered-modal-body{overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:10px;}
+        .mastered-word-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;background:#fafbff;border:1px solid var(--border);}
+        .mastered-word-row:hover{background:var(--primary-light);border-color:#c7d2ff;}
+
+        /* BADGE CAROUSEL */
+        .badge-carousel{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;}
+        .badge-carousel::-webkit-scrollbar{height:3px;}
+        .badge-carousel::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px;}
+        .badge-chip{flex-shrink:0;scroll-snap-align:start;display:flex;align-items:center;gap:8px;padding:8px 14px;border-radius:14px;border:1.5px solid var(--border);background:var(--card);transition:.2s;cursor:default;min-width:0;}
+        .badge-chip.unlocked{border-color:#fde68a;background:linear-gradient(135deg,#fffbeb,#fef3c7);}
+        .badge-chip.locked{opacity:.45;filter:grayscale(.6);}
+        .badge-chip-icon{font-size:1.4rem;line-height:1;flex-shrink:0;}
+        .badge-chip-text{min-width:0;}
+        .badge-chip-name{font-size:.75rem;font-weight:800;color:var(--text);white-space:nowrap;}
+        .badge-chip.locked .badge-chip-name{color:var(--muted);}
+        .badge-chip-desc{font-size:.62rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;}
+        .badge-chip .badge-chip-lock{font-size:.6rem;color:var(--muted);margin-top:1px;}
     </style>
 </head>
 <body>
@@ -471,13 +496,16 @@
                     <div id="progressChart" class="chart-bar-wrap"></div>
                 </div>
 
-                <!-- BADGES -->
-                <div id="badgesCard" class="hidden" style="background:var(--card);border:1px solid var(--border);border-radius:18px;padding:20px 22px;margin-bottom:20px;">
-                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-                        <div style="font-weight:800;font-size:.95rem;color:var(--text);">🏅 Huy hiệu thành tích</div>
-                        <div style="font-size:.8rem;font-weight:700;color:var(--muted);" id="badgeCountLabel">0 / 0</div>
+                <!-- BADGES carousel -->
+                <div id="badgesCard" class="hidden" style="background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px 20px;margin-bottom:20px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                        <div style="font-weight:800;font-size:.92rem;color:var(--text);">🏅 Huy hiệu thành tích</div>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <div style="font-size:.75rem;font-weight:700;color:var(--muted);" id="badgeCountLabel">0 / 0</div>
+                            <div style="font-size:.65rem;color:#94a3b8;">← kéo ngang →</div>
+                        </div>
                     </div>
-                    <div id="badgesGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:10px;"></div>
+                    <div id="badgesGrid" class="badge-carousel"></div>
                 </div>
                 <!-- Stats -->
                 <div id="libraryStats" style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px;"></div>
@@ -501,14 +529,15 @@
                 <!-- Table -->
                 <div style="overflow-x:auto;border-radius:14px;border:1px solid var(--border);">
                     <table class="lib-table">
-                        <thead><tr>
+                        <thead>\
                             <th>Từ vựng</th>
                             <th>Nghĩa</th>
                             <th>Cấp</th>
                             <th>SRS</th>
                             <th>Tiến độ</th>
                             <th style="text-align:center;">Xóa</th>
-                        </tr></thead>
+                        </tr>
+                        </thead>
                         <tbody id="libraryTableBody"></tbody>
                     </table>
                 </div>
@@ -589,7 +618,7 @@
                             <div id="qWord" class="quiz-word">Word</div>
                         </div>
                         <button class="tts-btn" id="ttsBtnQuiz" onclick="speakCurrent()" title="Phát âm" style="margin-top:8px;flex-shrink:0;">
-                            <svg xmlns="http://www.w3.org/2000/svg" style="width:18px;height:18px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M12 6v12m-3.536-9.536a5 5 0 000 7.072M6.343 9.657a8 8 0 000 4.686"/></svg>
+                            <svg xmlns="http://www.w3.org/2000/svg" style="width:18px;height:18px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M12 6v12m-3.536-9.536a5 5 0 000 7.072"/></svg>
                         </button>
                     </div>
                     <div id="qChoices" style="display:flex;flex-direction:column;gap:10px;"></div>
@@ -819,6 +848,20 @@
     <iframe id="gameFrame" class="game-modal-frame" allow="autoplay; microphone" allowfullscreen style="display:none;"></iframe>
 </div>
 
+<!-- MASTERED WORDS MODAL -->
+<div id="masteredModal" class="mastered-modal" onclick="closeMasteredModal()">
+    <div class="mastered-modal-box" onclick="event.stopPropagation()">
+        <div class="mastered-modal-header">
+            <div>
+                <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:1rem;color:var(--primary);">⭐ Từ đã thuộc hoàn toàn</div>
+                <div style="font-size:.72rem;color:var(--muted);margin-top:2px;" id="masteredSubtitle">0 từ</div>
+            </div>
+            <button onclick="closeMasteredModal()" style="background:var(--primary-light);border:none;border-radius:10px;padding:8px 14px;font-family:'Be Vietnam Pro',sans-serif;font-weight:700;font-size:.8rem;color:var(--primary);cursor:pointer;">Đóng ✕</button>
+        </div>
+        <div class="mastered-modal-body" id="masteredModalBody"></div>
+    </div>
+</div>
+
 <!-- BADGE UNLOCK MODAL -->
 <div id="badgeModal" class="badge-modal" onclick="closeBadgeModal()">
     <div class="badge-modal-box" onclick="event.stopPropagation()">
@@ -886,7 +929,7 @@ async function addXP(amount) {
     updateXPUI(xp);
     showXPPop(amount);
     // Kiểm tra badge XP ngay sau mỗi lần earn XP
-    if (typeof checkAndAwardBadges === 'function') checkAndAwardBadges(xp);
+    await checkAndAwardBadges(xp);
 }
 function updateXPUI(xp) {
     const lv = lvFromXP(xp);
@@ -1127,27 +1170,27 @@ document.getElementById('generateBtn').onclick = async () => {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${key}` // Groq dùng Bearer Token
+            'Authorization': `Bearer ${key}`
         },
         body: JSON.stringify({
-            model: "llama-3.3-70b-versatile", // Hoặc "llama3-8b-8192" để nhanh hơn
+            model: "llama-3.3-70b-versatile",
             messages: [
                 {
                     role: "user",
                     content: prompt
                 }
             ],
-            temperature: 0.2 // Giữ độ chính xác cao cho JSON
+            temperature: 0.2
         })
     });
 
     const data = await res.json();
-    // Groq/OpenAI trả về data.choices[0].message.content
     const aiText = data.choices[0].message.content;
     learningData = JSON.parse(aiText.replace(/```json|```/g, '').trim());
     
     renderVocabList(); 
-    saveVocabToDb(learningData); 
+    await saveVocabToDb(learningData); 
+    await checkAndAwardBadges(await getUserXP()); // kiểm tra badge sau khi thêm từ
     showToast('✅ Phân tích thành công!');
 } catch(e) { 
     console.error(e);
@@ -1209,8 +1252,14 @@ function renderLibrary() {
     const mastered = fullLibrary.filter(i=>(i.correct_count||0)>=10).length;
     const dueCount = fullLibrary.filter(i=>isDue(i)).length;
     document.getElementById('libraryStats').innerHTML = `
-        <div class="stat-card"><div class="stat-label">Tổng từ</div><div class="stat-num" style="color:var(--text);">${fullLibrary.length}</div></div>
-        <div class="stat-card highlight"><div class="stat-label">Đã thuộc</div><div class="stat-num">${mastered}</div></div>
+        <div class="stat-card" onclick="openMasteredModal()" style="cursor:pointer;" title="Nhấn để xem danh sách từ đã thuộc">
+            <div class="stat-label">Tổng từ</div>
+            <div class="stat-num" style="color:var(--text);">${fullLibrary.length}</div>
+        </div>
+        <div class="stat-card highlight" onclick="openMasteredModal()" style="cursor:pointer;" title="Nhấn để xem danh sách từ đã thuộc">
+            <div class="stat-label">⭐ Đã thuộc <span style="font-size:.6rem;opacity:.7;">(nhấn xem)</span></div>
+            <div class="stat-num">${mastered}</div>
+        </div>
         <div class="stat-card"><div class="stat-label">Đến hạn</div><div class="stat-num" style="color:var(--warn);">${dueCount}</div></div>`;
 
     const tbody = document.getElementById('libraryTableBody');
@@ -1337,6 +1386,15 @@ function placeWordInZone(zone, word) {
         const bank = document.getElementById('draggableContainer');
         const existing = [...bank.querySelectorAll('.draggable-item')].find(el=>el.dataset.word===prev);
         if (existing) { existing.style.opacity='1'; existing.style.display=''; }
+        // Also, if any other zone has the same word, clear it (to avoid duplicates)
+        const otherZones = document.querySelectorAll('.drop-zone');
+        for (let oz of otherZones) {
+            if (oz !== zone && oz.classList.contains('filled') && oz.innerText.trim() === prev) {
+                oz.classList.remove('filled');
+                oz.innerText = '';
+                oz.style.borderColor = '';
+            }
+        }
     }
     zone.innerText = word;
     zone.classList.add('filled');
@@ -1347,10 +1405,22 @@ function placeWordInZone(zone, word) {
 }
 document.getElementById('checkDragDropBtn').onclick = () => {
     const zones=document.querySelectorAll('.drop-zone'); let ok=0;
+    // Clear previous result spans (avoid stacking)
+    for (let z of zones) {
+        // Remove any extra span we may have added earlier
+        if (z.querySelector('.result-span')) z.querySelector('.result-span').remove();
+    }
     zones.forEach(z=>{
         const correct=z.innerText.trim().toLowerCase()===z.dataset.answer.toLowerCase();
         if(correct){ok++;z.style.background='#064e3b';z.style.borderColor='#10b981';z.style.color='#6ee7b7';}
-        else{z.style.background='#450a0a';z.style.borderColor='#ef4444';z.style.color='#fca5a5';z.innerHTML+=` <span style="font-size:.7rem;opacity:.7;">[${z.dataset.answer}]</span>`;}
+        else{z.style.background='#450a0a';z.style.borderColor='#ef4444';z.style.color='#fca5a5';
+            const span = document.createElement('span');
+            span.className = 'result-span';
+            span.style.fontSize='.7rem';
+            span.style.opacity='.7';
+            span.innerText = ` [${z.dataset.answer}]`;
+            z.appendChild(span);
+        }
     });
     document.getElementById('dragDropScore').innerHTML=`<div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px;text-align:center;color:#10b981;font-weight:800;">KẾT QUẢ: ${ok}/${zones.length} — ${Math.round(ok/zones.length*100)}% ✨</div>`;
 };
@@ -1405,6 +1475,8 @@ async function startReviewQuiz() {
     currentReviewIdx = 0;
 
     document.getElementById('reviewStart').classList.add('hidden');
+    startSessionTimer(reviewPool.length);
+    _sessionCorrect = 0; _sessionTotal = reviewPool.length;
 
     if (studyType === 'flash') {
         document.getElementById('flashcardArea').style.display = 'block';
@@ -1428,14 +1500,15 @@ function updateProgress() {
 
 function esc(s){ return (s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
 
-function showReviewQuestion() {
+async function showReviewQuestion() {
     if(currentReviewIdx>=reviewPool.length){
         document.getElementById('reviewQuizArea').style.display='none';
         document.getElementById('flashcardArea').style.display='none';
         document.getElementById('reviewStart').classList.remove('hidden');
         updateProgress();
         showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} câu.`);
-        loadSRSDueCount(); return switchTab('library');
+        await finalizeSessionBadges();
+        loadSRSDueCount(); switchTab('library'); return;
     }
     updateProgress();
     const target = reviewPool[currentReviewIdx];
@@ -1490,6 +1563,8 @@ async function checkAnswer(btn, selected, correct, word) {
         await ref.set({ correct_count:firebase.firestore.FieldValue.increment(1), ...srs }, {merge:true});
         await addXP(10);
         await recordDailyActivity(1, 1);
+        trackAnswerStreak(true);
+        trackSessionResult(true);
         if(reviewMode==='reverse') speak(word,'en-US');
     } else {
         btn.classList.add('wrong');
@@ -1499,6 +1574,8 @@ async function checkAnswer(btn, selected, correct, word) {
         await ref.set({ incorrect_count:firebase.firestore.FieldValue.increment(1), ...srs }, {merge:true});
         await addXP(2);
         await recordDailyActivity(1, 0);
+        trackAnswerStreak(false);
+        trackSessionResult(false);
         reviewPool.push(reviewPool.splice(currentReviewIdx,1)[0]);
         currentReviewIdx--;
     }
@@ -1559,7 +1636,6 @@ document.getElementById('libFileInput').onchange = async (e) => {
             showToast(`✨ Đang nhờ AI phân tích ${newWords.length} từ mới...`);
 
             // 4. Gọi AI xử lý CEFR, IPA và Ví dụ
-            // Định dạng data gửi đi cho AI hiểu nghĩa user đã cấu hình
             const wordsPromptData = newWords.map(w => `"${w.word}": "${w.vn}"`).join(', ');
             
             const prompt = `I have a list of English words and their Vietnamese meanings: { ${wordsPromptData} }. 
@@ -1585,14 +1661,25 @@ document.getElementById('libFileInput').onchange = async (e) => {
 });
 
 const data = await aiRes.json();
-const jsonStr = data.choices[0].message.content.replace(/```json|```/g, '').trim();
-const finalData = JSON.parse(jsonStr);
+let jsonStr = data.choices[0].message.content.replace(/```json|```/g, '').trim();
+let finalData;
+try {
+    finalData = JSON.parse(jsonStr);
+} catch(e) {
+    console.error("JSON parse error", e, jsonStr);
+    showToast('❌ AI trả về định dạng không hợp lệ, vui lòng thử lại.');
+    return;
+}
 
             // 5. Lưu vào Firestore
             await saveVocabToDb(finalData);
             await loadLibrary(); // Refresh giao diện thư viện
             
             showToast(`✅ Đã thêm thành công ${finalData.length} từ vựng mới!`);
+            // Badge: nhập từ qua file .docx
+            _extraBadgeData.importedDocx = true;
+            db.collection('users').doc(currentUser.uid).set({ badgeExtra:{ importedDocx:true } }, {merge:true});
+            const xp2 = await getUserXP(); checkAndAwardBadges(xp2);
             
         } catch (error) {
             console.error(error);
@@ -1679,8 +1766,6 @@ function openGame(url, name) {
     banner.classList.add('hidden');
 
     // ── Script injected INTO the game page ──────────────────────────
-    // Runs inside the iframe: finds every <textarea> and fills it once DOM is ready.
-    // Retries a few times to handle dynamically-rendered UIs.
     const VOCAB_JSON = JSON.stringify(_vocabText);
     const injectScript = `
 <script>
@@ -1693,7 +1778,6 @@ function openGame(url, name) {
     var areas = Array.from(document.querySelectorAll('textarea'));
     if (!areas.length) return;
 
-    // Score each textarea — prefer the one most likely to be the vocab input
     var scored = areas.map(function(ta) {
       var score = 0;
       var txt   = ((ta.id||'')+(ta.className||'')+(ta.placeholder||'')+(ta.name||'')).toLowerCase();
@@ -1708,7 +1792,6 @@ function openGame(url, name) {
     target.value = VOCAB;
     target.dispatchEvent(new Event('input',  {bubbles:true}));
     target.dispatchEvent(new Event('change', {bubbles:true}));
-    // Also try React-style setter in case the game uses a JS framework
     var nativeSet = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype,'value');
     if (nativeSet && nativeSet.set) {
       nativeSet.set.call(target, VOCAB);
@@ -1721,27 +1804,21 @@ function openGame(url, name) {
     document.addEventListener('DOMContentLoaded', fill);
   } else { fill(); }
 
-  // Retry in case textarea is rendered late by JS
   setTimeout(fill, 400);
   setTimeout(fill, 1200);
   setTimeout(fill, 2500);
 })();
 <\/script>`;
 
-    // ── Fetch game HTML, inject script, load via srcdoc ──────────────
     fetch(url, { cache: 'no-store' })
         .then(function(res) {
             if (!res.ok) throw new Error('HTTP ' + res.status);
             return res.text();
         })
         .then(function(html) {
-            // Add <base> so all relative assets (CSS/JS/images) resolve correctly
             var baseUrl = url.endsWith('/') ? url : url.substring(0, url.lastIndexOf('/') + 1);
             var baseTag = '<base href="' + baseUrl + '">';
-
-            // Insert base tag + inject script right after <head>
             html = html.replace(/(<head[^>]*>)/i, '$1' + baseTag + injectScript);
-            // Fallback if <head> not found
             if (!html.includes(baseTag)) {
                 html = baseTag + injectScript + html;
             }
@@ -1750,7 +1827,6 @@ function openGame(url, name) {
             frame.onload = function() {
                 overlay.style.display = 'none';
                 frame.style.display   = 'block';
-                // Show success banner briefly
                 bannerText.textContent = '✅ Đã tự động điền ' + list.length + ' từ vựng vào game!';
                 banner.style.background = '';
                 banner.style.color = '';
@@ -1760,7 +1836,6 @@ function openGame(url, name) {
         })
         .catch(function(err) {
             console.warn('Auto-inject failed, falling back to direct URL:', err);
-            // Fallback: load game directly + copy vocab to clipboard as backup
             frame.removeAttribute('srcdoc');
             frame.src = url;
             frame.onload = function() {
@@ -1779,7 +1854,6 @@ function closeGameModal() {
     const frame = document.getElementById('gameFrame');
     document.getElementById('gameModal').classList.remove('open');
     document.body.style.overflow = '';
-    // Small delay before clearing so browser doesn't stutter on close animation
     setTimeout(() => {
         frame.removeAttribute('srcdoc');
         frame.removeAttribute('src');
@@ -1817,7 +1891,10 @@ function showFlashcard() {
         document.getElementById('flashcardArea').style.display = 'none';
         document.getElementById('reviewStart').classList.remove('hidden');
         showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} thẻ.`);
-        loadSRSDueCount(); switchTab('library'); return;
+        finalizeSessionBadges().then(() => {
+            loadSRSDueCount(); switchTab('library');
+        });
+        return;
     }
     updateFCProgress();
     _fcFlipped = false;
@@ -1852,7 +1929,7 @@ function flipCard() {
     document.getElementById('theFlashcard').classList.add('flipped');
     setTimeout(() => {
         document.getElementById('fcRatingWrap').style.display = 'block';
-        if (reviewMode === 'reverse') speak(currentWord.word, 'en-US');
+        // Removed auto‑speech on flip due to iOS restrictions
     }, 280);
 }
 
@@ -1872,7 +1949,6 @@ async function rateFC(rating) {
     const isCorrect = (rating !== 'hard');
     const srs = srsUpdate(item, isCorrect);
     if (isCorrect) {
-        // set+merge thay vì update để tránh lỗi nếu doc chưa tồn tại
         await ref.set({ correct_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
     } else {
         await ref.set({ incorrect_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
@@ -1881,6 +1957,8 @@ async function rateFC(rating) {
     }
     await addXP(xpMap[rating]);
     await recordDailyActivity(1, isCorrect ? 1 : 0);
+    trackAnswerStreak(isCorrect);
+    trackSessionResult(isCorrect);
     currentReviewIdx++;
     showFlashcard();
 }
@@ -1951,30 +2029,87 @@ async function renderProgressChart() {
 }
 
 // ══════════════════════════════════════════
+// MASTERED WORDS MODAL
+// ══════════════════════════════════════════
+function openMasteredModal() {
+    const mastered = fullLibrary.filter(i => (i.correct_count || 0) >= 10);
+    const body = document.getElementById('masteredModalBody');
+    document.getElementById('masteredSubtitle').textContent = `${mastered.length} từ đã hoàn thành`;
+    if (!mastered.length) {
+        body.innerHTML = `<div class="empty-state" style="padding:32px 0;"><div class="icon">⭐</div><p>Chưa có từ nào được thuộc hoàn toàn</p><p style="font-size:.8rem;margin-top:6px;font-weight:500;color:#94a3b8;">Ôn đúng 10 lần để thuộc 1 từ</p></div>`;
+    } else {
+        const sorted = [...mastered].sort((a,b) => (b.correct_count||0) - (a.correct_count||0));
+        body.innerHTML = sorted.map(item => `
+            <div class="mastered-word-row">
+                <div style="flex:1;min-width:0;">
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                        <span style="font-weight:800;color:var(--primary);font-size:.95rem;">${item.word}</span>
+                        <button class="tts-btn" onclick="speak('${item.word.replace(/'/g,"\\'")}','en-US')" style="padding:3px 6px;">
+                            <svg xmlns="http://www.w3.org/2000/svg" style="width:12px;height:12px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M12 6v12m-3.536-9.536a5 5 0 000 7.072"/></svg>
+                        </button>
+                        <span class="level-badge ${lvClass(item.level)}" style="font-size:.58rem;">${item.level}</span>
+                    </div>
+                    <div style="font-size:.82rem;color:#475569;margin-top:2px;">${item.vn}</div>
+                    ${item.ipa ? `<div style="font-family:monospace;font-size:.7rem;color:var(--muted);">${item.ipa}</div>` : ''}
+                </div>
+                <div style="text-align:right;flex-shrink:0;padding-left:8px;">
+                    <div style="font-family:'Nunito',sans-serif;font-size:1.15rem;font-weight:800;color:var(--success);">${item.correct_count}</div>
+                    <div style="font-size:.6rem;font-weight:700;color:var(--muted);">lần đúng</div>
+                </div>
+            </div>`).join('');
+    }
+    document.getElementById('masteredModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+function closeMasteredModal() {
+    document.getElementById('masteredModal').classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+// ══════════════════════════════════════════
 // BADGES — ACHIEVEMENT SYSTEM
 // ══════════════════════════════════════════
 const BADGES = [
-    { id:'first_word',   icon:'🌱', name:'Bước đầu tiên',    desc:'Thêm từ vựng đầu tiên vào thư viện',          check: lib => lib.length >= 1 },
-    { id:'words_10',     icon:'📚', name:'Học sinh chăm chỉ', desc:'Có 10 từ trong thư viện',                     check: lib => lib.length >= 10 },
-    { id:'words_50',     icon:'🎓', name:'Sinh viên xuất sắc', desc:'Có 50 từ trong thư viện',                    check: lib => lib.length >= 50 },
-    { id:'words_100',    icon:'🏛️', name:'Bách khoa từ điển', desc:'Đạt 100 từ trong thư viện',                  check: lib => lib.length >= 100 },
-    { id:'mastered_5',   icon:'⭐', name:'Ngôi sao đang lên', desc:'Thuộc hoàn toàn 5 từ (correct ≥ 10)',         check: lib => lib.filter(i=>(i.correct_count||0)>=10).length >= 5 },
-    { id:'mastered_20',  icon:'🌟', name:'Ngôi sao sáng',     desc:'Thuộc hoàn toàn 20 từ',                       check: lib => lib.filter(i=>(i.correct_count||0)>=10).length >= 20 },
-    { id:'mastered_50',  icon:'💫', name:'Siêu sao',          desc:'Thuộc hoàn toàn 50 từ',                       check: lib => lib.filter(i=>(i.correct_count||0)>=10).length >= 50 },
-    { id:'level_b1',     icon:'🔵', name:'B1 Bứt phá',        desc:'Có ít nhất 10 từ cấp B1 trong thư viện',      check: lib => lib.filter(i=>i.level==='B1').length >= 10 },
-    { id:'level_b2',     icon:'🟣', name:'B2 Chuyên nghiệp',  desc:'Có ít nhất 10 từ cấp B2 trong thư viện',      check: lib => lib.filter(i=>i.level==='B2').length >= 10 },
-    { id:'level_c',      icon:'🔴', name:'C-Level Warrior',   desc:'Có ít nhất 5 từ cấp C1 hoặc C2',              check: lib => lib.filter(i=>i.level==='C1'||i.level==='C2').length >= 5 },
-    { id:'xp_500',       icon:'⚡', name:'Năng lượng dồi dào', desc:'Tích lũy 500 XP',                             check: (lib, xp) => xp >= 500 },
-    { id:'xp_2000',      icon:'🔥', name:'Ngọn lửa bùng cháy', desc:'Tích lũy 2000 XP',                            check: (lib, xp) => xp >= 2000 },
+    { id:'first_word',   icon:'🌱', name:'Bước đầu tiên',      desc:'Thêm từ đầu tiên vào thư viện',                    check:(lib)=>lib.length>=1 },
+    { id:'words_10',     icon:'📚', name:'Chăm chỉ',            desc:'Có 10 từ trong thư viện',                          check:(lib)=>lib.length>=10 },
+    { id:'words_50',     icon:'🎓', name:'Sinh viên xuất sắc',  desc:'Có 50 từ trong thư viện',                          check:(lib)=>lib.length>=50 },
+    { id:'words_100',    icon:'🏛️', name:'Bách khoa',           desc:'Đạt 100 từ trong thư viện',                        check:(lib)=>lib.length>=100 },
+    { id:'words_300',    icon:'📖', name:'Từ điển sống',         desc:'Đạt 300 từ — thử thách thực sự!',                  check:(lib)=>lib.length>=300 },
+    { id:'words_500',    icon:'🧠', name:'Bộ não từ vựng',       desc:'Đạt 500 từ trong thư viện',                        check:(lib)=>lib.length>=500 },
+    { id:'mastered_5',   icon:'⭐', name:'Ngôi sao đang lên',   desc:'Thuộc hoàn toàn 5 từ',                             check:(lib)=>lib.filter(i=>(i.correct_count||0)>=10).length>=5 },
+    { id:'mastered_20',  icon:'🌟', name:'Ngôi sao sáng',        desc:'Thuộc hoàn toàn 20 từ',                            check:(lib)=>lib.filter(i=>(i.correct_count||0)>=10).length>=20 },
+    { id:'mastered_50',  icon:'💫', name:'Siêu sao',             desc:'Thuộc hoàn toàn 50 từ',                            check:(lib)=>lib.filter(i=>(i.correct_count||0)>=10).length>=50 },
+    { id:'mastered_100', icon:'🏆', name:'Nhà vô địch',          desc:'Thuộc hoàn toàn 100 từ!',                          check:(lib)=>lib.filter(i=>(i.correct_count||0)>=10).length>=100 },
+    { id:'level_b1',     icon:'🔵', name:'B1 Bứt phá',           desc:'Có ít nhất 10 từ cấp B1',                          check:(lib)=>lib.filter(i=>i.level==='B1').length>=10 },
+    { id:'level_b2',     icon:'🟣', name:'B2 Chuyên nghiệp',     desc:'Có ít nhất 10 từ cấp B2',                          check:(lib)=>lib.filter(i=>i.level==='B2').length>=10 },
+    { id:'level_c',      icon:'🔴', name:'C-Level Warrior',      desc:'Có ít nhất 5 từ cấp C1 hoặc C2',                   check:(lib)=>lib.filter(i=>i.level==='C1'||i.level==='C2').length>=5 },
+    { id:'level_c_hard', icon:'💎', name:'C-Level Master',       desc:'Có ít nhất 20 từ cấp C1 hoặc C2',                  check:(lib)=>lib.filter(i=>i.level==='C1'||i.level==='C2').length>=20 },
+    { id:'all_levels',   icon:'🌈', name:'Toàn diện',             desc:'Có ít nhất 5 từ ở mỗi cấp A1→C2',                 check:(lib)=>['A1','A2','B1','B2','C1','C2'].every(lv=>lib.filter(i=>i.level===lv).length>=5) },
+    { id:'polyglot',     icon:'🌍', name:'Đa ngôn',               desc:'Có ít nhất 10 từ ở mỗi cấp A1→C2',               check:(lib)=>['A1','A2','B1','B2','C1','C2'].every(lv=>lib.filter(i=>i.level===lv).length>=10) },
+    { id:'xp_500',       icon:'⚡', name:'Năng lượng',            desc:'Tích lũy 500 XP',                                  check:(_,xp)=>xp>=500 },
+    { id:'xp_2000',      icon:'🔥', name:'Bùng cháy',             desc:'Tích lũy 2000 XP',                                 check:(_,xp)=>xp>=2000 },
+    { id:'xp_5000',      icon:'🚀', name:'Tên lửa XP',            desc:'Tích lũy 5000 XP',                                 check:(_,xp)=>xp>=5000 },
+    { id:'xp_10000',     icon:'👑', name:'Hoàng đế XP',           desc:'Tích lũy 10000 XP — huyền thoại!',                 check:(_,xp)=>xp>=10000 },
+    { id:'perfect_10',   icon:'🎯', name:'Thiện xạ',              desc:'Trả lời đúng 10 lần liên tiếp',                    check:(_,__,ex)=>(ex?.perfectStreak||0)>=10 },
+    { id:'no_mistake',   icon:'🛡️', name:'Bất khả chiến bại',    desc:'Hoàn thành phiên 15 câu không sai 1 lần',           check:(_,__,ex)=>ex?.perfectSession||false },
+    { id:'librarian',    icon:'📜', name:'Thủ thư',               desc:'Nhập từ vựng qua file .docx',                       check:(_,__,ex)=>ex?.importedDocx||false },
+    { id:'speed_review', icon:'⏩', name:'Tốc độ ánh sáng',       desc:'Hoàn thành phiên 20 câu trong dưới 3 phút',         check:(_,__,ex)=>ex?.speedReview||false },
 ];
 
 let _unlockedBadges = new Set();
+let _extraBadgeData = { perfectStreak:0, perfectSession:false, importedDocx:false, speedReview:false };
+let _currentAnswerStreak = 0;
+let _sessionStartTime = 0;
+let _sessionCorrect = 0;
+let _sessionTotal = 0;
 
 async function loadBadges(xp) {
     if (!currentUser) return;
     const doc = await db.collection('users').doc(currentUser.uid).get();
     const saved = (doc.exists && doc.data().badges) || [];
+    const extra = (doc.exists && doc.data().badgeExtra) || {};
     _unlockedBadges = new Set(saved);
+    _extraBadgeData = { perfectStreak:0, perfectSession:false, importedDocx:false, speedReview:false, ...extra };
     await checkAndAwardBadges(xp);
     renderBadges();
 }
@@ -1984,19 +2119,14 @@ async function checkAndAwardBadges(xp) {
     const newlyUnlocked = [];
     for (const badge of BADGES) {
         if (_unlockedBadges.has(badge.id)) continue;
-        if (badge.check(fullLibrary, xp || 0)) {
+        if (badge.check(fullLibrary, xp || 0, _extraBadgeData)) {
             _unlockedBadges.add(badge.id);
             newlyUnlocked.push(badge);
         }
     }
     if (newlyUnlocked.length) {
-        await db.collection('users').doc(currentUser.uid).set(
-            { badges: [..._unlockedBadges] }, { merge: true }
-        );
-        // Show popup for each new badge (queue them)
-        for (const badge of newlyUnlocked) {
-            await showBadgePopup(badge);
-        }
+        await db.collection('users').doc(currentUser.uid).set({ badges:[..._unlockedBadges] }, {merge:true});
+        for (const badge of newlyUnlocked) await showBadgePopup(badge);
         renderBadges();
     }
 }
@@ -2007,7 +2137,6 @@ function showBadgePopup(badge) {
         document.getElementById('badgeModalName').textContent = badge.name;
         document.getElementById('badgeModalDesc').textContent = badge.desc;
         document.getElementById('badgeModal').classList.add('open');
-        // Auto-close after 5s if user doesn't click
         const timer = setTimeout(() => { closeBadgeModal(); resolve(); }, 5000);
         document.getElementById('badgeModal').dataset.resolver = timer;
         window._badgeResolve = resolve;
@@ -2016,8 +2145,7 @@ function showBadgePopup(badge) {
 
 function closeBadgeModal() {
     const modal = document.getElementById('badgeModal');
-    const timer = modal.dataset.resolver;
-    if (timer) clearTimeout(Number(timer));
+    if (modal.dataset.resolver) clearTimeout(Number(modal.dataset.resolver));
     modal.classList.remove('open');
     if (window._badgeResolve) { window._badgeResolve(); window._badgeResolve = null; }
 }
@@ -2026,17 +2154,58 @@ function renderBadges() {
     const grid = document.getElementById('badgesGrid');
     const unlocked = _unlockedBadges.size;
     document.getElementById('badgeCountLabel').textContent = `${unlocked} / ${BADGES.length}`;
-    grid.innerHTML = BADGES.map(badge => {
-        const isUnlocked = _unlockedBadges.has(badge.id);
-        return `<div class="badge-item ${isUnlocked ? 'unlocked' : 'locked'}" title="${badge.desc}">
-            <div class="badge-icon">${badge.icon}</div>
-            <div class="badge-name">${badge.name}</div>
-            <div class="badge-desc">${badge.desc}</div>
+    const sorted = [...BADGES].sort((a,b) => (_unlockedBadges.has(b.id)?1:0) - (_unlockedBadges.has(a.id)?1:0));
+    grid.innerHTML = sorted.map(badge => {
+        const ok = _unlockedBadges.has(badge.id);
+        return `<div class="badge-chip ${ok?'unlocked':'locked'}" title="${badge.desc}">
+            <div class="badge-chip-icon">${badge.icon}</div>
+            <div class="badge-chip-text">
+                <div class="badge-chip-name">${badge.name}</div>
+                <div class="badge-chip-desc">${badge.desc}</div>
+                <div style="font-size:.6rem;font-weight:700;margin-top:2px;${ok?'color:#d97706;':'color:#94a3b8;'}">${ok?'✅ Đã mở khóa':'🔒 Chưa đạt'}</div>
+            </div>
         </div>`;
     }).join('');
     document.getElementById('badgesCard').classList.remove('hidden');
 }
 
+function trackAnswerStreak(isCorrect) {
+    if (isCorrect) {
+        _currentAnswerStreak++;
+        if (_currentAnswerStreak > (_extraBadgeData.perfectStreak || 0)) {
+            _extraBadgeData.perfectStreak = _currentAnswerStreak;
+            db.collection('users').doc(currentUser.uid).set({ badgeExtra: { perfectStreak: _currentAnswerStreak } }, {merge:true});
+        }
+    } else {
+        _currentAnswerStreak = 0;
+    }
+}
+
+function startSessionTimer(total) {
+    _sessionStartTime = Date.now();
+    _sessionCorrect = 0;
+    _sessionTotal = total;
+}
+
+function trackSessionResult(correct) {
+    _sessionCorrect += correct ? 1 : 0;
+}
+
+async function finalizeSessionBadges() {
+    const elapsed = (Date.now() - _sessionStartTime) / 1000;
+    let changed = false;
+    if (_sessionCorrect === _sessionTotal && _sessionTotal >= 15) {
+        _extraBadgeData.perfectSession = true; changed = true;
+    }
+    if (_sessionTotal >= 20 && elapsed < 180) {
+        _extraBadgeData.speedReview = true; changed = true;
+    }
+    if (changed) {
+        await db.collection('users').doc(currentUser.uid).set({ badgeExtra: _extraBadgeData }, {merge:true});
+        const xp = await getUserXP();
+        await checkAndAwardBadges(xp);
+    }
+}
 
 const _origRenderLibrary = renderLibrary;
 renderLibrary = function() {
