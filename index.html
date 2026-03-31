@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Be Heard | Lexi Learning</title>
+    <title>Be Heard|Lexi Learning</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
@@ -1899,17 +1899,19 @@ function showFlashcard() {
     updateFCProgress();
     _fcFlipped = false;
     const card = document.getElementById('theFlashcard');
-    card.classList.remove('flipped');
-    document.getElementById('fcRatingWrap').style.display = 'none';
     
-    // --- FIX: Xóa nội dung mặt sau trước khi cập nhật từ mới ---
+    // --- Quan trọng: Xóa nội dung mặt sau TRƯỚC khi lật thẻ ---
     document.getElementById('fcMeaning').innerText = '';
     document.getElementById('fcExample').innerText = '';
-    // --- end fix ---
-
+    document.getElementById('fcRatingWrap').style.display = 'none';
+    
+    // Bây giờ mới lật thẻ về mặt trước
+    card.classList.remove('flipped');
+    
+    // Cập nhật nội dung mới cho thẻ
     const target = reviewPool[currentReviewIdx];
     currentWord  = target;
-
+    
     if (reviewMode === 'normal') {
         document.getElementById('fcPromptLabel').innerText = 'Từ tiếng Anh';
         document.getElementById('fcWord').innerText = target.word;
