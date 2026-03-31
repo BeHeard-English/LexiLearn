@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Be Heard|Lexi Learning</title>
+    <title>Be Heard | Lexi Learning</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
@@ -1463,6 +1463,8 @@ async function startReviewQuiz() {
     studyType    = document.querySelector('.mode-btn[data-study].active')?.dataset.study||'quiz';
     if(!levels.length){ showToast('⚠️ Hãy chọn ít nhất 1 cấp độ!'); return; }
 
+    window._wordHardCount = {}; // ✅ Đặt ngay sau kiểm tra
+
     const snap = await db.collection('users').doc(currentUser.uid).collection('vocabulary').where('correct_count','<',10).get();
     let pool = snap.docs.map(d=>d.data()).filter(i=>levels.includes(i.level));
     if(pool.length<4){ showToast('⚠️ Cần tối thiểu 4 từ ở cấp đã chọn!'); return; }
@@ -1899,25 +1901,27 @@ function showFlashcard() {
     updateFCProgress();
     _fcFlipped = false;
     const card = document.getElementById('theFlashcard');
-    
-    // Xoá nội dung mặt sau trước khi lật thẻ về mặt trước
+
+    // Ẩn nút đánh giá
+    document.getElementById('fcRatingWrap').style.display = 'none';
+
+    // Xóa nội dung mặt sau (phòng khi CSS chưa kịp ẩn)
     document.getElementById('fcMeaning').innerText = '';
     document.getElementById('fcExample').innerText = '';
-    document.getElementById('fcRatingWrap').style.display = 'none';
-    
-    // Đảm bảo thẻ ở mặt trước
+
+    // Lật về mặt trước
     card.classList.remove('flipped');
-    
+
     const target = reviewPool[currentReviewIdx];
     currentWord  = target;
-    
+
     if (reviewMode === 'normal') {
         document.getElementById('fcPromptLabel').innerText = 'Từ tiếng Anh';
         document.getElementById('fcWord').innerText = target.word;
         document.getElementById('fcIpa').innerText  = target.ipa || '';
         document.getElementById('fcBackLabel').innerText  = 'Nghĩa tiếng Việt';
         document.getElementById('fcTtsBtn').style.display = 'flex';
-        // Gán nghĩa và ví dụ cho mặt sau (chưa hiển thị)
+        // Gán lại nội dung mặt sau (nhưng sẽ bị ẩn nhờ CSS)
         document.getElementById('fcMeaning').innerText = target.vn;
         document.getElementById('fcExample').innerText = target.example || '';
     } else {
@@ -1948,35 +1952,65 @@ function speakFC() {
 }
 
 async function rateFC(rating) {
-    const xpMap  = { easy: 15, ok: 10, hard: 0 }; // hard không cộng XP
+    const xpMap  = { easy: 15, ok: 10, hard: 0 };
     const target = reviewPool[currentReviewIdx];
-    const ref    = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(target.word.toLowerCase());
+    const word   = target.word.toLowerCase();
+    const ref    = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(word);
     const snap   = await ref.get();
     const item   = snap.exists ? snap.data() : {};
 
     const isCorrect = (rating !== 'hard');
     const srs = srsUpdate(item, isCorrect);
-    
+
     if (isCorrect) {
         await ref.set({ correct_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
     } else {
         await ref.set({ incorrect_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
-        // Đưa từ về cuối danh sách để ôn lại
-        reviewPool.push(reviewPool.splice(currentReviewIdx, 1)[0]);
-        currentReviewIdx--;
     }
-    
-    // Chỉ cộng XP nếu nhớ từ (easy/ok)
-    if (xpMap[rating] > 0) {
+
+    // Xử lý riêng cho trường hợp "khó"
+    let skipWord = false;
+    if (rating === 'hard') {
+        window._wordHardCount[word] = (window._wordHardCount[word] || 0) + 1;
+        if (window._wordHardCount[word] >= 2) {
+            skipWord = true;  // không đưa từ về cuối
+            showToast(`⏭️ Đã bỏ qua từ "${target.word}" vì chọn "Khó" 2 lần.`);
+        }
+    }
+
+    if (isCorrect) {
+        // Đúng: cộng XP, ghi nhận
         await addXP(xpMap[rating]);
+        await recordDailyActivity(1, 1);
+        trackAnswerStreak(true);
+        trackSessionResult(true);
+        currentReviewIdx++;
+    } else {
+        if (!skipWord) {
+            // Chưa đủ 2 lần khó: đẩy từ về cuối để ôn lại
+            reviewPool.push(reviewPool.splice(currentReviewIdx, 1)[0]);
+            // không tăng currentReviewIdx vì sẽ xử lý lại từ này
+        } else {
+            // Đã 2 lần khó: bỏ qua từ, chuyển sang từ tiếp theo
+            currentReviewIdx++;
+        }
+        await recordDailyActivity(1, 0);
+        trackAnswerStreak(false);
+        trackSessionResult(false);
     }
-    
-    await recordDailyActivity(1, isCorrect ? 1 : 0);
-    trackAnswerStreak(isCorrect);
-    trackSessionResult(isCorrect);
-    
-    currentReviewIdx++;
-    showFlashcard();
+
+    // Nếu vẫn còn từ, hiển thị thẻ tiếp theo
+    if (currentReviewIdx < reviewPool.length) {
+        showFlashcard();
+    } else {
+        // Kết thúc phiên
+        document.getElementById('flashcardArea').style.display = 'none';
+        document.getElementById('reviewStart').classList.remove('hidden');
+        showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} thẻ.`);
+        await finalizeSessionBadges();
+        loadSRSDueCount();
+        switchTab('library');
+    }
 }
 
 // ══════════════════════════════════════════
@@ -2230,6 +2264,13 @@ renderLibrary = function() {
 };
 
 function shuffle(arr){ return [...arr].sort(()=>Math.random()-.5); }
+    /* Ẩn mặt sau khi thẻ chưa lật, chỉ hiện khi có class .flipped */
+.flashcard-face.fc-back {
+    visibility: hidden;
+}
+.flashcard.flipped .flashcard-face.fc-back {
+    visibility: visible;
+}
 </script>
 </body>
 </html>
