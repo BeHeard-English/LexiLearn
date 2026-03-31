@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Be Heard | Lexi Learning</title>
+    <title>Be Heard |Lexi Learning</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
@@ -451,6 +451,17 @@
     <div id="tab-library" class="hidden fade-in">
         <div class="card" style="overflow:hidden;">
             <div class="card-header" style="padding:24px 28px;">
+                <!-- Phần nhóm từ vựng -->
+<div style="padding:0 28px 16px 28px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <div>
+            <div style="font-weight:800; font-size:.9rem; color:var(--text);">📁 Nhóm từ vựng</div>
+            <div class="card-subtitle" style="margin-top:2px;">Quản lý các chủ đề học tập riêng</div>
+        </div>
+        <button id="createTopicBtn" class="btn-primary" style="padding:6px 12px; font-size:.75rem;">+ Tạo nhóm mới</button>
+    </div>
+    <div id="topicsList" style="display:flex; flex-wrap:wrap; gap:10px; margin-bottom:8px;"></div>
+</div>
                 <div>
                     <div style="font-family:'Nunito',sans-serif;font-size:1.5rem;font-weight:800;color:var(--primary);">Thư viện</div>
                     <div class="card-subtitle" style="margin-top:4px;">Tổng hợp từ vựng</div>
@@ -537,14 +548,16 @@
                 <div style="overflow-x:auto;border-radius:14px;border:1px solid var(--border);">
                     <table class="lib-table">
                         <thead>
-                            <th>Từ vựng</th>
-                            <th>Nghĩa</th>
-                            <th>Cấp</th>
-                            <th>SRS</th>
-                            <th>Tiến độ</th>
-                            <th style="text-align:center;">Xóa</th>
-                        </tr>
-                        </thead>
+    <tr>
+        <th>Từ vựng</th>
+        <th>Nghĩa</th>
+        <th>Cấp</th>
+        <th>Nhóm</th>
+        <th>SRS</th>
+        <th>Tiến độ</th>
+        <th style="text-align:center;">Xóa</th>
+    </tr>
+</thead>
                         <tbody id="libraryTableBody"></tbody>
                     </table>
                 </div>
@@ -592,6 +605,14 @@
                 <!-- Level -->
                 <div style="text-align:left;margin-bottom:28px;">
                     <div class="section-label" style="margin-bottom:10px;">Cấp độ <span style="font-weight:400;color:#94a3b8;text-transform:none;letter-spacing:0;">(chọn nhiều)</span></div>
+                    <!-- Chủ đề -->
+<div style="text-align:left; margin-bottom:22px;">
+    <div class="section-label" style="margin-bottom:10px;">Chủ đề</div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;" id="topicFilters">
+        <button class="level-btn active" data-topic="ALL">📚 Tất cả (thư viện chính)</button>
+        <!-- Các topic sẽ được thêm động bằng JS -->
+    </div>
+</div>
                     <div style="display:flex;gap:8px;flex-wrap:wrap;">
                         <button class="level-btn active" data-level="A1">A1</button>
                         <button class="level-btn active" data-level="A2">A2</button>
@@ -881,6 +902,8 @@
 </div>
 
 <script>
+let topics = [];               // Danh sách các topic của user
+let selectedTopic = 'ALL';     // Topic được chọn trong ôn tập
 // ══════════════════════════════════════════
 // FIREBASE
 // ══════════════════════════════════════════
@@ -1077,11 +1100,13 @@ window.addEventListener('load', () => {
     const k = localStorage.getItem('vflow_api_key');
     if (k) { document.getElementById('apiKey').value = k; document.getElementById('apiKeyMobile').value = k; }
     if (window.innerWidth <= 480) document.getElementById('settingsToggle').style.display = 'flex';
-    // Show touch hint on touch devices
     if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
         const hint = document.getElementById('touchHint');
         if (hint) hint.style.display = 'block';
     }
+    // Gán sự kiện cho nút tạo nhóm (sẽ hoạt động sau khi user đăng nhập)
+    const createBtn = document.getElementById('createTopicBtn');
+    if (createBtn) createBtn.onclick = createTopic;
 });
 document.getElementById('saveKeyBtn').onclick = () => {
     const k = document.getElementById('apiKey').value.trim();
@@ -1123,7 +1148,9 @@ auth.onAuthStateChanged(async user => {
         document.getElementById('xpProfileCard').classList.remove('hidden');
         document.getElementById('mobileBottomNav').classList.remove('hidden');
         const xp = await getUserXP(); updateXPUI(xp);
-        loadLibrary(); loadSRSDueCount();
+        await loadLibrary();
+        await loadTopics();     // <-- Thêm dòng này
+        loadSRSDueCount();
     } else {
         ['loginBtn'].forEach(id=>document.getElementById(id).classList.remove('hidden'));
         ['userProfile','desktopTabs','xpNavWrap','xpProfileCard'].forEach(id=>document.getElementById(id).classList.add('hidden'));
@@ -1274,29 +1301,31 @@ function renderLibrary() {
     if(!list.length) { tbody.innerHTML=''; empty.classList.remove('hidden'); return; }
     empty.classList.add('hidden');
     tbody.innerHTML = list.map(item => `
-        <tr>
-            <td>
-                <div style="display:flex;align-items:center;gap:6px;">
-                    <span style="font-weight:800;color:var(--primary);">${item.word}</span>
-                    <button class="tts-btn" onclick="speak('${item.word.replace(/'/g,"\\'")}','en-US')" title="Phát âm">
-                        <svg xmlns="http://www.w3.org/2000/svg" style="width:13px;height:13px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M12 6v12m-3.536-9.536a5 5 0 000 7.072"/></svg>
-                    </button>
-                </div>
-                <div style="font-family:monospace;font-size:.72rem;color:var(--muted);">${item.ipa||''}</div>
-            </td>
-            <td style="font-size:.85rem;color:#334155;">${item.vn}</td>
-            <td><span class="level-badge ${lvClass(item.level)}">${item.level||'—'}</span></td>
-            <td>${srsChip(item)}</td>
-            <td style="min-width:110px;">
-                <div class="progress-bar-wrap" style="height:5px;margin-bottom:4px;"><div class="progress-bar-fill" style="width:${Math.min((item.correct_count||0)*10,100)}%"></div></div>
-                <span style="font-size:.7rem;font-weight:700;color:var(--muted);">${item.correct_count||0}/10</span>
-            </td>
-            <td style="text-align:center;">
-                <button onclick="deleteWord('${item.word}')" class="del-btn" title="Xóa">
-                    <svg xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+    <tr>
+        <td>
+            <div style="display:flex;align-items:center;gap:6px;">
+                <span style="font-weight:800;color:var(--primary);">${item.word}</span>
+                <button class="tts-btn" onclick="speak('${item.word.replace(/'/g,"\\'")}','en-US')" title="Phát âm">
+                    <svg xmlns="http://www.w3.org/2000/svg" style="width:13px;height:13px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M12 6v12m-3.536-9.536a5 5 0 000 7.072"/></svg>
                 </button>
-            </td>
-        </tr>`).join('');
+            </div>
+            <div style="font-family:monospace;font-size:.72rem;color:var(--muted);">${item.ipa||''}</div>
+        </td>
+        <td style="font-size:.85rem;color:#334155;">${item.vn}</td>
+        <td><span class="level-badge ${lvClass(item.level)}">${item.level||'—'}</span></td>
+        <td style="font-size:.8rem; color:var(--muted);">${item.topicName || 'Thư viện chính'}</td>
+        <td>${srsChip(item)}</td>
+        <td style="min-width:110px;">
+            <div class="progress-bar-wrap" style="height:5px;margin-bottom:4px;"><div class="progress-bar-fill" style="width:${Math.min((item.correct_count||0)*10,100)}%"></div></div>
+            <span style="font-size:.7rem;font-weight:700;color:var(--muted);">${item.correct_count||0}/10</span>
+        </td>
+        <td style="text-align:center;">
+            <button onclick="deleteWord('${item.word}')" class="del-btn" title="Xóa">
+                <svg xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
+        </td>
+    </tr>
+`).join('');
 }
 
 document.getElementById('libSearch').oninput = e => { libQuery=e.target.value; renderLibrary(); };
@@ -1470,9 +1499,14 @@ async function startReviewQuiz() {
     studyType    = document.querySelector('.mode-btn[data-study].active')?.dataset.study||'quiz';
     if(!levels.length){ showToast('⚠️ Hãy chọn ít nhất 1 cấp độ!'); return; }
 
-    window._wordHardCount = {}; // ✅ Đặt ngay sau kiểm tra
+    window._wordHardCount = {};
 
-    const snap = await db.collection('users').doc(currentUser.uid).collection('vocabulary').where('correct_count','<',10).get();
+    // Lấy từ vựng theo topic đã chọn
+    let vocabQuery = db.collection('users').doc(currentUser.uid).collection('vocabulary').where('correct_count', '<', 10);
+    if (selectedTopic !== 'ALL') {
+        vocabQuery = vocabQuery.where('topicId', '==', selectedTopic);
+    }
+    const snap = await vocabQuery.get();
     let pool = snap.docs.map(d=>d.data()).filter(i=>levels.includes(i.level));
     if(pool.length<4){ showToast('⚠️ Cần tối thiểu 4 từ ở cấp đã chọn!'); return; }
 
@@ -2271,6 +2305,164 @@ renderLibrary = function() {
 };
 
 function shuffle(arr){ return [...arr].sort(()=>Math.random()-.5); }
+    // ─── QUẢN LÝ TOPIC ───────────────────────────────────────────────
+async function loadTopics() {
+    if (!currentUser) return;
+    const snap = await db.collection('users').doc(currentUser.uid).collection('topics').orderBy('createdAt', 'desc').get();
+    topics = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    renderTopicsList();
+    renderTopicFilters();
+}
+
+function renderTopicsList() {
+    const container = document.getElementById('topicsList');
+    if (!container) return;
+    if (!topics.length) {
+        container.innerHTML = '<div style="font-size:.8rem; color:var(--muted); padding:8px 0;">Chưa có nhóm nào. Nhấn "Tạo nhóm mới" để bắt đầu.</div>';
+        return;
+    }
+    container.innerHTML = topics.map(topic => `
+        <div style="background:var(--primary-light); border-radius:12px; padding:8px 14px; display:flex; align-items:center; gap:10px;">
+            <span style="font-weight:800;">📁 ${escapeHtml(topic.name)}</span>
+            <span style="font-size:.7rem; color:var(--muted);">${topic.wordCount || 0} từ</span>
+            <button onclick="deleteTopic('${topic.id}')" class="del-btn" style="margin-left:auto;" title="Xóa nhóm">🗑️</button>
+        </div>
+    `).join('');
+}
+
+function renderTopicFilters() {
+    const container = document.getElementById('topicFilters');
+    if (!container) return;
+    let html = `<button class="level-btn active" data-topic="ALL">📚 Tất cả (thư viện chính)</button>`;
+    topics.forEach(topic => {
+        html += `<button class="level-btn" data-topic="${topic.id}">📁 ${escapeHtml(topic.name)}</button>`;
+    });
+    container.innerHTML = html;
+
+    // Gán sự kiện click cho các nút lọc chủ đề
+    document.querySelectorAll('#topicFilters .level-btn').forEach(btn => {
+        btn.onclick = () => {
+            document.querySelectorAll('#topicFilters .level-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            selectedTopic = btn.dataset.topic;
+        };
+    });
+}
+
+async function createTopic() {
+    const name = prompt('Nhập tên chủ đề (ví dụ: Science, IELTS, ...):');
+    if (!name) return;
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.docx,.txt';
+    fileInput.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        showToast('⏳ Đang xử lý file...');
+        try {
+            let text = '';
+            if (file.name.endsWith('.docx')) {
+                const arrayBuffer = await file.arrayBuffer();
+                const result = await mammoth.extractRawText({ arrayBuffer });
+                text = result.value;
+            } else {
+                text = await file.text();
+            }
+            // Phân tích file để lấy danh sách từ (mỗi dòng: từ: nghĩa)
+            const lines = text.split('\n').filter(l => l.trim() !== '');
+            const wordItems = [];
+            for (const line of lines) {
+                const clean = line.replace(/^[\d\.\-\*\•\s]+/, '').trim();
+                if (clean.includes(':')) {
+                    const parts = clean.split(':');
+                    const enWord = parts[0].trim();
+                    const vnMeaning = parts.slice(1).join(':').trim();
+                    if (enWord && vnMeaning) {
+                        wordItems.push({ word: enWord, vn: vnMeaning });
+                    }
+                }
+            }
+            if (wordItems.length === 0) {
+                showToast('⚠️ Không tìm thấy từ vựng hợp lệ (định dạng: từ: nghĩa)');
+                return;
+            }
+
+            // Tạo topic mới trong Firestore
+            const topicRef = db.collection('users').doc(currentUser.uid).collection('topics').doc();
+            const topicId = topicRef.id;
+            await topicRef.set({
+                name: name,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                wordCount: wordItems.length
+            });
+
+            // Gọi AI để bổ sung IPA, level, example cho từng từ
+            const key = document.getElementById('apiKey').value.trim() || document.getElementById('apiKeyMobile').value.trim();
+            if (!key) { showToast('⚠️ Cần API Key để phân tích từ'); return; }
+            const prompt = `I have a list of English words and their Vietnamese meanings: ${wordItems.map(w => `"${w.word}": "${w.vn}"`).join(', ')}. Return a JSON array exactly matching this structure: [{"word":"string","ipa":"string","vn":"(keep the provided Vietnamese meaning)","level":"A1-C2","example":"English sentence"}]. Do not output any markdown formatting or extra text, just the raw JSON array.`;
+            const res = await fetch(`https://api.groq.com/openai/v1/chat/completions`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+                body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: prompt }], temperature: 0.2 })
+            });
+            const data = await res.json();
+            let jsonStr = data.choices[0].message.content.replace(/```json|```/g, '').trim();
+            let enriched = JSON.parse(jsonStr);
+
+            // Lưu từng từ vào vocabulary với topicId
+            const batch = db.batch();
+            for (let item of enriched) {
+                const wordRef = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(item.word.toLowerCase());
+                batch.set(wordRef, {
+                    ...item,
+                    correct_count: 0,
+                    incorrect_count: 0,
+                    srs_interval: 1,
+                    srs_ease: 2.5,
+                    srs_reps: 0,
+                    srs_next_review: firebase.firestore.Timestamp.fromDate(new Date()),
+                    topicId: topicId,
+                    topicName: name,
+                    last_updated: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+            }
+            await batch.commit();
+
+            showToast(`✅ Đã thêm nhóm "${name}" với ${enriched.length} từ.`);
+            await loadLibrary();   // reload toàn bộ thư viện
+            await loadTopics();    // cập nhật danh sách nhóm
+        } catch (err) {
+            console.error(err);
+            showToast('❌ Lỗi khi xử lý file.');
+        }
+    };
+    fileInput.click();
+}
+
+async function deleteTopic(topicId) {
+    if (!confirm('Xóa nhóm sẽ xóa tất cả từ vựng trong nhóm. Bạn có chắc?')) return;
+    // Xóa tất cả từ thuộc topic này
+    const wordsSnap = await db.collection('users').doc(currentUser.uid).collection('vocabulary').where('topicId', '==', topicId).get();
+    const batch = db.batch();
+    wordsSnap.docs.forEach(doc => batch.delete(doc.ref));
+    await batch.commit();
+    // Xóa topic
+    await db.collection('users').doc(currentUser.uid).collection('topics').doc(topicId).delete();
+    showToast('Đã xóa nhóm và các từ liên quan.');
+    await loadLibrary();
+    await loadTopics();
+}
+
+// Hàm escapeHtml đơn giản để tránh XSS
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+    });
+}
 </script>
 </body>
 </html>
