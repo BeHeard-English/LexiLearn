@@ -1900,15 +1900,14 @@ function showFlashcard() {
     _fcFlipped = false;
     const card = document.getElementById('theFlashcard');
     
-    // --- Quan trọng: Xóa nội dung mặt sau TRƯỚC khi lật thẻ ---
+    // Xoá nội dung mặt sau trước khi lật thẻ về mặt trước
     document.getElementById('fcMeaning').innerText = '';
     document.getElementById('fcExample').innerText = '';
     document.getElementById('fcRatingWrap').style.display = 'none';
     
-    // Bây giờ mới lật thẻ về mặt trước
+    // Đảm bảo thẻ ở mặt trước
     card.classList.remove('flipped');
     
-    // Cập nhật nội dung mới cho thẻ
     const target = reviewPool[currentReviewIdx];
     currentWord  = target;
     
@@ -1917,17 +1916,19 @@ function showFlashcard() {
         document.getElementById('fcWord').innerText = target.word;
         document.getElementById('fcIpa').innerText  = target.ipa || '';
         document.getElementById('fcBackLabel').innerText  = 'Nghĩa tiếng Việt';
-        document.getElementById('fcMeaning').innerText    = target.vn;
         document.getElementById('fcTtsBtn').style.display = 'flex';
+        // Gán nghĩa và ví dụ cho mặt sau (chưa hiển thị)
+        document.getElementById('fcMeaning').innerText = target.vn;
+        document.getElementById('fcExample').innerText = target.example || '';
     } else {
         document.getElementById('fcPromptLabel').innerText = 'Nghĩa tiếng Việt';
         document.getElementById('fcWord').innerText = target.vn;
         document.getElementById('fcIpa').innerText  = '';
         document.getElementById('fcBackLabel').innerText  = 'Từ tiếng Anh';
-        document.getElementById('fcMeaning').innerText    = target.word;
         document.getElementById('fcTtsBtn').style.display = 'none';
+        document.getElementById('fcMeaning').innerText = target.word;
+        document.getElementById('fcExample').innerText = target.example || '';
     }
-    document.getElementById('fcExample').innerText = target.example || '';
 }
 
 function flipCard() {
@@ -1947,7 +1948,7 @@ function speakFC() {
 }
 
 async function rateFC(rating) {
-    const xpMap  = { easy: 15, ok: 10, hard: 5 };
+    const xpMap  = { easy: 15, ok: 10, hard: 0 }; // hard không cộng XP
     const target = reviewPool[currentReviewIdx];
     const ref    = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(target.word.toLowerCase());
     const snap   = await ref.get();
@@ -1955,17 +1956,25 @@ async function rateFC(rating) {
 
     const isCorrect = (rating !== 'hard');
     const srs = srsUpdate(item, isCorrect);
+    
     if (isCorrect) {
         await ref.set({ correct_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
     } else {
         await ref.set({ incorrect_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
+        // Đưa từ về cuối danh sách để ôn lại
         reviewPool.push(reviewPool.splice(currentReviewIdx, 1)[0]);
         currentReviewIdx--;
     }
-    await addXP(xpMap[rating]);
+    
+    // Chỉ cộng XP nếu nhớ từ (easy/ok)
+    if (xpMap[rating] > 0) {
+        await addXP(xpMap[rating]);
+    }
+    
     await recordDailyActivity(1, isCorrect ? 1 : 0);
     trackAnswerStreak(isCorrect);
     trackSessionResult(isCorrect);
+    
     currentReviewIdx++;
     showFlashcard();
 }
