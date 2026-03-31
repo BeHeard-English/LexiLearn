@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Be Heard | Lexi Learning</title>
+    <title>Be Heard |Lexi Learning</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
@@ -316,6 +316,13 @@
         .badge-chip.locked .badge-chip-name{color:var(--muted);}
         .badge-chip-desc{font-size:.62rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px;}
         .badge-chip .badge-chip-lock{font-size:.6rem;color:var(--muted);margin-top:1px;}
+        /* Ẩn mặt sau khi thẻ chưa lật, chỉ hiện khi có class .flipped */
+.flashcard-face.fc-back {
+    visibility: hidden;
+}
+.flashcard.flipped .flashcard-face.fc-back {
+    visibility: visible;
+}
     </style>
 </head>
 <body>
@@ -529,7 +536,7 @@
                 <!-- Table -->
                 <div style="overflow-x:auto;border-radius:14px;border:1px solid var(--border);">
                     <table class="lib-table">
-                        <thead>\
+                        <thead>
                             <th>Từ vựng</th>
                             <th>Nghĩa</th>
                             <th>Cấp</th>
@@ -2264,13 +2271,6 @@ renderLibrary = function() {
 };
 
 function shuffle(arr){ return [...arr].sort(()=>Math.random()-.5); }
-    /* Ẩn mặt sau khi thẻ chưa lật, chỉ hiện khi có class .flipped */
-.flashcard-face.fc-back {
-    visibility: hidden;
-}
-.flashcard.flipped .flashcard-face.fc-back {
-    visibility: visible;
-}
 </script>
 </body>
 </html>
