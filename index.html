@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Be Heard | Lexi Learning</title>
+    <title>Be Heard |Lexi Learning</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
@@ -1682,6 +1682,7 @@ async function startReviewQuiz() {
     if(!levels.length){ showToast('⚠️ Hãy chọn ít nhất 1 cấp độ!'); return; }
 
     window._wordHardCount = {};
+    window._wordCorrectCount = {}; // Thêm dòng này để đếm số lần đúng trong phiên
 
     const snap = await db.collection('users').doc(currentUser.uid).collection('vocabulary').where('correct_count','<',10).get();
     let pool = snap.docs.map(d=>d.data()).filter(i=>levels.includes(i.level));
@@ -1689,7 +1690,6 @@ async function startReviewQuiz() {
     // Xử lý nguồn từ vựng
     if (vocabSource !== 'all') {
         if (vocabSource === 'mastered') {
-            // Lấy tất cả từ đã thuộc (correct_count >= 10)
             const masteredSnap = await db.collection('users').doc(currentUser.uid).collection('vocabulary')
                 .where('correct_count','>=',10).get();
             pool = masteredSnap.docs.map(d=>d.data()).filter(i=>levels.includes(i.level));
@@ -1702,14 +1702,13 @@ async function startReviewQuiz() {
 
     if(pool.length<4){ showToast('⚠️ Cần tối thiểu 4 từ ở cấp đã chọn trong nguồn này!'); return; }
 
-    // SRS: due words first (chỉ áp dụng nếu nguồn là all hoặc topic, không áp dụng cho mastered vì đã thuộc)
+    // SRS: due words first
     const due    = shuffle(pool.filter(i=> isDue(i)));
     const notDue = shuffle(pool.filter(i=>!isDue(i)));
     reviewPool = [...due,...notDue].slice(0, count);
     totalReviewCount = reviewPool.length;
     currentReviewIdx = 0;
 
-    // Lưu lại nguồn để dùng trong checkAnswer
     window._currentReviewSource = vocabSource;
 
     document.getElementById('reviewStart').classList.add('hidden');
@@ -2962,6 +2961,11 @@ async function showTypingQuestion() {
         document.getElementById('typingWord').innerText = target.vn;
         ttsBtn.style.display = 'none';
     }
+
+    // Xử lý sự kiện Enter
+    const inputEl = document.getElementById('typingInput');
+    inputEl.removeEventListener('keypress', handleEnter);
+    inputEl.addEventListener('keypress', handleEnter);
 }
 
 // Xử lý kiểm tra đáp án
@@ -2988,17 +2992,34 @@ async function checkTypingAnswer() {
     const srs = srsUpdate(item, isCorrect);
 
     if (isCorrect) {
-        // Đúng: +15 XP
+        // Tính XP dựa trên số lần đã đúng của từ này trong phiên
+        const wordKey = target.word.toLowerCase();
+        let correctCount = window._wordCorrectCount[wordKey] || 0;
+        let xpGain = 0;
+        if (correctCount === 0) xpGain = 15;
+        else if (correctCount === 1) xpGain = 10;
+        else if (correctCount === 2) xpGain = 5;
+        // lần thứ 4 trở đi xpGain = 0
+
+        if (xpGain > 0) {
+            await addXP(xpGain);
+            feedbackDiv.style.cssText = 'display:block;padding:12px 18px;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;text-align:center;border-radius:12px;margin-bottom:12px;background:linear-gradient(135deg,#d1fae5,#a7f3d0);color:#065f46;';
+            feedbackDiv.innerText = `✅ Chính xác! +${xpGain} XP`;
+        } else {
+            feedbackDiv.style.cssText = 'display:block;padding:12px 18px;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;text-align:center;border-radius:12px;margin-bottom:12px;background:linear-gradient(135deg,#d1fae5,#a7f3d0);color:#065f46;';
+            feedbackDiv.innerText = `✅ Chính xác! (đã hết XP cho từ này)`;
+        }
+
+        // Cập nhật số lần đã đúng
+        window._wordCorrectCount[wordKey] = correctCount + 1;
+
         await ref.set({ correct_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
-        await addXP(15);
         await recordDailyActivity(1, 1);
         trackAnswerStreak(true);
         trackSessionResult(true);
-        feedbackDiv.style.cssText = 'display:block;padding:12px 18px;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;text-align:center;border-radius:12px;margin-bottom:12px;background:linear-gradient(135deg,#d1fae5,#a7f3d0);color:#065f46;';
-        feedbackDiv.innerText = '✅ Chính xác! +15 XP';
         currentReviewIdx++;
     } else {
-        // Sai: không XP
+        // Sai
         feedbackDiv.style.cssText = 'display:block;padding:12px 18px;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;text-align:center;border-radius:12px;margin-bottom:12px;background:linear-gradient(135deg,#fee2e2,#fecaca);color:#991b1b;';
         feedbackDiv.innerText = `❌ Sai! Đáp án đúng: "${correctAnswer}"`;
         await ref.set({ incorrect_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
@@ -3006,7 +3027,7 @@ async function checkTypingAnswer() {
         trackAnswerStreak(false);
         trackSessionResult(false);
 
-        // Xử lý riêng nếu nguồn là "mastered"
+        // Xử lý nguồn mastered
         if (window._currentReviewSource === 'mastered') {
             const currentCorrect = item.correct_count || 0;
             const newCorrect = Math.max(0, currentCorrect - 1);
@@ -3035,6 +3056,12 @@ async function checkTypingAnswer() {
             });
         }
     };
+}
+    function handleEnter(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        checkTypingAnswer();
+    }
 }
 
 // Phát âm cho typing mode
