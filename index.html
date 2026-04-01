@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Be Heard |Lexi Learning</title>
+    <title>Be Heard | Lexi Learning</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
@@ -1772,35 +1772,48 @@ async function checkAnswer(btn, selected, correct, word) {
         btn.classList.add('correct');
         overlay.style.cssText='display:block;padding:12px 18px;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;text-align:center;border-radius:12px;margin-top:14px;background:linear-gradient(135deg,#d1fae5,#a7f3d0);color:#065f46;';
         overlay.innerText='✅ Chính xác!';
-        await ref.set({ correct_count:firebase.firestore.FieldValue.increment(1), ...srs }, {merge:true});
+        // Cập nhật đúng: tăng correct_count, áp dụng SRS
+        await ref.set({ correct_count: firebase.firestore.FieldValue.increment(1), ...srs }, {merge:true});
         await addXP(10);
         await recordDailyActivity(1, 1);
         trackAnswerStreak(true);
         trackSessionResult(true);
         if(reviewMode==='reverse') speak(word,'en-US');
+        currentReviewIdx++; // Chuyển sang câu tiếp theo
     } else {
         btn.classList.add('wrong');
         allBtns.forEach(b=>{ if(b.innerText.includes(correct)) b.classList.add('correct'); });
         overlay.style.cssText='display:block;padding:12px 18px;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;text-align:center;border-radius:12px;margin-top:14px;background:linear-gradient(135deg,#fee2e2,#fecaca);color:#991b1b;';
         overlay.innerText='✍️ Chưa chính xác — Ôn lại sau!';
-        await ref.set({ incorrect_count:firebase.firestore.FieldValue.increment(1), ...srs }, {merge:true});
         await addXP(2);
         await recordDailyActivity(1, 0);
         trackAnswerStreak(false);
         trackSessionResult(false);
-        reviewPool.push(reviewPool.splice(currentReviewIdx,1)[0]);
-        currentReviewIdx--;
-    if (window._currentReviewSource === 'mastered') {
+
+        // Xử lý riêng cho nguồn "mastered": giảm correct_count
+        if (window._currentReviewSource === 'mastered') {
             const currentCorrect = item.correct_count || 0;
             const newCorrect = Math.max(0, currentCorrect - 1);
             await ref.set({ correct_count: newCorrect, ...srs }, { merge: true });
-            // Cập nhật lại fullLibrary để giao diện đồng bộ
             fullLibrary = fullLibrary.map(i => i.word === word ? {...i, correct_count: newCorrect} : i);
         } else {
+            // Nguồn bình thường: tăng incorrect_count, áp dụng SRS
             await ref.set({ incorrect_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
         }
+
+        // Nếu không phải mastered, đẩy từ về cuối để ôn lại
+        if (window._currentReviewSource !== 'mastered') {
+            reviewPool.push(reviewPool.splice(currentReviewIdx, 1)[0]);
+            // Không tăng currentReviewIdx vì sẽ lấy từ vừa đẩy xuống cuối
+        } else {
+            // Nếu là mastered, chuyển sang từ tiếp theo (bỏ qua từ hiện tại)
+            currentReviewIdx++;
+        }
+    }
+
     const nb = document.getElementById('nextReviewBtn');
-    nb.style.display='flex'; nb.onclick=()=>{ currentReviewIdx++; showReviewQuestion(); };
+    nb.style.display='flex';
+    nb.onclick=()=>{ currentReviewIdx++; showReviewQuestion(); };
 }
 // ══════════════════════════════════════════
 // ADD WORD DROPDOWN MENU
@@ -2570,43 +2583,47 @@ async function rateFC(rating) {
     const srs = srsUpdate(item, isCorrect);
 
     if (isCorrect) {
+        // Đúng: tăng correct_count
         await ref.set({ correct_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
         await addXP(rating === 'easy' ? 15 : 10);
         await recordDailyActivity(1, 1);
         trackAnswerStreak(true);
         trackSessionResult(true);
-        currentReviewIdx++;
+        currentReviewIdx++; // Chuyển sang thẻ tiếp theo
     } else {
-        // Xử lý cho trường hợp hard
+        // Sai (hard)
         window._wordHardCount[word] = (window._wordHardCount[word] || 0) + 1;
         let skipWord = window._wordHardCount[word] >= 2;
 
-        // Nếu đang ôn từ đã thuộc và câu sai → giảm correct_count
+        // Xử lý nguồn mastered: giảm correct_count
         if (window._currentReviewSource === 'mastered') {
             const currentCorrect = item.correct_count || 0;
             const newCorrect = Math.max(0, currentCorrect - 1);
             await ref.set({ correct_count: newCorrect, ...srs }, { merge: true });
             fullLibrary = fullLibrary.map(i => i.word === word ? {...i, correct_count: newCorrect} : i);
-            // Vì đã giảm correct_count, ta vẫn có thể chuyển sang từ tiếp theo (không đẩy về cuối)
-            skipWord = true; // bỏ qua từ này, không đưa về cuối
+            skipWord = true; // Bỏ qua từ này, không đưa về cuối
         } else {
             await ref.set({ incorrect_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
         }
 
-        if (!skipWord) {
-            reviewPool.push(reviewPool.splice(currentReviewIdx, 1)[0]);
-        } else {
-            currentReviewIdx++;
-        }
+        // Ghi nhận hoạt động
         await recordDailyActivity(1, 0);
         trackAnswerStreak(false);
         trackSessionResult(false);
+
+        if (!skipWord) {
+            // Nếu chưa đủ 2 lần hard và không phải mastered: đẩy từ về cuối
+            reviewPool.push(reviewPool.splice(currentReviewIdx, 1)[0]);
+        } else {
+            // Đã đủ 2 lần hard hoặc là mastered: bỏ qua từ, tăng index
+            currentReviewIdx++;
+        }
     }
 
+    // Tiếp tục hoặc kết thúc phiên
     if (currentReviewIdx < reviewPool.length) {
         showFlashcard();
     } else {
-        // Kết thúc phiên
         document.getElementById('flashcardArea').style.display = 'none';
         document.getElementById('reviewStart').classList.remove('hidden');
         showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} thẻ.`);
