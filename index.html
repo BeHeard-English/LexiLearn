@@ -3026,37 +3026,37 @@ async function checkTypingAnswer() {
         feedbackDiv.innerText = '🤖 AI đang kiểm tra...';
         feedbackDiv.style.display = 'block';
 
-        const key = document.getElementById('apiKey').value.trim() || document.getElementById('apiKeyMobile').value.trim();
-        if (!key) {
-            // Fallback nếu thiếu key
-            isCorrect = normalizeString(userAnswer) === normalizeString(correctAnswer);
-        } else {
-            try {
-                const prompt = `Bạn là giáo viên tiếng Anh. Hãy kiểm tra xem câu trả lời "${userAnswer}" có phải là bản dịch nghĩa đúng của từ tiếng Anh "${target.word}" không. Chỉ trả về "true" nếu đúng, "false" nếu sai. Không giải thích.`;
-                const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${key}`
-                    },
-                    body: JSON.stringify({
-                        model: 'llama-3.3-70b-versatile',
-                        messages: [{ role: 'user', content: prompt }],
-                        temperature: 0
-                    })
-                });
-                const data = await res.json();
-                const answer = data.choices[0].message.content.trim().toLowerCase();
-                isCorrect = answer === 'true';
-            } catch (err) {
-                console.error(err);
-                isCorrect = normalizeString(userAnswer) === normalizeString(correctAnswer);
-            }
-        }
-    } else {
-        // Các trường hợp khác (reverse mode, hoặc không bật AI) dùng so sánh chuỗi
+        const key = ...;
+    if (!key) {
         isCorrect = normalizeString(userAnswer) === normalizeString(correctAnswer);
+    } else {
+        try {
+            const prompt = `Bạn là chuyên gia ngôn ngữ Anh - Việt. Hãy xác định xem bản dịch tiếng Việt "${userAnswer}" có tương đương với nghĩa của từ tiếng Anh "${target.word}" không. Nếu đúng hoặc có thể chấp nhận được (ví dụ: đồng nghĩa, cách diễn đạt khác nhưng cùng nghĩa), trả về "true". Nếu sai hoàn toàn, trả về "false". Chỉ trả về "true" hoặc "false", không thêm bất kỳ giải thích nào.`;
+            const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${key}`
+                },
+                body: JSON.stringify({
+                    model: 'llama-3.3-70b-versatile',
+                    messages: [
+                        { role: 'system', content: 'Bạn là chuyên gia ngôn ngữ Anh - Việt, trả lời chính xác và ngắn gọn.' },
+                        { role: 'user', content: prompt }
+                    ],
+                    temperature: 0,
+                    max_tokens: 10
+                })
+            });
+            const data = await res.json();
+            const answer = data.choices[0].message.content.trim().toLowerCase();
+            isCorrect = answer === 'true';
+        } catch (err) {
+            console.error(err);
+            isCorrect = normalizeString(userAnswer) === normalizeString(correctAnswer);
+        }
     }
+}
 
     // Hiển thị feedback kết quả
     if (isCorrect) {
