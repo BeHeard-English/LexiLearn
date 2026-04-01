@@ -1682,7 +1682,8 @@ async function startReviewQuiz() {
     if(!levels.length){ showToast('⚠️ Hãy chọn ít nhất 1 cấp độ!'); return; }
 
     window._wordHardCount = {};
-    window._wordCorrectCount = {}; // Thêm dòng này để đếm số lần đúng trong phiên
+    window._wordCorrectCount = {};
+    window._wordWrongCount = {};
 
     const snap = await db.collection('users').doc(currentUser.uid).collection('vocabulary').where('correct_count','<',10).get();
     let pool = snap.docs.map(d=>d.data()).filter(i=>levels.includes(i.level));
@@ -2992,14 +2993,17 @@ async function checkTypingAnswer() {
     const srs = srsUpdate(item, isCorrect);
 
     if (isCorrect) {
-        // Tính XP dựa trên số lần đã đúng của từ này trong phiên
+        // Đúng: tính XP dựa trên số lần sai trước đó
         const wordKey = target.word.toLowerCase();
-        let correctCount = window._wordCorrectCount[wordKey] || 0;
+        let wrongCount = window._wordWrongCount[wordKey] || 0;
         let xpGain = 0;
-        if (correctCount === 0) xpGain = 15;
-        else if (correctCount === 1) xpGain = 10;
-        else if (correctCount === 2) xpGain = 5;
-        // lần thứ 4 trở đi xpGain = 0
+        if (wrongCount === 0) xpGain = 15;
+        else if (wrongCount === 1) xpGain = 10;
+        else if (wrongCount === 2) xpGain = 5;
+        // wrongCount >= 3 thì xpGain = 0
+
+        // Reset số lần sai vì đã đúng
+        delete window._wordWrongCount[wordKey];
 
         if (xpGain > 0) {
             await addXP(xpGain);
@@ -3007,43 +3011,54 @@ async function checkTypingAnswer() {
             feedbackDiv.innerText = `✅ Chính xác! +${xpGain} XP`;
         } else {
             feedbackDiv.style.cssText = 'display:block;padding:12px 18px;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;text-align:center;border-radius:12px;margin-bottom:12px;background:linear-gradient(135deg,#d1fae5,#a7f3d0);color:#065f46;';
-            feedbackDiv.innerText = `✅ Chính xác! (đã hết XP cho từ này)`;
+            feedbackDiv.innerText = `✅ Chính xác! (đã hết XP do sai quá nhiều)`;
         }
 
-        // Cập nhật số lần đã đúng
-        window._wordCorrectCount[wordKey] = correctCount + 1;
-
+        // Cập nhật correct_count và SRS
         await ref.set({ correct_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
         await recordDailyActivity(1, 1);
         trackAnswerStreak(true);
         trackSessionResult(true);
         currentReviewIdx++;
     } else {
-        // Sai
+        // Sai: tăng số lần sai
+        const wordKey = target.word.toLowerCase();
+        window._wordWrongCount[wordKey] = (window._wordWrongCount[wordKey] || 0) + 1;
+        let wrongCount = window._wordWrongCount[wordKey];
+
         feedbackDiv.style.cssText = 'display:block;padding:12px 18px;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;text-align:center;border-radius:12px;margin-bottom:12px;background:linear-gradient(135deg,#fee2e2,#fecaca);color:#991b1b;';
         feedbackDiv.innerText = `❌ Sai! Đáp án đúng: "${correctAnswer}"`;
+        
         await ref.set({ incorrect_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
         await recordDailyActivity(1, 0);
         trackAnswerStreak(false);
         trackSessionResult(false);
 
         // Xử lý nguồn mastered
+        let skipWord = false;
         if (window._currentReviewSource === 'mastered') {
             const currentCorrect = item.correct_count || 0;
             const newCorrect = Math.max(0, currentCorrect - 1);
             await ref.set({ correct_count: newCorrect }, { merge: true });
             fullLibrary = fullLibrary.map(i => i.word === target.word ? {...i, correct_count: newCorrect} : i);
+            skipWord = true; // mastered: bỏ qua từ luôn
+        } else if (wrongCount >= 3) {
+            // Sai 3 lần trở lên: bỏ qua từ
+            skipWord = true;
+            feedbackDiv.innerText += ` (Đã sai ${wrongCount} lần, bỏ qua từ này)`;
         }
 
-        // Đẩy từ về cuối nếu không phải mastered
-        if (window._currentReviewSource !== 'mastered') {
+        if (!skipWord) {
+            // Đưa từ về cuối để ôn lại
             reviewPool.push(reviewPool.splice(currentReviewIdx, 1)[0]);
         } else {
+            // Bỏ qua từ, chuyển sang từ tiếp theo
             currentReviewIdx++;
         }
     }
 
-    nextBtn.onclick = () => {
+    // Định nghĩa hàm chuyển tiếp
+    const proceed = () => {
         if (currentReviewIdx < reviewPool.length) {
             showTypingQuestion();
         } else {
@@ -3056,6 +3071,19 @@ async function checkTypingAnswer() {
             });
         }
     };
+
+    // Gán sự kiện cho nút "Câu tiếp theo"
+    nextBtn.onclick = proceed;
+
+    // Xử lý Enter: sau khi có kết quả, nhấn Enter sẽ gọi proceed
+    const inputEl = document.getElementById('typingInput');
+    inputEl.removeEventListener('keypress', handleEnter); // gỡ listener cũ
+    inputEl.addEventListener('keypress', function nextEnterHandler(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            proceed();
+        }
+    });
 }
     function handleEnter(e) {
     if (e.key === 'Enter') {
