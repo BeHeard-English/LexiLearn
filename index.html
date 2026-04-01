@@ -651,6 +651,12 @@
                         <button class="mode-btn" data-mode="reverse">🇻🇳 Nghĩa → Từ</button>
                     </div>
                 </div>
+                <!-- AI Grading option (chỉ hiển thị khi chọn typing? nhưng để đơn giản, đặt luôn, nhưng chỉ typing mới dùng) -->
+<div id="aiGradingOption" style="text-align:left;margin-bottom:22px;">
+    <label style="display:flex;align-items:center;gap:8px; cursor:pointer;">
+        <input type="checkbox" id="useAIGrading"> 🤖 Dùng AI chấm điểm (chỉ cho chế độ gõ từ → nghĩa)
+    </label>
+</div>
                 <!-- Count -->
                 <div style="text-align:left;margin-bottom:22px;">
                     <div class="section-label" style="margin-bottom:10px;">Số câu hỏi</div>
@@ -1653,11 +1659,26 @@ document.querySelectorAll('.mode-btn[data-study]').forEach(btn => btn.onclick = 
     document.querySelectorAll('.mode-btn[data-study]').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     studyType = btn.dataset.study;
+    // Ẩn/hiện tùy chọn AI: chỉ hiện khi studyType === 'typing' và reviewMode === 'normal'
+    const aiOption = document.getElementById('aiGradingOption');
+    if (studyType === 'typing' && reviewMode === 'normal') {
+        aiOption.style.display = 'block';
+    } else {
+        aiOption.style.display = 'none';
+    }
 });
+
 document.querySelectorAll('.mode-btn[data-mode]').forEach(btn => btn.onclick = () => {
     document.querySelectorAll('.mode-btn[data-mode]').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     reviewMode = btn.dataset.mode;
+    // Ẩn/hiện tùy chọn AI: chỉ hiện khi studyType === 'typing' và reviewMode === 'normal'
+    const aiOption = document.getElementById('aiGradingOption');
+    if (studyType === 'typing' && reviewMode === 'normal') {
+        aiOption.style.display = 'block';
+    } else {
+        aiOption.style.display = 'none';
+    }
 });
 document.querySelectorAll('.count-btn').forEach(btn=>btn.onclick=()=>{document.querySelectorAll('.count-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');});
 document.querySelectorAll('.level-btn').forEach(btn=>btn.onclick=()=>btn.classList.toggle('active'));
@@ -1685,6 +1706,7 @@ async function startReviewQuiz() {
     window._wordHardCount = {};
     window._wordCorrectCount = {};
     window._wordWrongCount = {};
+    window._typingProceed = null;
 
     const snap = await db.collection('users').doc(currentUser.uid).collection('vocabulary').where('correct_count','<',10).get();
     let pool = snap.docs.map(d=>d.data()).filter(i=>levels.includes(i.level));
@@ -2922,6 +2944,9 @@ renderLibrary = function() {
 // ══════════════════════════════════════════
 
 // Normalize string để so sánh (bỏ dấu câu, khoảng trắng thừa, viết thường)
+// ================== TYPING MODE ==================
+
+// Normalize string để so sánh (bỏ dấu câu, khoảng trắng thừa, viết thường)
 function normalizeString(s) {
     return s.toLowerCase().trim().replace(/[^\w\s]/g, '').replace(/\s+/g, ' ');
 }
@@ -2934,7 +2959,6 @@ function updateTypingProgress() {
 }
 
 // Hiển thị câu hỏi cho Typing Mode
-// Sửa hàm showTypingQuestion (phần xử lý Enter)
 async function showTypingQuestion() {
     if (currentReviewIdx >= reviewPool.length) {
         document.getElementById('typingArea').style.display = 'none';
@@ -2970,22 +2994,19 @@ async function showTypingQuestion() {
         ttsBtn.style.display = 'none';
     }
 
-    // Reset cờ và thiết lập listener Enter
-    _waitingForNext = false;
+    // Gắn listener Enter (dùng hàm chung)
     const inputEl = document.getElementById('typingInput');
-    inputEl.removeEventListener('keypress', handleEnter);
-    inputEl.addEventListener('keypress', handleEnter);
+    inputEl.removeEventListener('keypress', typingEnterHandler);
+    inputEl.addEventListener('keypress', typingEnterHandler);
 }
 
 // Xử lý kiểm tra đáp án
-// Sửa hàm checkTypingAnswer (bỏ phần thay đổi listener, thay bằng thiết lập cờ)
 async function checkTypingAnswer() {
     const input = document.getElementById('typingInput');
     const userAnswer = input.value.trim();
     const target = reviewPool[currentReviewIdx];
     const correctAnswer = (reviewMode === 'normal') ? target.vn : target.word;
-    const isCorrect = normalizeString(userAnswer) === normalizeString(correctAnswer);
-
+    
     const feedbackDiv = document.getElementById('typingFeedback');
     const checkBtn = document.getElementById('checkTypingBtn');
     const nextBtn = document.getElementById('nextTypingBtn');
@@ -2996,6 +3017,59 @@ async function checkTypingAnswer() {
     checkBtn.style.display = 'none';
     nextBtn.style.display = 'flex';
 
+    let isCorrect = false;
+    const useAI = document.getElementById('useAIGrading')?.checked || false;
+
+    // Chỉ dùng AI khi chế độ gõ và từ → nghĩa
+    if (useAI && reviewMode === 'normal' && studyType === 'typing') {
+        feedbackDiv.style.cssText = 'display:block;padding:12px 18px;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;text-align:center;border-radius:12px;margin-bottom:12px;background:#334155;color:#f1f5f9;';
+        feedbackDiv.innerText = '🤖 AI đang kiểm tra...';
+        feedbackDiv.style.display = 'block';
+
+        const key = document.getElementById('apiKey').value.trim() || document.getElementById('apiKeyMobile').value.trim();
+        if (!key) {
+            // Fallback nếu thiếu key
+            isCorrect = normalizeString(userAnswer) === normalizeString(correctAnswer);
+        } else {
+            try {
+                const prompt = `Bạn là giáo viên tiếng Anh. Hãy kiểm tra xem câu trả lời "${userAnswer}" có phải là bản dịch nghĩa đúng của từ tiếng Anh "${target.word}" không. Chỉ trả về "true" nếu đúng, "false" nếu sai. Không giải thích.`;
+                const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${key}`
+                    },
+                    body: JSON.stringify({
+                        model: 'llama-3.3-70b-versatile',
+                        messages: [{ role: 'user', content: prompt }],
+                        temperature: 0
+                    })
+                });
+                const data = await res.json();
+                const answer = data.choices[0].message.content.trim().toLowerCase();
+                isCorrect = answer === 'true';
+            } catch (err) {
+                console.error(err);
+                isCorrect = normalizeString(userAnswer) === normalizeString(correctAnswer);
+            }
+        }
+    } else {
+        // Các trường hợp khác (reverse mode, hoặc không bật AI) dùng so sánh chuỗi
+        isCorrect = normalizeString(userAnswer) === normalizeString(correctAnswer);
+    }
+
+    // Hiển thị feedback kết quả
+    if (isCorrect) {
+        feedbackDiv.style.cssText = 'display:block;padding:12px 18px;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;text-align:center;border-radius:12px;margin-bottom:12px;background:linear-gradient(135deg,#d1fae5,#a7f3d0);color:#065f46;';
+        if (useAI && reviewMode === 'normal') feedbackDiv.innerText = '✅ Chính xác! (AI)';
+        else feedbackDiv.innerText = '✅ Chính xác!';
+    } else {
+        feedbackDiv.style.cssText = 'display:block;padding:12px 18px;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;text-align:center;border-radius:12px;margin-bottom:12px;background:linear-gradient(135deg,#fee2e2,#fecaca);color:#991b1b;';
+        if (useAI && reviewMode === 'normal') feedbackDiv.innerText = `❌ Sai! (AI)`;
+        else feedbackDiv.innerText = `❌ Sai! Đáp án đúng: "${correctAnswer}"`;
+    }
+
+    // --- Cập nhật DB và SRS (giữ nguyên logic cũ) ---
     const ref = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(target.word.toLowerCase());
     const snap = await ref.get();
     const item = snap.exists ? snap.data() : {};
@@ -3012,11 +3086,9 @@ async function checkTypingAnswer() {
 
         if (xpGain > 0) {
             await addXP(xpGain);
-            feedbackDiv.style.cssText = 'display:block;padding:12px 18px;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;text-align:center;border-radius:12px;margin-bottom:12px;background:linear-gradient(135deg,#d1fae5,#a7f3d0);color:#065f46;';
-            feedbackDiv.innerText = `✅ Chính xác! +${xpGain} XP`;
+            feedbackDiv.innerText += ` +${xpGain} XP`;
         } else {
-            feedbackDiv.style.cssText = 'display:block;padding:12px 18px;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;text-align:center;border-radius:12px;margin-bottom:12px;background:linear-gradient(135deg,#d1fae5,#a7f3d0);color:#065f46;';
-            feedbackDiv.innerText = `✅ Chính xác! (đã hết XP do sai quá nhiều)`;
+            feedbackDiv.innerText += ` (đã hết XP)`;
         }
 
         await ref.set({ correct_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
@@ -3029,9 +3101,6 @@ async function checkTypingAnswer() {
         window._wordWrongCount[wordKey] = (window._wordWrongCount[wordKey] || 0) + 1;
         let wrongCount = window._wordWrongCount[wordKey];
 
-        feedbackDiv.style.cssText = 'display:block;padding:12px 18px;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;text-align:center;border-radius:12px;margin-bottom:12px;background:linear-gradient(135deg,#fee2e2,#fecaca);color:#991b1b;';
-        feedbackDiv.innerText = `❌ Sai! Đáp án đúng: "${correctAnswer}"`;
-        
         await ref.set({ incorrect_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
         await recordDailyActivity(1, 0);
         trackAnswerStreak(false);
@@ -3056,6 +3125,7 @@ async function checkTypingAnswer() {
         }
     }
 
+    // Hàm chuyển tiếp
     const proceed = () => {
         if (currentReviewIdx < reviewPool.length) {
             showTypingQuestion();
@@ -3070,8 +3140,34 @@ async function checkTypingAnswer() {
         }
     };
 
-    nextBtn.onclick = proceed;
-    _waitingForNext = true; // Đánh dấu đã kiểm tra xong, Enter sẽ gọi proceed
+    // Lưu proceed vào biến toàn cục để typingEnterHandler dùng
+    window._typingProceed = proceed;
+
+    nextBtn.onclick = () => {
+        window._typingProceed = null; // xóa sau khi dùng
+        proceed();
+    };
+}
+
+// Hàm xử lý Enter chung (chỉ gắn một lần)
+function typingEnterHandler(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        const nextBtn = document.getElementById('nextTypingBtn');
+        // Nếu nút "Câu tiếp theo" đang hiển thị -> gọi proceed (đã lưu)
+        if (nextBtn && nextBtn.style.display === 'flex' && window._typingProceed) {
+            window._typingProceed();
+        } else {
+            checkTypingAnswer();
+        }
+    }
+}
+
+// Gắn sự kiện Enter cho ô input (chỉ một lần)
+const typingInput = document.getElementById('typingInput');
+if (typingInput) {
+    typingInput.removeEventListener('keypress', typingEnterHandler);
+    typingInput.addEventListener('keypress', typingEnterHandler);
 }
 
 // Phát âm cho typing mode
@@ -3083,25 +3179,21 @@ function speakCurrentTyping() {
     setTimeout(() => btn.classList.remove('speaking'), 1800);
 }
 
-// Hàm xử lý Enter ban đầu (gọi checkTypingAnswer)
-function handleEnter(e) {
-    if (e.key === 'Enter') {
-        e.preventDefault();
-        if (_waitingForNext) {
-            // Kích hoạt nút "Câu tiếp theo"
-            document.getElementById('nextTypingBtn').click();
-        } else {
-            checkTypingAnswer();
-        }
-    }
-}
-
 // Gắn sự kiện cho nút kiểm tra
 document.addEventListener('DOMContentLoaded', function() {
     const checkTypingBtn = document.getElementById('checkTypingBtn');
     if (checkTypingBtn) checkTypingBtn.onclick = checkTypingAnswer;
 });
 
+function updateAIOptionVisibility() {
+    const aiOption = document.getElementById('aiGradingOption');
+    if (aiOption) {
+        // Chỉ hiển thị khi chọn typing và reviewMode === 'normal' (từ → nghĩa)
+        const isVisible = (studyType === 'typing' && reviewMode === 'normal');
+        aiOption.style.display = isVisible ? 'block' : 'none';
+    }
+}
+    
 function shuffle(arr){ return [...arr].sort(()=>Math.random()-.5); }
 </script>
 </body>
