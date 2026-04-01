@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Be Heard |Lexi Learning</title>
+    <title>Be Heard | Lexi Learning</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
@@ -1706,7 +1706,7 @@ async function startReviewQuiz() {
     // SRS: due words first
     const due    = shuffle(pool.filter(i=> isDue(i)));
     const notDue = shuffle(pool.filter(i=>!isDue(i)));
-    reviewPool = [...due,...notDue].slice(0, count);
+    reviewPool = [...due, ...notDue].slice(0, count);
     totalReviewCount = reviewPool.length;
     currentReviewIdx = 0;
 
@@ -1732,7 +1732,7 @@ async function startReviewQuiz() {
         document.getElementById('typingArea').style.display = 'none';
         showReviewQuestion();
     }
-} 
+}
 
 // ══════════════════════════════════════════
 // REVIEW — QUESTION
@@ -2963,7 +2963,7 @@ async function showTypingQuestion() {
         ttsBtn.style.display = 'none';
     }
 
-    // Xử lý sự kiện Enter
+    // Xử lý Enter
     const inputEl = document.getElementById('typingInput');
     inputEl.removeEventListener('keypress', handleEnter);
     inputEl.addEventListener('keypress', handleEnter);
@@ -3059,38 +3059,30 @@ async function checkTypingAnswer() {
 
     // Định nghĩa hàm chuyển tiếp
     const proceed = () => {
-        if (currentReviewIdx < reviewPool.length) {
-            showTypingQuestion();
-        } else {
-            document.getElementById('typingArea').style.display = 'none';
-            document.getElementById('reviewStart').classList.remove('hidden');
-            showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} câu.`);
-            finalizeSessionBadges().then(() => {
-                loadSRSDueCount();
-                switchTab('library');
-            });
-        }
-    };
+    if (currentReviewIdx < reviewPool.length) {
+        showTypingQuestion();
+    } else {
+        document.getElementById('typingArea').style.display = 'none';
+        document.getElementById('reviewStart').classList.remove('hidden');
+        showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} câu.`);
+        finalizeSessionBadges().then(() => {
+            loadSRSDueCount();
+            switchTab('library');
+        });
+    }
+};
 
-    // Gán sự kiện cho nút "Câu tiếp theo"
-    nextBtn.onclick = proceed;
+nextBtn.onclick = proceed;
 
-    // Xử lý Enter: sau khi có kết quả, nhấn Enter sẽ gọi proceed
-    const inputEl = document.getElementById('typingInput');
-    inputEl.removeEventListener('keypress', handleEnter); // gỡ listener cũ
-    inputEl.addEventListener('keypress', function nextEnterHandler(e) {
-        if (e.key === 'Enter') {
-            e.preventDefault();
-            proceed();
-        }
-    });
-}
-    function handleEnter(e) {
+// Thay đổi listener Enter
+const inputEl = document.getElementById('typingInput');
+inputEl.removeEventListener('keypress', handleEnter);
+inputEl.addEventListener('keypress', function nextEnterHandler(e) {
     if (e.key === 'Enter') {
         e.preventDefault();
-        checkTypingAnswer();
+        proceed();
     }
-}
+});
 
 // Phát âm cho typing mode
 function speakCurrentTyping() {
@@ -3105,6 +3097,12 @@ document.addEventListener('DOMContentLoaded', function() {
     if (checkTypingBtn) checkTypingBtn.onclick = checkTypingAnswer;
 });
 function shuffle(arr){ return [...arr].sort(()=>Math.random()-.5); }
+function handleEnter(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        checkTypingAnswer();
+    }
+}
 </script>
 </body>
 </html>
