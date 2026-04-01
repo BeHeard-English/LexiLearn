@@ -780,7 +780,7 @@
 
                     <!-- Row 2: Level filter — chỉ hiện khi nguồn = thư viện tổng hợp -->
                     <div id="gameLevelFilterWrap">
-                        <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;">Lọc theo cấp độ</div>
+                        <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;">Lọc theo cấp độ <span style="font-weight:400;color:#94a3b8;text-transform:none;letter-spacing:0;">(chọn nhiều)</span></div>
                         <div style="display:flex;gap:6px;flex-wrap:wrap;" id="gameLevelFilter">
                             <button class="lib-filter-btn active" data-gf="ALL">Tất cả</button>
                             <button class="lib-filter-btn" data-gf="A1">A1</button>
@@ -848,7 +848,7 @@
                 </div>
                 <div class="game-card-body">
                     <div class="game-card-title">🕺 Move &amp; Pose</div>
-                    <div class="game-card-desc">Di chuyển vào đúng ô chứa đáp án trước khi hết giờ đếm ngược! Hỗ trợ 2 người chơi — đỏ vs xanh. Học từ vựng theo dạng thể chất và vận động.</div>
+                    <div class="game-card-desc">Di chuyển vào đúng ô chứa đáp án trước khi hết giờ đếm ngược! Hỗ trợ 2 người chơi, đỏ vs xanh. Học từ vựng theo dạng thể chất và vận động.</div>
                     <div class="game-card-meta">
                         <span class="game-tag">🏃 Vận động</span>
                         <span class="game-tag">👥 1-2 người</span>
@@ -2250,13 +2250,30 @@ let _gameVocabSource = 'all';   // 'all' | topicList id
 let _gameUrl    = '';
 let _vocabText  = '';
 
-// Filter buttons in Games tab
+// Filter buttons in Games tab — multi-select toggle (like review level buttons)
 document.getElementById('gameLevelFilter').onclick = e => {
     const btn = e.target.closest('.lib-filter-btn');
     if (!btn) return;
-    document.querySelectorAll('#gameLevelFilter .lib-filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    _gameLevel = btn.dataset.gf;
+    const clicked = btn.dataset.gf;
+    const allBtn  = document.querySelector('#gameLevelFilter [data-gf="ALL"]');
+    const levelBtns = document.querySelectorAll('#gameLevelFilter [data-gf]:not([data-gf="ALL"])');
+
+    if (clicked === 'ALL') {
+        // "Tất cả" → deselect everything else, select ALL
+        levelBtns.forEach(b => b.classList.remove('active'));
+        allBtn.classList.add('active');
+    } else {
+        // Toggle this level
+        btn.classList.toggle('active');
+        // If no level selected, fall back to ALL
+        const anyActive = [...levelBtns].some(b => b.classList.contains('active'));
+        if (!anyActive) {
+            allBtn.classList.add('active');
+        } else {
+            allBtn.classList.remove('active');
+        }
+    }
+    _gameLevel = 'MULTI';   // signal to getGameVocab to read active buttons
     updateGameWordCount();
 };
 
@@ -2275,9 +2292,13 @@ function getGameVocab() {
         const ids = tl ? (tl.wordIds || []) : [];
         return fullLibrary.filter(i => ids.includes((i.word || '').toLowerCase()));
     }
-    let list = fullLibrary;
-    if (_gameLevel !== 'ALL') list = list.filter(i => i.level === _gameLevel);
-    return list;
+    // Read all active level buttons
+    const allActive = document.querySelector('#gameLevelFilter [data-gf="ALL"]')?.classList.contains('active');
+    if (allActive) return fullLibrary;
+    const activeLevels = [...document.querySelectorAll('#gameLevelFilter [data-gf]:not([data-gf="ALL"]).active')]
+        .map(b => b.dataset.gf);
+    if (!activeLevels.length) return fullLibrary;
+    return fullLibrary.filter(i => activeLevels.includes(i.level));
 }
 
 function updateGameWordCount() {
