@@ -541,7 +541,7 @@
                             </div>
                             <div style="text-align:center;">
                                 <div style="font-family:'Nunito',sans-serif;font-size:1.4rem;font-weight:800;color:var(--success);" id="chartTotalToday">0</div>
-                                <div style="font-size:.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;">Hôm nay</div>
+                                <div style="font-size:.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;">Today</div>
                             </div>
                             <div style="text-align:center;">
                                 <div style="font-family:'Nunito',sans-serif;font-size:1.4rem;font-weight:800;color:var(--gold);" id="chartBestDay">0</div>
@@ -766,22 +766,39 @@
         </div>
 
         <!-- Vocab source selector -->
-        <div class="card" style="padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
-            <div style="flex:1;min-width:200px;">
-                <div style="font-size:.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">Nguồn từ vựng cho game</div>
-                <div style="display:flex;gap:8px;flex-wrap:wrap;" id="gameLevelFilter">
-                    <button class="lib-filter-btn active" data-gf="ALL">Tất cả</button>
-                    <button class="lib-filter-btn" data-gf="A1">A1</button>
-                    <button class="lib-filter-btn" data-gf="A2">A2</button>
-                    <button class="lib-filter-btn" data-gf="B1">B1</button>
-                    <button class="lib-filter-btn" data-gf="B2">B2</button>
-                    <button class="lib-filter-btn" data-gf="C1">C1</button>
-                    <button class="lib-filter-btn" data-gf="C2">C2</button>
+        <div class="card" style="padding:18px 20px;margin-bottom:20px;">
+            <div style="display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap;">
+                <div style="flex:1;min-width:220px;display:flex;flex-direction:column;gap:14px;">
+
+                    <!-- Row 1: Nguồn từ vựng dropdown -->
+                    <div>
+                        <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;">Nguồn từ vựng</div>
+                        <select id="gameVocabSource" class="vocab-source-select" onchange="onGameVocabSourceChange()">
+                            <option value="all">📚 Thư viện tổng hợp (tất cả)</option>
+                        </select>
+                    </div>
+
+                    <!-- Row 2: Level filter — chỉ hiện khi nguồn = thư viện tổng hợp -->
+                    <div id="gameLevelFilterWrap">
+                        <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;">Lọc theo cấp độ</div>
+                        <div style="display:flex;gap:6px;flex-wrap:wrap;" id="gameLevelFilter">
+                            <button class="lib-filter-btn active" data-gf="ALL">Tất cả</button>
+                            <button class="lib-filter-btn" data-gf="A1">A1</button>
+                            <button class="lib-filter-btn" data-gf="A2">A2</button>
+                            <button class="lib-filter-btn" data-gf="B1">B1</button>
+                            <button class="lib-filter-btn" data-gf="B2">B2</button>
+                            <button class="lib-filter-btn" data-gf="C1">C1</button>
+                            <button class="lib-filter-btn" data-gf="C2">C2</button>
+                        </div>
+                    </div>
+
                 </div>
-            </div>
-            <div style="text-align:center;background:var(--primary-light);border-radius:14px;padding:12px 20px;min-width:120px;">
-                <div style="font-family:'Nunito',sans-serif;font-size:1.8rem;font-weight:800;color:var(--primary);" id="gameWordCount">0</div>
-                <div style="font-size:.72rem;font-weight:700;color:var(--muted);">từ sẵn sàng</div>
+
+                <!-- Word count badge -->
+                <div style="text-align:center;background:var(--primary-light);border-radius:14px;padding:14px 22px;min-width:120px;align-self:center;">
+                    <div style="font-family:'Nunito',sans-serif;font-size:2rem;font-weight:800;color:var(--primary);" id="gameWordCount">0</div>
+                    <div style="font-size:.72rem;font-weight:700;color:var(--muted);">từ sẵn sàng</div>
+                </div>
             </div>
         </div>
 
@@ -803,7 +820,7 @@
                 </div>
                 <div class="game-card-body">
                     <div class="game-card-title">🚀 Space Voyage</div>
-                    <div class="game-card-desc">Bắn tàu vũ trụ để tiêu diệt đáp án đúng! Tốc độ tăng dần theo cấp độ. Phù hợp luyện nhớ từ vựng theo dạng trắc nghiệm hành động.</div>
+                    <div class="game-card-desc">Điều khiển tàu để bắn vào đáp án đúng! Có thể tự thay đổi tốc độ để tăng độ khó. Phù hợp luyện nhớ từ vựng theo dạng trắc nghiệm hành động.</div>
                     <div class="game-card-meta">
                         <span class="game-tag">🎯 Bắn súng</span>
                         <span class="game-tag">👤 1 người</span>
@@ -1311,6 +1328,7 @@ function switchTab(name) {
     document.querySelectorAll('.mbtab').forEach(b => { b.classList.remove('active'); if(b.dataset.tab===name) b.classList.add('active'); });
     if (name==='library') loadLibrary();
     if (name==='review')  { loadSRSDueCount(); if (!topicLists.length) loadTopicLists(); }
+    if (name==='games')   { if (!topicLists.length) loadTopicLists(); updateGameWordCount(); }
 }
 
 // ══════════════════════════════════════════
@@ -1823,10 +1841,21 @@ function renderTopicLists() {
 }
 
 function populateReviewVocabSelect() {
-    const sel = document.getElementById('reviewVocabSource');
-    if (!sel) return;
-    sel.innerHTML = '<option value="all">📚 Thư viện tổng hợp (tất cả)</option>'
+    const options = '<option value="all">📚 Thư viện tổng hợp (tất cả)</option>'
         + topicLists.map(tl => `<option value="${tl.id}">${tl.icon || '📋'} ${tl.name}</option>`).join('');
+
+    const reviewSel = document.getElementById('reviewVocabSource');
+    if (reviewSel) reviewSel.innerHTML = options;
+
+    const gameSel = document.getElementById('gameVocabSource');
+    if (gameSel) {
+        const prev = gameSel.value;
+        gameSel.innerHTML = options;
+        // Restore previous selection if it still exists
+        if ([...gameSel.options].some(o => o.value === prev)) gameSel.value = prev;
+        else { gameSel.value = 'all'; _gameVocabSource = 'all'; }
+        onGameVocabSourceChange();
+    }
 }
 
 // ══════════════════════════════════════════
@@ -2216,7 +2245,8 @@ try {
 // ══════════════════════════════════════════
 // GAMES TAB
 // ══════════════════════════════════════════
-let _gameLevel  = 'ALL';
+let _gameLevel       = 'ALL';
+let _gameVocabSource = 'all';   // 'all' | topicList id
 let _gameUrl    = '';
 let _vocabText  = '';
 
@@ -2230,7 +2260,21 @@ document.getElementById('gameLevelFilter').onclick = e => {
     updateGameWordCount();
 };
 
+function onGameVocabSourceChange() {
+    const sel = document.getElementById('gameVocabSource');
+    _gameVocabSource = sel.value;
+    // Show level filter only when using the full library
+    document.getElementById('gameLevelFilterWrap').style.display =
+        _gameVocabSource === 'all' ? '' : 'none';
+    updateGameWordCount();
+}
+
 function getGameVocab() {
+    if (_gameVocabSource !== 'all') {
+        const tl = topicLists.find(t => t.id === _gameVocabSource);
+        const ids = tl ? (tl.wordIds || []) : [];
+        return fullLibrary.filter(i => ids.includes((i.word || '').toLowerCase()));
+    }
     let list = fullLibrary;
     if (_gameLevel !== 'ALL') list = list.filter(i => i.level === _gameLevel);
     return list;
@@ -2588,7 +2632,7 @@ async function renderProgressChart() {
                     ${val > 0 ? `<span class="chart-bar-val">${val}</span>` : ''}
                 </div>
             </div>
-            <div class="chart-label">${isToday ? 'Hôm nay' : dayLabels[dow]}</div>
+            <div class="chart-label">${isToday ? 'Today' : dayLabels[dow]}</div>
         </div>`;
     }).join('');
 
