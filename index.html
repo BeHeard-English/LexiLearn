@@ -2947,6 +2947,9 @@ renderLibrary = function() {
 // ================== TYPING MODE ==================
 
 // Normalize string để so sánh (bỏ dấu câu, khoảng trắng thừa, viết thường)
+// ================== TYPING MODE ==================
+
+// Normalize string để so sánh (bỏ dấu câu, khoảng trắng thừa, viết thường)
 function normalizeString(s) {
     return s.toLowerCase().trim().replace(/[^\w\s]/g, '').replace(/\s+/g, ' ');
 }
@@ -3026,37 +3029,40 @@ async function checkTypingAnswer() {
         feedbackDiv.innerText = '🤖 AI đang kiểm tra...';
         feedbackDiv.style.display = 'block';
 
-        const key = ...;
-    if (!key) {
-        isCorrect = normalizeString(userAnswer) === normalizeString(correctAnswer);
-    } else {
-        try {
-            const prompt = `Bạn là chuyên gia ngôn ngữ Anh - Việt. Hãy xác định xem bản dịch tiếng Việt "${userAnswer}" có tương đương với nghĩa của từ tiếng Anh "${target.word}" không. Nếu đúng hoặc có thể chấp nhận được (ví dụ: đồng nghĩa, cách diễn đạt khác nhưng cùng nghĩa), trả về "true". Nếu sai hoàn toàn, trả về "false". Chỉ trả về "true" hoặc "false", không thêm bất kỳ giải thích nào.`;
-            const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${key}`
-                },
-                body: JSON.stringify({
-                    model: 'llama-3.3-70b-versatile',
-                    messages: [
-                        { role: 'system', content: 'Bạn là chuyên gia ngôn ngữ Anh - Việt, trả lời chính xác và ngắn gọn.' },
-                        { role: 'user', content: prompt }
-                    ],
-                    temperature: 0,
-                    max_tokens: 10
-                })
-            });
-            const data = await res.json();
-            const answer = data.choices[0].message.content.trim().toLowerCase();
-            isCorrect = answer === 'true';
-        } catch (err) {
-            console.error(err);
+        const key = document.getElementById('apiKey').value.trim() || document.getElementById('apiKeyMobile').value.trim();
+        if (!key) {
             isCorrect = normalizeString(userAnswer) === normalizeString(correctAnswer);
+        } else {
+            try {
+                const prompt = `Bạn là chuyên gia ngôn ngữ Anh - Việt. Hãy xác định xem bản dịch tiếng Việt "${userAnswer}" có tương đương với nghĩa của từ tiếng Anh "${target.word}" không. Nếu đúng hoặc có thể chấp nhận được (ví dụ: đồng nghĩa, cách diễn đạt khác nhưng cùng nghĩa), trả về "true". Nếu sai hoàn toàn, trả về "false". Chỉ trả về "true" hoặc "false", không thêm bất kỳ giải thích nào.`;
+                const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${key}`
+                    },
+                    body: JSON.stringify({
+                        model: 'llama-3.3-70b-versatile',
+                        messages: [
+                            { role: 'system', content: 'Bạn là chuyên gia ngôn ngữ Anh - Việt, trả lời chính xác và ngắn gọn.' },
+                            { role: 'user', content: prompt }
+                        ],
+                        temperature: 0,
+                        max_tokens: 10
+                    })
+                });
+                const data = await res.json();
+                const answer = data.choices[0].message.content.trim().toLowerCase();
+                isCorrect = answer === 'true';
+            } catch (err) {
+                console.error(err);
+                isCorrect = normalizeString(userAnswer) === normalizeString(correctAnswer);
+            }
         }
+    } else {
+        // Các trường hợp khác (reverse mode, hoặc không bật AI) dùng so sánh chuỗi
+        isCorrect = normalizeString(userAnswer) === normalizeString(correctAnswer);
     }
-}
 
     // Hiển thị feedback kết quả
     if (isCorrect) {
@@ -3069,7 +3075,7 @@ async function checkTypingAnswer() {
         else feedbackDiv.innerText = `❌ Sai! Đáp án đúng: "${correctAnswer}"`;
     }
 
-    // --- Cập nhật DB và SRS (giữ nguyên logic cũ) ---
+    // --- Cập nhật DB và SRS ---
     const ref = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(target.word.toLowerCase());
     const snap = await ref.get();
     const item = snap.exists ? snap.data() : {};
@@ -3163,13 +3169,6 @@ function typingEnterHandler(e) {
     }
 }
 
-// Gắn sự kiện Enter cho ô input (chỉ một lần)
-const typingInput = document.getElementById('typingInput');
-if (typingInput) {
-    typingInput.removeEventListener('keypress', typingEnterHandler);
-    typingInput.addEventListener('keypress', typingEnterHandler);
-}
-
 // Phát âm cho typing mode
 function speakCurrentTyping() {
     if (!currentWord) return;
@@ -3179,12 +3178,19 @@ function speakCurrentTyping() {
     setTimeout(() => btn.classList.remove('speaking'), 1800);
 }
 
-// Gắn sự kiện cho nút kiểm tra
+// Gắn sự kiện cho nút kiểm tra và listener Enter cho ô input
 document.addEventListener('DOMContentLoaded', function() {
     const checkTypingBtn = document.getElementById('checkTypingBtn');
     if (checkTypingBtn) checkTypingBtn.onclick = checkTypingAnswer;
+    
+    const typingInput = document.getElementById('typingInput');
+    if (typingInput) {
+        typingInput.removeEventListener('keypress', typingEnterHandler);
+        typingInput.addEventListener('keypress', typingEnterHandler);
+    }
 });
 
+// Cập nhật hiển thị tùy chọn AI (gọi từ các sự kiện thay đổi studyType/reviewMode)
 function updateAIOptionVisibility() {
     const aiOption = document.getElementById('aiGradingOption');
     if (aiOption) {
@@ -3193,7 +3199,7 @@ function updateAIOptionVisibility() {
         aiOption.style.display = isVisible ? 'block' : 'none';
     }
 }
-    
+
 function shuffle(arr){ return [...arr].sort(()=>Math.random()-.5); }
 </script>
 </body>
