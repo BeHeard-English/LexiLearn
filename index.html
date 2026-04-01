@@ -2916,6 +2916,11 @@ renderLibrary = function() {
     updateGameWordCount();
 };
 // Normalize string để so sánh (bỏ dấu câu, khoảng trắng thừa, viết thường)
+// ══════════════════════════════════════════
+// TYPING MODE
+// ══════════════════════════════════════════
+
+// Normalize string để so sánh (bỏ dấu câu, khoảng trắng thừa, viết thường)
 function normalizeString(s) {
     return s.toLowerCase().trim().replace(/[^\w\s]/g, '').replace(/\s+/g, ' ');
 }
@@ -3059,30 +3064,31 @@ async function checkTypingAnswer() {
 
     // Định nghĩa hàm chuyển tiếp
     const proceed = () => {
-    if (currentReviewIdx < reviewPool.length) {
-        showTypingQuestion();
-    } else {
-        document.getElementById('typingArea').style.display = 'none';
-        document.getElementById('reviewStart').classList.remove('hidden');
-        showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} câu.`);
-        finalizeSessionBadges().then(() => {
-            loadSRSDueCount();
-            switchTab('library');
-        });
-    }
-};
+        if (currentReviewIdx < reviewPool.length) {
+            showTypingQuestion();
+        } else {
+            document.getElementById('typingArea').style.display = 'none';
+            document.getElementById('reviewStart').classList.remove('hidden');
+            showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} câu.`);
+            finalizeSessionBadges().then(() => {
+                loadSRSDueCount();
+                switchTab('library');
+            });
+        }
+    };
 
-nextBtn.onclick = proceed;
+    nextBtn.onclick = proceed;
 
-// Thay đổi listener Enter
-const inputEl = document.getElementById('typingInput');
-inputEl.removeEventListener('keypress', handleEnter);
-inputEl.addEventListener('keypress', function nextEnterHandler(e) {
-    if (e.key === 'Enter') {
-        e.preventDefault();
-        proceed();
-    }
-});
+    // Thay đổi listener Enter: sau khi đã kiểm tra, nhấn Enter sẽ chuyển tiếp
+    const inputEl = document.getElementById('typingInput');
+    inputEl.removeEventListener('keypress', handleEnter);
+    inputEl.addEventListener('keypress', function nextEnterHandler(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            proceed();
+        }
+    });
+}
 
 // Phát âm cho typing mode
 function speakCurrentTyping() {
@@ -3092,17 +3098,22 @@ function speakCurrentTyping() {
     speak(reviewMode === 'normal' ? currentWord.word : currentWord.vn, reviewMode === 'normal' ? 'en-US' : 'vi-VN');
     setTimeout(() => btn.classList.remove('speaking'), 1800);
 }
-document.addEventListener('DOMContentLoaded', function() {
-    const checkTypingBtn = document.getElementById('checkTypingBtn');
-    if (checkTypingBtn) checkTypingBtn.onclick = checkTypingAnswer;
-});
-function shuffle(arr){ return [...arr].sort(()=>Math.random()-.5); }
+
+// Hàm xử lý Enter ban đầu (gọi checkTypingAnswer)
 function handleEnter(e) {
     if (e.key === 'Enter') {
         e.preventDefault();
         checkTypingAnswer();
     }
 }
+
+// Gắn sự kiện cho nút kiểm tra
+document.addEventListener('DOMContentLoaded', function() {
+    const checkTypingBtn = document.getElementById('checkTypingBtn');
+    if (checkTypingBtn) checkTypingBtn.onclick = checkTypingAnswer;
+});
+
+function shuffle(arr){ return [...arr].sort(()=>Math.random()-.5); }
 </script>
 </body>
 </html>
