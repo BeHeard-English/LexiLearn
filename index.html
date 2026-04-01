@@ -600,13 +600,14 @@
                 <div style="overflow-x:auto;border-radius:14px;border:1px solid var(--border);">
                     <table class="lib-table">
                         <thead>
+                            <tr>
                             <th>Từ vựng</th>
                             <th>Nghĩa</th>
                             <th>Cấp</th>
                             <th>SRS</th>
                             <th>Tiến độ</th>
                             <th style="text-align:center;">Xóa</th>
-                        </tr>
+                            </tr>
                         </thead>
                         <tbody id="libraryTableBody"></tbody>
                     </table>
@@ -972,6 +973,20 @@
         <div style="display:flex;gap:6px;">
             <span class="ldot" style="color:#7eb8ff;">●</span><span class="ldot" style="color:#7eb8ff;">●</span><span class="ldot" style="color:#7eb8ff;">●</span>
         </div>
+        <div style="font-size:.78rem;color:#475569;max-width:280px;text-align:center;margin-top:8px;">Đang kết nối tới máy chủ game, vui lòng chờ...</div>
+    </div>
+    <!-- Error panel (shown if game fails to load) -->
+    <div id="gameErrorPanel" style="display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;background:#0f172a;gap:20px;padding:32px;">
+        <div style="font-size:3.5rem;">😕</div>
+        <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:1.1rem;color:#f87171;text-align:center;">Không thể tải game trong iframe</div>
+        <div style="font-size:.85rem;color:#64748b;text-align:center;max-width:320px;line-height:1.7;">Game có thể chặn nhúng iframe. Hãy thử mở trong tab mới — từ vựng đã được copy vào clipboard để paste vào game.</div>
+        <button onclick="openGameNewTab()" class="game-play-btn" style="max-width:260px;">
+            <svg xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+            Mở game trong tab mới
+        </button>
+        <button onclick="copyVocabAgain()" style="font-size:.8rem;color:#94a3b8;background:none;border:1px solid #334155;border-radius:10px;padding:8px 20px;cursor:pointer;transition:.2s;" onmouseover="this.style.color='#e2e8f0'" onmouseout="this.style.color='#94a3b8'">
+            📋 Copy lại từ vựng
+        </button>
     </div>
     <iframe id="gameFrame" class="game-modal-frame" allow="autoplay; microphone" allowfullscreen style="display:none;"></iframe>
 </div>
@@ -1464,6 +1479,7 @@ async function loadLibrary() {
     renderProgressChart();
     loadBadges(xp);
     loadTopicLists();
+    updateGameWordCount(); // Đảm bảo số từ trong Games tab luôn được cập nhật
 }
 
 function renderLibrary() {
@@ -2432,16 +2448,56 @@ function openGame(url, name) {
     document.getElementById('gameModal').classList.add('open');
     document.body.style.overflow = 'hidden';
 
-    const frame   = document.getElementById('gameFrame');
-    const overlay = document.getElementById('gameLoadingOverlay');
-    const banner  = document.getElementById('vocabBanner');
+    const frame      = document.getElementById('gameFrame');
+    const overlay    = document.getElementById('gameLoadingOverlay');
+    const banner     = document.getElementById('vocabBanner');
     const bannerText = document.getElementById('vocabBannerText');
 
-    frame.style.display  = 'none';
+    frame.style.display   = 'none';
     overlay.style.display = 'flex';
     banner.classList.add('hidden');
 
-    // ── Script injected INTO the game page ──────────────────────────
+    // Timeout fallback: nếu sau 18 giây game vẫn chưa load được → hiện thông báo lỗi
+    let _gameLoaded = false;
+    const _loadTimeout = setTimeout(function() {
+        if (_gameLoaded) return;
+        _gameLoaded = true;
+        overlay.style.display = 'none';
+        frame.style.display   = 'none';
+        // Hiện panel lỗi
+        const errPanel = document.getElementById('gameErrorPanel');
+        if (errPanel) errPanel.style.display = 'flex';
+        copyVocabToClipboard(_vocabText);
+        bannerText.textContent = '⚠️ Game tải quá chậm. Đã copy ' + list.length + ' từ vào clipboard!';
+        banner.style.background = 'linear-gradient(90deg,#7c2d12,#9a3412)';
+        banner.style.color = '#fca5a5';
+        banner.classList.remove('hidden');
+    }, 18000);
+
+    // Helper: gọi khi game đã load thành công
+    function onGameLoaded(autoFilled) {
+        if (_gameLoaded) return;
+        _gameLoaded = true;
+        clearTimeout(_loadTimeout);
+        overlay.style.display = 'none';
+        frame.style.display   = 'block';
+        const errPanel = document.getElementById('gameErrorPanel');
+        if (errPanel) errPanel.style.display = 'none';
+        if (autoFilled) {
+            bannerText.textContent = '✅ Đã tự động điền ' + list.length + ' từ vựng vào game!';
+            banner.style.background = '';
+            banner.style.color = '';
+        } else {
+            copyVocabToClipboard(_vocabText);
+            bannerText.textContent = '📋 Đã copy ' + list.length + ' từ vào clipboard — hãy paste vào game!';
+            banner.style.background = 'linear-gradient(90deg,#064e3b,#065f46)';
+            banner.style.color = '#6ee7b7';
+        }
+        banner.classList.remove('hidden');
+        setTimeout(() => banner.classList.add('hidden'), 5000);
+    }
+
+    // ── Script inject vào trang game ─────────────────────────────────
     const VOCAB_JSON = JSON.stringify(_vocabText);
     const injectScript = `
 <script>
@@ -2486,7 +2542,8 @@ function openGame(url, name) {
 })();
 <\/script>`;
 
-    fetch(url, { cache: 'no-store' })
+    // Thử fetch để inject vocab tự động (CORS có thể chặn → fallback về direct iframe)
+    fetch(url, { cache: 'no-store', mode: 'cors' })
         .then(function(res) {
             if (!res.ok) throw new Error('HTTP ' + res.status);
             return res.text();
@@ -2498,31 +2555,28 @@ function openGame(url, name) {
             if (!html.includes(baseTag)) {
                 html = baseTag + injectScript + html;
             }
-
             frame.srcdoc = html;
-            frame.onload = function() {
-                overlay.style.display = 'none';
-                frame.style.display   = 'block';
-                bannerText.textContent = '✅ Đã tự động điền ' + list.length + ' từ vựng vào game!';
-                banner.style.background = '';
-                banner.style.color = '';
-                banner.classList.remove('hidden');
-                setTimeout(() => banner.classList.add('hidden'), 4000);
-            };
+            frame.onload = function() { onGameLoaded(true); };
         })
         .catch(function(err) {
-            console.warn('Auto-inject failed, falling back to direct URL:', err);
+            // CORS hoặc lỗi mạng → load trực tiếp qua src (vocab sẽ cần paste thủ công)
+            console.info('Fetch blocked (CORS), using direct iframe src:', err.message || err);
             frame.removeAttribute('srcdoc');
             frame.src = url;
-            frame.onload = function() {
+            frame.onload = function() { onGameLoaded(false); };
+            frame.onerror = function() {
+                clearTimeout(_loadTimeout);
+                if (_gameLoaded) return;
+                _gameLoaded = true;
                 overlay.style.display = 'none';
-                frame.style.display   = 'block';
+                const errPanel = document.getElementById('gameErrorPanel');
+                if (errPanel) errPanel.style.display = 'flex';
+                copyVocabToClipboard(_vocabText);
+                bannerText.textContent = '❌ Không thể tải game. Hãy thử mở tab mới.';
+                banner.style.background = 'linear-gradient(90deg,#7c2d12,#9a3412)';
+                banner.style.color = '#fca5a5';
+                banner.classList.remove('hidden');
             };
-            copyVocabToClipboard(_vocabText);
-            bannerText.textContent = '⚠️ Không thể tự điền — đã copy ' + list.length + ' từ vào clipboard, hãy paste vào game!';
-            banner.style.background = 'linear-gradient(90deg,#7c2d12,#9a3412)';
-            banner.style.color = '#fca5a5';
-            banner.classList.remove('hidden');
         });
 }
 
@@ -2534,6 +2588,8 @@ function closeGameModal() {
         frame.removeAttribute('srcdoc');
         frame.removeAttribute('src');
         frame.style.display = 'none';
+        const errPanel = document.getElementById('gameErrorPanel');
+        if (errPanel) errPanel.style.display = 'none';
         document.getElementById('gameLoadingOverlay').style.display = 'flex';
         document.getElementById('vocabBanner').classList.add('hidden');
     }, 200);
