@@ -406,7 +406,7 @@
 
 <!-- Mobile settings panel -->
 <div class="settings-panel" id="settingsPanel">
-    <p class="section-label">Groq API Key</p>
+    <p class="section-label">Nhập Key</p>
     <div style="display:flex;gap:8px;">
         <input type="password" id="apiKeyMobile" placeholder="Nhập API Key..." style="flex:1;padding:9px 12px;border:2px solid var(--border);border-radius:10px;font-family:inherit;font-size:.82rem;outline:none;">
         <button id="saveKeyMobileBtn" class="btn-primary" style="padding:9px 14px;border-radius:10px;">Lưu</button>
@@ -1348,7 +1348,7 @@ document.getElementById('fileInput').onchange = async e => {
 };
 document.getElementById('generateBtn').onclick = async () => {
     const key = document.getElementById('apiKey').value.trim() || document.getElementById('apiKeyMobile').value.trim();
-    if(!key) { showToast('⚠️ Vui lòng nhập API Key!'); return; }
+    if(!key) { showToast('⚠️ Vui lòng nhập Key!'); return; }
     const sel = Array.from(new Set(Array.from(document.querySelectorAll('.is-bold')).map(el=>el.innerText.trim().replace(/[^a-zA-Z-]/g,'')))).filter(w=>w.length>1);
     if(!sel.length) { showToast('💡 Hãy double-click để chọn từ!'); return; }
     document.getElementById('vocabContainer').classList.remove('hidden');
@@ -1976,7 +1976,7 @@ function pickExistingList(listId) {
 // ══════════════════════════════════════════
 async function processFileForTopicList(listId, file) {
     const key = document.getElementById('apiKey').value.trim() || document.getElementById('apiKeyMobile').value.trim();
-    if (!key) { showToast('⚠️ Vui lòng nhập API Key!'); return; }
+    if (!key) { showToast('⚠️ Vui lòng nhập Key!'); return; }
     showToast('⏳ Đang đọc file...');
     const reader = new FileReader();
     reader.onload = async ev => {
@@ -2138,7 +2138,7 @@ document.getElementById('libFileInput').onchange = async (e) => {
     if(!file) return;
 
     const key = document.getElementById('apiKey').value.trim() || document.getElementById('apiKeyMobile').value.trim();
-    if(!key) { showToast('⚠️ Vui lòng nhập API Key!'); return; }
+    if(!key) { showToast('⚠️ Vui lòng nhập Key!'); return; }
 
     showToast('⏳ Đang đọc file và xử lý văn bản...');
 
