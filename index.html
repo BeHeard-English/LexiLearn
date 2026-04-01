@@ -3030,9 +3030,9 @@ async function checkTypingAnswer() {
         feedbackDiv.style.display = 'block';
 
         const key = document.getElementById('apiKey').value.trim() || document.getElementById('apiKeyMobile').value.trim();
-        if (!key) {
-            isCorrect = normalizeString(userAnswer) === normalizeString(correctAnswer);
-        } else {
+    if (!key) {
+        isCorrect = normalizeString(userAnswer) === normalizeString(correctAnswer);
+    } else {
             try {
                 const prompt = `Bạn là chuyên gia ngôn ngữ Anh - Việt. Hãy xác định xem bản dịch tiếng Việt "${userAnswer}" có tương đương với nghĩa của từ tiếng Anh "${target.word}" không. Nếu đúng hoặc có thể chấp nhận được (ví dụ: đồng nghĩa, cách diễn đạt khác nhưng cùng nghĩa), trả về "true". Nếu sai hoàn toàn, trả về "false". Chỉ trả về "true" hoặc "false", không thêm bất kỳ giải thích nào.`;
                 const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
