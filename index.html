@@ -639,6 +639,7 @@
                     <div style="display:flex;gap:8px;flex-wrap:wrap;">
                         <button class="mode-btn active" data-study="quiz" style="gap:6px;">🎯 Trắc nghiệm</button>
                         <button class="mode-btn" data-study="flash" style="gap:6px;">🃏 Flashcard</button>
+                        <button class="mode-btn" data-study="typing" style="gap:6px;">⌨️ Gõ đáp án</button>
                     </div>
                 </div>
 
@@ -755,8 +756,33 @@
                     </div>
                 </div>
             </div>
+        <!-- Typing area -->
+<div id="typingArea" style="display:none;">
+                <div style="margin-bottom:16px;padding:0 4px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <span style="font-size:.8rem;font-weight:700;color:var(--muted);">Tiến độ</span>
+                        <span id="typingProgressText" style="font-size:.8rem;font-weight:800;color:var(--primary);">0 / 0</span>
+                    </div>
+                    <div class="progress-bar-wrap"><div class="progress-bar-fill" id="typingProgressFill" style="width:0%"></div></div>
+                </div>
+                <div class="quiz-card">
+                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:4px;">
+                        <div style="flex:1;">
+                            <div class="quiz-prompt-label" id="typingPromptLabel">Từ tiếng Anh</div>
+                            <span id="typingIpa" style="display:block;font-family:monospace;font-size:.95rem;color:var(--muted);margin-bottom:2px;">/ /</span>
+                            <div id="typingWord" class="quiz-word">Word</div>
+                        </div>
+                        <button class="tts-btn" id="ttsBtnTyping" onclick="speakCurrentTyping()" title="Phát âm" style="margin-top:8px;flex-shrink:0;">
+                            <svg xmlns="http://www.w3.org/2000/svg" style="width:18px;height:18px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M12 6v12m-3.536-9.536a5 5 0 000 7.072"/></svg>
+                        </button>
+                    </div>
+                    <input type="text" id="typingInput" class="txt-input" placeholder="Nhập đáp án..." style="margin-bottom:16px;">
+                    <div id="typingFeedback" style="display:none;padding:12px 18px;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;text-align:center;border-radius:12px;margin-bottom:12px;"></div>
+                    <button id="checkTypingBtn" class="btn-primary wide" style="padding:14px;">Kiểm tra</button>
+                    <button id="nextTypingBtn" class="btn-primary wide" style="margin-top:12px;display:none;padding:14px;">Câu tiếp theo ➜</button>
+                </div>
+            </div>
         </div>
-    </div>
 
     <!-- ═══════════════ TAB: GAMES ═══════════════ -->
     <div id="tab-games" class="hidden fade-in">
@@ -1691,14 +1717,20 @@ async function startReviewQuiz() {
     _sessionCorrect = 0; _sessionTotal = reviewPool.length;
 
     if (studyType === 'flash') {
-        document.getElementById('flashcardArea').style.display = 'block';
-        document.getElementById('reviewQuizArea').style.display = 'none';
-        showFlashcard();
-    } else {
-        document.getElementById('reviewQuizArea').style.display = 'block';
-        document.getElementById('flashcardArea').style.display = 'none';
-        showReviewQuestion();
-    }
+    document.getElementById('flashcardArea').style.display = 'block';
+    document.getElementById('reviewQuizArea').style.display = 'none';
+    document.getElementById('typingArea').style.display = 'none';
+    showFlashcard();
+} else if (studyType === 'typing') {
+    document.getElementById('typingArea').style.display = 'block';
+    document.getElementById('reviewQuizArea').style.display = 'none';
+    document.getElementById('flashcardArea').style.display = 'none';
+    showTypingQuestion();
+} else {
+    document.getElementById('reviewQuizArea').style.display = 'block';
+    document.getElementById('flashcardArea').style.display = 'none';
+    document.getElementById('typingArea').style.display = 'none';
+    showReviewQuestion();
 }
 
 // ══════════════════════════════════════════
@@ -2882,7 +2914,140 @@ renderLibrary = function() {
     _origRenderLibrary.apply(this, arguments);
     updateGameWordCount();
 };
+// Normalize string để so sánh (bỏ dấu câu, khoảng trắng thừa, viết thường)
+function normalizeString(s) {
+    return s.toLowerCase().trim().replace(/[^\w\s]/g, '').replace(/\s+/g, ' ');
+}
 
+// Cập nhật thanh tiến độ
+function updateTypingProgress() {
+    const pct = Math.round((currentReviewIdx / totalReviewCount) * 100);
+    document.getElementById('typingProgressFill').style.width = pct + '%';
+    document.getElementById('typingProgressText').innerText = `${currentReviewIdx} / ${totalReviewCount}`;
+}
+
+// Hiển thị câu hỏi cho Typing Mode
+async function showTypingQuestion() {
+    if (currentReviewIdx >= reviewPool.length) {
+        document.getElementById('typingArea').style.display = 'none';
+        document.getElementById('reviewStart').classList.remove('hidden');
+        updateTypingProgress();
+        showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} câu.`);
+        await finalizeSessionBadges();
+        loadSRSDueCount();
+        switchTab('library');
+        return;
+    }
+    updateTypingProgress();
+    const target = reviewPool[currentReviewIdx];
+    currentWord = target;
+    document.getElementById('typingFeedback').style.display = 'none';
+    document.getElementById('nextTypingBtn').style.display = 'none';
+    document.getElementById('checkTypingBtn').style.display = 'flex';
+    document.getElementById('typingInput').value = '';
+    document.getElementById('typingInput').disabled = false;
+    document.getElementById('checkTypingBtn').disabled = false;
+
+    const ttsBtn = document.getElementById('ttsBtnTyping');
+
+    if (reviewMode === 'normal') {
+        document.getElementById('typingPromptLabel').innerText = 'Từ tiếng Anh';
+        document.getElementById('typingIpa').innerText = target.ipa || '/ /';
+        document.getElementById('typingWord').innerText = target.word;
+        ttsBtn.style.display = 'flex';
+    } else {
+        document.getElementById('typingPromptLabel').innerText = 'Nghĩa tiếng Việt';
+        document.getElementById('typingIpa').innerText = '';
+        document.getElementById('typingWord').innerText = target.vn;
+        ttsBtn.style.display = 'none';
+    }
+}
+
+// Xử lý kiểm tra đáp án
+async function checkTypingAnswer() {
+    const input = document.getElementById('typingInput');
+    const userAnswer = input.value.trim();
+    const target = reviewPool[currentReviewIdx];
+    const correctAnswer = (reviewMode === 'normal') ? target.vn : target.word;
+    const isCorrect = normalizeString(userAnswer) === normalizeString(correctAnswer);
+
+    const feedbackDiv = document.getElementById('typingFeedback');
+    const checkBtn = document.getElementById('checkTypingBtn');
+    const nextBtn = document.getElementById('nextTypingBtn');
+    const inputField = document.getElementById('typingInput');
+
+    inputField.disabled = true;
+    checkBtn.disabled = true;
+    checkBtn.style.display = 'none';
+    nextBtn.style.display = 'flex';
+
+    const ref = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(target.word.toLowerCase());
+    const snap = await ref.get();
+    const item = snap.exists ? snap.data() : {};
+    const srs = srsUpdate(item, isCorrect);
+
+    if (isCorrect) {
+        // Đúng: +15 XP
+        await ref.set({ correct_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
+        await addXP(15);
+        await recordDailyActivity(1, 1);
+        trackAnswerStreak(true);
+        trackSessionResult(true);
+        feedbackDiv.style.cssText = 'display:block;padding:12px 18px;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;text-align:center;border-radius:12px;margin-bottom:12px;background:linear-gradient(135deg,#d1fae5,#a7f3d0);color:#065f46;';
+        feedbackDiv.innerText = '✅ Chính xác! +15 XP';
+        currentReviewIdx++;
+    } else {
+        // Sai: không XP
+        feedbackDiv.style.cssText = 'display:block;padding:12px 18px;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;text-align:center;border-radius:12px;margin-bottom:12px;background:linear-gradient(135deg,#fee2e2,#fecaca);color:#991b1b;';
+        feedbackDiv.innerText = `❌ Sai! Đáp án đúng: "${correctAnswer}"`;
+        await ref.set({ incorrect_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
+        await recordDailyActivity(1, 0);
+        trackAnswerStreak(false);
+        trackSessionResult(false);
+
+        // Xử lý riêng nếu nguồn là "mastered"
+        if (window._currentReviewSource === 'mastered') {
+            const currentCorrect = item.correct_count || 0;
+            const newCorrect = Math.max(0, currentCorrect - 1);
+            await ref.set({ correct_count: newCorrect }, { merge: true });
+            fullLibrary = fullLibrary.map(i => i.word === target.word ? {...i, correct_count: newCorrect} : i);
+        }
+
+        // Đẩy từ về cuối nếu không phải mastered
+        if (window._currentReviewSource !== 'mastered') {
+            reviewPool.push(reviewPool.splice(currentReviewIdx, 1)[0]);
+        } else {
+            currentReviewIdx++;
+        }
+    }
+
+    nextBtn.onclick = () => {
+        if (currentReviewIdx < reviewPool.length) {
+            showTypingQuestion();
+        } else {
+            document.getElementById('typingArea').style.display = 'none';
+            document.getElementById('reviewStart').classList.remove('hidden');
+            showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} câu.`);
+            finalizeSessionBadges().then(() => {
+                loadSRSDueCount();
+                switchTab('library');
+            });
+        }
+    };
+}
+
+// Phát âm cho typing mode
+function speakCurrentTyping() {
+    if (!currentWord) return;
+    const btn = document.getElementById('ttsBtnTyping');
+    btn.classList.add('speaking');
+    speak(reviewMode === 'normal' ? currentWord.word : currentWord.vn, reviewMode === 'normal' ? 'en-US' : 'vi-VN');
+    setTimeout(() => btn.classList.remove('speaking'), 1800);
+}
+document.addEventListener('DOMContentLoaded', function() {
+    const checkTypingBtn = document.getElementById('checkTypingBtn');
+    if (checkTypingBtn) checkTypingBtn.onclick = checkTypingAnswer;
+});
 function shuffle(arr){ return [...arr].sort(()=>Math.random()-.5); }
 </script>
 </body>
