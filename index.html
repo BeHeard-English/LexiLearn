@@ -2938,30 +2938,17 @@ renderLibrary = function() {
     _origRenderLibrary.apply(this, arguments);
     updateGameWordCount();
 };
-// Normalize string để so sánh (bỏ dấu câu, khoảng trắng thừa, viết thường)
-// ══════════════════════════════════════════
-// TYPING MODE
-// ══════════════════════════════════════════
-
-// Normalize string để so sánh (bỏ dấu câu, khoảng trắng thừa, viết thường)
 // ================== TYPING MODE ==================
-
-// Normalize string để so sánh (bỏ dấu câu, khoảng trắng thừa, viết thường)
-// ================== TYPING MODE ==================
-
-// Normalize string để so sánh (bỏ dấu câu, khoảng trắng thừa, viết thường)
 function normalizeString(s) {
     return s.toLowerCase().trim().replace(/[^\w\s]/g, '').replace(/\s+/g, ' ');
 }
 
-// Cập nhật thanh tiến độ
 function updateTypingProgress() {
     const pct = Math.round((currentReviewIdx / totalReviewCount) * 100);
     document.getElementById('typingProgressFill').style.width = pct + '%';
     document.getElementById('typingProgressText').innerText = `${currentReviewIdx} / ${totalReviewCount}`;
 }
 
-// Hiển thị câu hỏi cho Typing Mode
 async function showTypingQuestion() {
     if (currentReviewIdx >= reviewPool.length) {
         document.getElementById('typingArea').style.display = 'none';
@@ -2997,13 +2984,11 @@ async function showTypingQuestion() {
         ttsBtn.style.display = 'none';
     }
 
-    // Gắn listener Enter (dùng hàm chung)
     const inputEl = document.getElementById('typingInput');
     inputEl.removeEventListener('keypress', typingEnterHandler);
     inputEl.addEventListener('keypress', typingEnterHandler);
 }
 
-// Xử lý kiểm tra đáp án
 async function checkTypingAnswer() {
     const input = document.getElementById('typingInput');
     const userAnswer = input.value.trim();
@@ -3023,16 +3008,15 @@ async function checkTypingAnswer() {
     let isCorrect = false;
     const useAI = document.getElementById('useAIGrading')?.checked || false;
 
-    // Chỉ dùng AI khi chế độ gõ và từ → nghĩa
     if (useAI && reviewMode === 'normal' && studyType === 'typing') {
         feedbackDiv.style.cssText = 'display:block;padding:12px 18px;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;text-align:center;border-radius:12px;margin-bottom:12px;background:#334155;color:#f1f5f9;';
         feedbackDiv.innerText = '🤖 AI đang kiểm tra...';
         feedbackDiv.style.display = 'block';
 
         const key = document.getElementById('apiKey').value.trim() || document.getElementById('apiKeyMobile').value.trim();
-    if (!key) {
-        isCorrect = normalizeString(userAnswer) === normalizeString(correctAnswer);
-    } else {
+        if (!key) {
+            isCorrect = normalizeString(userAnswer) === normalizeString(correctAnswer);
+        } else {
             try {
                 const prompt = `Bạn là chuyên gia ngôn ngữ Anh - Việt. Hãy xác định xem bản dịch tiếng Việt "${userAnswer}" có tương đương với nghĩa của từ tiếng Anh "${target.word}" không. Nếu đúng hoặc có thể chấp nhận được (ví dụ: đồng nghĩa, cách diễn đạt khác nhưng cùng nghĩa), trả về "true". Nếu sai hoàn toàn, trả về "false". Chỉ trả về "true" hoặc "false", không thêm bất kỳ giải thích nào.`;
                 const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -3060,11 +3044,9 @@ async function checkTypingAnswer() {
             }
         }
     } else {
-        // Các trường hợp khác (reverse mode, hoặc không bật AI) dùng so sánh chuỗi
         isCorrect = normalizeString(userAnswer) === normalizeString(correctAnswer);
     }
 
-    // Hiển thị feedback kết quả
     if (isCorrect) {
         feedbackDiv.style.cssText = 'display:block;padding:12px 18px;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;text-align:center;border-radius:12px;margin-bottom:12px;background:linear-gradient(135deg,#d1fae5,#a7f3d0);color:#065f46;';
         if (useAI && reviewMode === 'normal') feedbackDiv.innerText = '✅ Chính xác! (AI)';
@@ -3075,7 +3057,6 @@ async function checkTypingAnswer() {
         else feedbackDiv.innerText = `❌ Sai! Đáp án đúng: "${correctAnswer}"`;
     }
 
-    // --- Cập nhật DB và SRS ---
     const ref = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(target.word.toLowerCase());
     const snap = await ref.get();
     const item = snap.exists ? snap.data() : {};
@@ -3131,7 +3112,6 @@ async function checkTypingAnswer() {
         }
     }
 
-    // Hàm chuyển tiếp
     const proceed = () => {
         if (currentReviewIdx < reviewPool.length) {
             showTypingQuestion();
@@ -3146,21 +3126,17 @@ async function checkTypingAnswer() {
         }
     };
 
-    // Lưu proceed vào biến toàn cục để typingEnterHandler dùng
     window._typingProceed = proceed;
-
     nextBtn.onclick = () => {
-        window._typingProceed = null; // xóa sau khi dùng
+        window._typingProceed = null;
         proceed();
     };
 }
 
-// Hàm xử lý Enter chung (chỉ gắn một lần)
 function typingEnterHandler(e) {
     if (e.key === 'Enter') {
         e.preventDefault();
         const nextBtn = document.getElementById('nextTypingBtn');
-        // Nếu nút "Câu tiếp theo" đang hiển thị -> gọi proceed (đã lưu)
         if (nextBtn && nextBtn.style.display === 'flex' && window._typingProceed) {
             window._typingProceed();
         } else {
@@ -3169,7 +3145,6 @@ function typingEnterHandler(e) {
     }
 }
 
-// Phát âm cho typing mode
 function speakCurrentTyping() {
     if (!currentWord) return;
     const btn = document.getElementById('ttsBtnTyping');
@@ -3190,11 +3165,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-// Cập nhật hiển thị tùy chọn AI (gọi từ các sự kiện thay đổi studyType/reviewMode)
 function updateAIOptionVisibility() {
     const aiOption = document.getElementById('aiGradingOption');
     if (aiOption) {
-        // Chỉ hiển thị khi chọn typing và reviewMode === 'normal' (từ → nghĩa)
         const isVisible = (studyType === 'typing' && reviewMode === 'normal');
         aiOption.style.display = isVisible ? 'block' : 'none';
     }
