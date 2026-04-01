@@ -1717,21 +1717,22 @@ async function startReviewQuiz() {
     _sessionCorrect = 0; _sessionTotal = reviewPool.length;
 
     if (studyType === 'flash') {
-    document.getElementById('flashcardArea').style.display = 'block';
-    document.getElementById('reviewQuizArea').style.display = 'none';
-    document.getElementById('typingArea').style.display = 'none';
-    showFlashcard();
-} else if (studyType === 'typing') {
-    document.getElementById('typingArea').style.display = 'block';
-    document.getElementById('reviewQuizArea').style.display = 'none';
-    document.getElementById('flashcardArea').style.display = 'none';
-    showTypingQuestion();
-} else {
-    document.getElementById('reviewQuizArea').style.display = 'block';
-    document.getElementById('flashcardArea').style.display = 'none';
-    document.getElementById('typingArea').style.display = 'none';
-    showReviewQuestion();
-}
+        document.getElementById('flashcardArea').style.display = 'block';
+        document.getElementById('reviewQuizArea').style.display = 'none';
+        document.getElementById('typingArea').style.display = 'none';
+        showFlashcard();
+    } else if (studyType === 'typing') {
+        document.getElementById('typingArea').style.display = 'block';
+        document.getElementById('reviewQuizArea').style.display = 'none';
+        document.getElementById('flashcardArea').style.display = 'none';
+        showTypingQuestion();
+    } else {
+        document.getElementById('reviewQuizArea').style.display = 'block';
+        document.getElementById('flashcardArea').style.display = 'none';
+        document.getElementById('typingArea').style.display = 'none';
+        showReviewQuestion();
+    }
+} 
 
 // ══════════════════════════════════════════
 // REVIEW — QUESTION
