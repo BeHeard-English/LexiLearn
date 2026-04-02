@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Be Heard | Lexi Learning</title>
+    <title>Be Heard |Lexi Learning</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
@@ -3531,7 +3531,7 @@ function updateFBProgress() {
     document.getElementById('fbProgressText').innerText = `${currentReviewIdx} / ${totalReviewCount}`;
 }
 
-function showFillBlank() {
+async function showFillBlank() {
     if (currentReviewIdx >= reviewPool.length) {
         document.getElementById('fillBlankArea').style.display = 'none';
         document.getElementById('reviewStart').classList.remove('hidden');
@@ -3547,39 +3547,72 @@ function showFillBlank() {
 
     const target  = reviewPool[currentReviewIdx];
     currentWord   = target;
-    const example = target.example || '';
 
-    // Reset UI
+    // 1. Reset UI và Ẩn IPA, Nghĩa lúc ban đầu (như đã sửa ở bước trước)
     document.getElementById('fbFeedback').style.display = 'none';
     document.getElementById('fbCheckBtn').style.display  = 'flex';
     document.getElementById('fbNextBtn').style.display   = 'none';
     
-    // Gán dữ liệu nhưng ẨN CHÚNG ĐI lúc bắt đầu
     const fbIpa = document.getElementById('fbIpa');
     const fbMeaning = document.getElementById('fbMeaning');
-    
     fbIpa.textContent = target.ipa ? `/${target.ipa}/` : '';
-    fbIpa.style.display = 'none'; // Ẩn IPA
-    
+    fbIpa.style.display = 'none'; 
     fbMeaning.textContent = `💡 Nghĩa: ${target.vn}`;
-    fbMeaning.style.display = 'none'; // Ẩn Nghĩa
+    fbMeaning.style.display = 'none';
 
-    // Tạo câu với blank — thay từ đúng (case-insensitive) bằng blank đầu tiên tìm được
+    const sentenceDiv = document.getElementById('fbSentence');
+    // Hiển thị trạng thái đang tải
+    sentenceDiv.innerHTML = `<span class="ldot" style="color:var(--primary);">●</span><span class="ldot" style="color:var(--primary);">●</span><span class="ldot" style="color:var(--primary);">●</span> <span style="font-size: 0.9rem; color: var(--muted);">AI đang tạo ngữ cảnh mới...</span>`;
+    
+    // Khóa nút kiểm tra trong lúc đợi AI
+    document.getElementById('fbCheckBtn').disabled = true;
+
+    // 2. Gọi AI để tạo câu ví dụ mới
+    const key = document.getElementById('apiKey').value.trim() || document.getElementById('apiKeyMobile').value.trim();
+    let exampleText = target.example || ''; // Dùng câu cũ làm phương án dự phòng
+
+    if (key) {
+        try {
+            // Prompt ép AI dùng đúng dạng từ và trả về chỉ 1 câu duy nhất
+            const prompt = `Write a short, clear English sentence using the exact word "${target.word}". The sentence should demonstrate its meaning ("${target.vn}"). Do not use the word "${target.word}" more than once. Return ONLY the sentence, no quotes, no conversational filler.`;
+            
+            const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+                body: JSON.stringify({
+                    model: 'llama-3.3-70b-versatile',
+                    messages: [{ role: 'user', content: prompt }],
+                    temperature: 0.7
+                })
+            });
+            const data = await res.json();
+            if (data.choices && data.choices[0]) {
+                exampleText = data.choices[0].message.content.trim().replace(/^"|"$/g, '');
+            }
+        } catch(e) {
+            console.error("Lỗi tạo câu AI:", e);
+            // Nếu lỗi mạng, hệ thống sẽ tự động dùng lại exampleText dự phòng
+        }
+    }
+
+    // Mở khóa nút kiểm tra
+    document.getElementById('fbCheckBtn').disabled = false;
+
+    // 3. Tạo câu với chỗ trống (blank)
     const regex   = new RegExp('\\b(' + escapeRegExp(target.word) + ')\\b', 'i');
-    const hasBlanked = regex.test(example);
+    const hasBlanked = regex.test(exampleText);
 
     let sentenceHTML;
     if (hasBlanked) {
-        sentenceHTML = example.replace(regex,
+        sentenceHTML = exampleText.replace(regex,
             `<span class="fb-blank empty" id="fbBlank" data-correct="${target.word.toLowerCase()}" onclick="clickBlank()"></span>`
         );
     } else {
-        // Từ không xuất hiện trong ví dụ → hiện câu + chỗ trống ở cuối
-        sentenceHTML = example + ` <span class="fb-blank empty" id="fbBlank" data-correct="${target.word.toLowerCase()}" onclick="clickBlank()"></span>`;
+        sentenceHTML = exampleText + ` <span class="fb-blank empty" id="fbBlank" data-correct="${target.word.toLowerCase()}" onclick="clickBlank()"></span>`;
     }
-    document.getElementById('fbSentence').innerHTML = sentenceHTML;
+    sentenceDiv.innerHTML = sentenceHTML;
 
-    // Tạo word bank: từ đúng + 3 từ nhiễu ngẫu nhiên từ pool khác
+    // 4. Tạo word bank: từ đúng + 3 từ nhiễu ngẫu nhiên
     const distractors = shuffle(reviewPool.filter(i => i.word !== target.word)).slice(0, 3).map(i => i.word);
     const allWords    = shuffle([target.word, ...distractors]);
 
@@ -3592,7 +3625,7 @@ function showFillBlank() {
             ondragend="fbDragEnd(event)">${w}</div>`
     ).join('');
 
-    // Drop zone events on the blank
+    // Đăng ký sự kiện Drag & Drop
     const blank = document.getElementById('fbBlank');
     if (blank) {
         blank.addEventListener('dragover',  fbDragOver);
@@ -3600,7 +3633,7 @@ function showFillBlank() {
         blank.addEventListener('drop',      fbDrop);
     }
 
-    // Touch drag for mobile
+    // Touch drag cho mobile
     chipsEl.querySelectorAll('.fb-chip').forEach(chip => {
         chip.addEventListener('touchstart', fbTouchStart, { passive: false });
         chip.addEventListener('touchmove',  fbTouchMove,  { passive: false });
