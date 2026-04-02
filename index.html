@@ -117,6 +117,28 @@
         .draggable-item:hover{background:var(--primary);border-color:var(--primary);color:#fff;}
         .draggable-item:active{cursor:grabbing;transform:scale(.96);}
 
+        /* FILL BLANK MODE */
+        .fb-wordbank{position:sticky;top:var(--nav-h);z-index:50;background:var(--card);border-bottom:2px solid var(--border);padding:12px 16px;margin:-20px -20px 20px;box-shadow:0 4px 16px rgba(3,19,131,.08);}
+        .fb-wordbank-label{font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;}
+        .fb-words{display:flex;flex-wrap:wrap;gap:8px;min-height:36px;}
+        .fb-chip{cursor:pointer;padding:8px 16px;background:var(--primary-light);border:2px solid var(--border);border-radius:10px;font-weight:700;font-size:.88rem;color:var(--primary);transition:.2s;user-select:none;-webkit-user-select:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+        .fb-chip:hover{background:var(--primary);color:#fff;border-color:var(--primary);transform:translateY(-1px);box-shadow:0 4px 12px rgba(3,19,131,.2);}
+        .fb-chip.selected{background:var(--primary);color:#fff;border-color:var(--primary);box-shadow:0 0 0 3px rgba(79,142,247,.35);}
+        .fb-chip.used{opacity:0;pointer-events:none;visibility:hidden;}
+        .fb-chip.dragging{opacity:.4;transform:scale(.95);}
+        .fb-blank{display:inline-flex;align-items:center;justify-content:center;min-width:90px;height:32px;border-bottom:3px solid var(--primary-mid);border-radius:0;margin:0 4px;vertical-align:middle;font-weight:800;font-size:1rem;color:var(--primary);cursor:pointer;transition:.2s;padding:0 8px;position:relative;}
+        .fb-blank.empty{border-bottom-color:#cbd5e1;color:transparent;background:rgba(3,19,131,.04);border-radius:4px;}
+        .fb-blank.empty::after{content:'___';color:#cbd5e1;font-weight:400;}
+        .fb-blank.highlight{border-bottom-color:var(--accent);background:rgba(79,142,247,.1);border-radius:4px 4px 0 0;}
+        .fb-blank.correct-slot{border-bottom-color:var(--success);color:var(--success);}
+        .fb-blank.wrong-slot{border-bottom-color:var(--danger);color:var(--danger);}
+        .fb-sentence{font-size:1.05rem;line-height:2.2;color:#334155;word-break:break-word;}
+        .fb-meaning{font-size:.82rem;color:var(--muted);font-style:italic;margin-top:8px;line-height:1.6;padding:10px 14px;background:#f8faff;border-radius:10px;border-left:3px solid var(--primary-light);}
+        @keyframes fbPop{0%{transform:scale(.85);opacity:0;}70%{transform:scale(1.08);}100%{transform:scale(1);opacity:1;}}
+        .fb-blank.pop{animation:fbPop .25s ease both;}
+        /* Ghost for drag on mobile */
+        .fb-drag-ghost{position:fixed;pointer-events:none;z-index:9999;padding:8px 16px;background:var(--primary);color:#fff;border-radius:10px;font-weight:700;font-size:.88rem;transform:translate(-50%,-50%);box-shadow:0 8px 24px rgba(3,19,131,.35);transition:none;white-space:nowrap;}
+
         /* REVIEW BUTTONS */
         .count-btn,.level-btn,.mode-btn{padding:8px 18px;border-radius:10px;font-weight:700;font-size:.85rem;border:2px solid var(--border);background:var(--card);color:var(--muted);cursor:pointer;transition:.2s;}
         .count-btn.active,.level-btn.active,.mode-btn.active{background:var(--primary);border-color:var(--primary);color:#fff;box-shadow:0 3px 10px rgba(3,19,131,.25);}
@@ -643,11 +665,12 @@
                         <button class="mode-btn active" data-study="quiz" style="gap:6px;">🎯 Trắc nghiệm</button>
                         <button class="mode-btn" data-study="flash" style="gap:6px;">🃏 Flashcard</button>
                         <button class="mode-btn" data-study="typing" style="gap:6px;">⌨️ Gõ đáp án</button>
+                        <button class="mode-btn" data-study="fillblank" style="gap:6px;">📝 Điền từ</button>
                     </div>
                 </div>
 
-                <!-- Mode -->
-                <div style="text-align:left;margin-bottom:22px;">
+                <!-- Mode (ẩn khi chọn điền từ vì câu ví dụ luôn là tiếng Anh) -->
+                <div id="reviewModeWrap" style="text-align:left;margin-bottom:22px;">
                     <div class="section-label" style="margin-bottom:10px;">Chiều học</div>
                     <div style="display:flex;gap:8px;flex-wrap:wrap;">
                         <button class="mode-btn active" data-mode="normal">🇬🇧 Từ → Nghĩa</button>
@@ -796,7 +819,56 @@
                     <button id="nextTypingBtn" class="btn-primary wide" style="margin-top:12px;display:none;padding:14px;">Câu tiếp theo ➜</button>
                 </div>
             </div>
+
+        <!-- Fill Blank area -->
+        <div id="fillBlankArea" style="display:none;">
+            <!-- Progress -->
+            <div style="margin-bottom:16px;padding:0 4px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                    <span style="font-size:.8rem;font-weight:700;color:var(--muted);">Tiến độ</span>
+                    <span id="fbProgressText" style="font-size:.8rem;font-weight:800;color:var(--primary);">0 / 0</span>
+                </div>
+                <div class="progress-bar-wrap"><div class="progress-bar-fill" id="fbProgressFill" style="width:0%"></div></div>
+            </div>
+
+            <div class="quiz-card" style="padding:0;overflow:visible;">
+                <!-- Sticky word bank -->
+                <div class="fb-wordbank" id="fbWordbank">
+                    <div class="fb-wordbank-label">📦 Kéo hoặc nhấn chọn từ</div>
+                    <div class="fb-words" id="fbChips"></div>
+                </div>
+
+                <!-- Sentence + controls -->
+                <div style="padding:20px;">
+                    <!-- Word display -->
+                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px;">
+                        <div style="flex:1;">
+                            <div class="quiz-prompt-label">Điền từ còn thiếu vào câu</div>
+                            <div style="font-family:monospace;font-size:.82rem;color:var(--muted);margin-top:2px;" id="fbIpa"></div>
+                        </div>
+                        <button class="tts-btn" id="fbTtsBtn" onclick="speakFB()" title="Phát âm từ" style="margin-top:4px;flex-shrink:0;">
+                            <svg xmlns="http://www.w3.org/2000/svg" style="width:18px;height:18px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M12 6v12m-3.536-9.536a5 5 0 000 7.072"/></svg>
+                        </button>
+                    </div>
+
+                    <!-- Sentence with blank -->
+                    <div id="fbSentence" class="fb-sentence"></div>
+
+                    <!-- Vietnamese meaning hint -->
+                    <div id="fbMeaning" class="fb-meaning"></div>
+
+                    <!-- Feedback -->
+                    <div id="fbFeedback" style="display:none;padding:12px 16px;font-weight:800;font-size:.88rem;text-align:center;border-radius:12px;margin-top:16px;letter-spacing:.03em;"></div>
+
+                    <!-- Buttons -->
+                    <div style="display:flex;gap:10px;margin-top:16px;">
+                        <button id="fbCheckBtn" class="btn-primary wide" style="padding:14px;" onclick="checkFillBlank()">Kiểm tra</button>
+                        <button id="fbNextBtn" class="btn-primary wide" style="padding:14px;display:none;" onclick="nextFillBlank()">Câu tiếp theo ➜</button>
+                    </div>
+                </div>
+            </div>
         </div>
+
     </div><!-- /tab-review -->
 
     <!-- ═══════════════ TAB: GAMES ═══════════════ -->
@@ -1775,17 +1847,23 @@ document.querySelectorAll('.mode-btn[data-study]').forEach(btn => btn.onclick = 
     }
 });
 
+document.querySelectorAll('.mode-btn[data-study]').forEach(btn => btn.onclick = () => {
+    document.querySelectorAll('.mode-btn[data-study]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    studyType = btn.dataset.study;
+    const aiOption  = document.getElementById('aiGradingOption');
+    const modeWrap  = document.getElementById('reviewModeWrap');
+    // Điền từ không cần chiều học (câu ví dụ luôn tiếng Anh)
+    if (modeWrap) modeWrap.style.display = (studyType === 'fillblank') ? 'none' : '';
+    // AI chỉ dùng cho typing normal
+    if (aiOption) aiOption.style.display = (studyType === 'typing' && reviewMode === 'normal') ? 'block' : 'none';
+});
 document.querySelectorAll('.mode-btn[data-mode]').forEach(btn => btn.onclick = () => {
     document.querySelectorAll('.mode-btn[data-mode]').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     reviewMode = btn.dataset.mode;
-    // Ẩn/hiện tùy chọn AI: chỉ hiện khi studyType === 'typing' và reviewMode === 'normal'
     const aiOption = document.getElementById('aiGradingOption');
-    if (studyType === 'typing' && reviewMode === 'normal') {
-        aiOption.style.display = 'block';
-    } else {
-        aiOption.style.display = 'none';
-    }
+    if (aiOption) aiOption.style.display = (studyType === 'typing' && reviewMode === 'normal') ? 'block' : 'none';
 });
 document.querySelectorAll('.count-btn').forEach(btn=>btn.onclick=()=>{document.querySelectorAll('.count-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');});
 document.querySelectorAll('.level-btn').forEach(btn=>btn.onclick=()=>btn.classList.toggle('active'));
@@ -1850,16 +1928,34 @@ async function startReviewQuiz() {
         document.getElementById('flashcardArea').style.display = 'block';
         document.getElementById('reviewQuizArea').style.display = 'none';
         document.getElementById('typingArea').style.display = 'none';
+        document.getElementById('fillBlankArea').style.display = 'none';
         showFlashcard();
     } else if (studyType === 'typing') {
         document.getElementById('typingArea').style.display = 'block';
         document.getElementById('reviewQuizArea').style.display = 'none';
         document.getElementById('flashcardArea').style.display = 'none';
+        document.getElementById('fillBlankArea').style.display = 'none';
         showTypingQuestion();
+    } else if (studyType === 'fillblank') {
+        // Lọc chỉ giữ từ có câu ví dụ; nếu không đủ 4, báo lỗi
+        const withEx = reviewPool.filter(i => i.example && i.example.trim().length > 3);
+        if (withEx.length < 2) {
+            document.getElementById('reviewStart').classList.remove('hidden');
+            showToast('⚠️ Cần ít nhất 2 từ có câu ví dụ để dùng chế độ Điền từ. Hãy thêm câu ví dụ cho từ vựng!');
+            return;
+        }
+        reviewPool = withEx;
+        totalReviewCount = reviewPool.length;
+        document.getElementById('fillBlankArea').style.display = 'block';
+        document.getElementById('reviewQuizArea').style.display = 'none';
+        document.getElementById('flashcardArea').style.display = 'none';
+        document.getElementById('typingArea').style.display = 'none';
+        showFillBlank();
     } else {
         document.getElementById('reviewQuizArea').style.display = 'block';
         document.getElementById('flashcardArea').style.display = 'none';
         document.getElementById('typingArea').style.display = 'none';
+        document.getElementById('fillBlankArea').style.display = 'none';
         showReviewQuestion();
     }
 }
@@ -3420,6 +3516,315 @@ function updateAIOptionVisibility() {
         const isVisible = (studyType === 'typing' && reviewMode === 'normal');
         aiOption.style.display = isVisible ? 'block' : 'none';
     }
+}
+
+// ══════════════════════════════════════════
+// FILL BLANK MODE
+// ══════════════════════════════════════════
+let _fbSelectedChip = null;  // chip đang được chọn bằng click
+let _fbDragWord     = null;  // từ đang kéo
+let _fbAnswered     = false;
+
+function updateFBProgress() {
+    const pct = Math.round((currentReviewIdx / totalReviewCount) * 100);
+    document.getElementById('fbProgressFill').style.width = pct + '%';
+    document.getElementById('fbProgressText').innerText = `${currentReviewIdx} / ${totalReviewCount}`;
+}
+
+function showFillBlank() {
+    if (currentReviewIdx >= reviewPool.length) {
+        document.getElementById('fillBlankArea').style.display = 'none';
+        document.getElementById('reviewStart').classList.remove('hidden');
+        updateFBProgress();
+        showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} câu.`);
+        finalizeSessionBadges().then(() => { loadSRSDueCount(); switchTab('library'); });
+        return;
+    }
+    updateFBProgress();
+    _fbAnswered    = false;
+    _fbSelectedChip = null;
+    _fbDragWord    = null;
+
+    const target  = reviewPool[currentReviewIdx];
+    currentWord   = target;
+    const example = target.example || '';
+
+    // Reset UI
+    document.getElementById('fbFeedback').style.display = 'none';
+    document.getElementById('fbCheckBtn').style.display  = 'flex';
+    document.getElementById('fbNextBtn').style.display   = 'none';
+    document.getElementById('fbIpa').textContent = target.ipa ? `/${target.ipa}/` : '';
+    document.getElementById('fbMeaning').textContent = `💡 Nghĩa: ${target.vn}`;
+
+    // Tạo câu với blank — thay từ đúng (case-insensitive) bằng blank đầu tiên tìm được
+    const regex   = new RegExp('\\b(' + escapeRegExp(target.word) + ')\\b', 'i');
+    const hasBlanked = regex.test(example);
+
+    let sentenceHTML;
+    if (hasBlanked) {
+        sentenceHTML = example.replace(regex,
+            `<span class="fb-blank empty" id="fbBlank" data-correct="${target.word.toLowerCase()}" onclick="clickBlank()"></span>`
+        );
+    } else {
+        // Từ không xuất hiện trong ví dụ → hiện câu + chỗ trống ở cuối
+        sentenceHTML = example + ` <span class="fb-blank empty" id="fbBlank" data-correct="${target.word.toLowerCase()}" onclick="clickBlank()"></span>`;
+    }
+    document.getElementById('fbSentence').innerHTML = sentenceHTML;
+
+    // Tạo word bank: từ đúng + 3 từ nhiễu ngẫu nhiên từ pool khác
+    const distractors = shuffle(reviewPool.filter(i => i.word !== target.word)).slice(0, 3).map(i => i.word);
+    const allWords    = shuffle([target.word, ...distractors]);
+
+    const chipsEl = document.getElementById('fbChips');
+    chipsEl.innerHTML = allWords.map(w =>
+        `<div class="fb-chip" data-word="${w.toLowerCase()}" id="fbChip-${w.toLowerCase().replace(/\s+/g,'_')}"
+            onclick="clickChip(this)"
+            draggable="true"
+            ondragstart="fbDragStart(event, '${w}')"
+            ondragend="fbDragEnd(event)">${w}</div>`
+    ).join('');
+
+    // Drop zone events on the blank
+    const blank = document.getElementById('fbBlank');
+    if (blank) {
+        blank.addEventListener('dragover',  fbDragOver);
+        blank.addEventListener('dragleave', fbDragLeave);
+        blank.addEventListener('drop',      fbDrop);
+    }
+
+    // Touch drag for mobile
+    chipsEl.querySelectorAll('.fb-chip').forEach(chip => {
+        chip.addEventListener('touchstart', fbTouchStart, { passive: false });
+        chip.addEventListener('touchmove',  fbTouchMove,  { passive: false });
+        chip.addEventListener('touchend',   fbTouchEnd,   { passive: false });
+    });
+}
+
+/* ── Click-to-fill ─────────────────────────────────────────── */
+function clickChip(chip) {
+    if (_fbAnswered) return;
+    const blank = document.getElementById('fbBlank');
+    if (!blank) return;
+
+    if (_fbSelectedChip && _fbSelectedChip !== chip) {
+        _fbSelectedChip.classList.remove('selected');
+    }
+
+    // Nếu blank đang có từ → trả từ cũ về wordbank
+    const prevWord = blank.dataset.filled;
+    if (prevWord) returnWordToBank(prevWord);
+
+    // Điền từ mới vào blank
+    const word = chip.dataset.word;
+    blank.textContent   = chip.textContent;
+    blank.dataset.filled = word;
+    blank.classList.remove('empty', 'highlight');
+    blank.classList.add('pop');
+    setTimeout(() => blank.classList.remove('pop'), 300);
+
+    chip.classList.add('used');
+    chip.classList.remove('selected');
+    _fbSelectedChip = null;
+}
+
+function clickBlank() {
+    if (_fbAnswered) return;
+    const blank = document.getElementById('fbBlank');
+    if (!blank || !blank.dataset.filled) return;
+    // Xoá từ trong blank, trả về wordbank
+    returnWordToBank(blank.dataset.filled);
+    blank.textContent = '';
+    delete blank.dataset.filled;
+    blank.classList.add('empty');
+}
+
+function returnWordToBank(word) {
+    const chipId = 'fbChip-' + word.replace(/\s+/g,'_');
+    const chip   = document.getElementById(chipId);
+    if (chip) {
+        chip.classList.remove('used', 'selected');
+    }
+}
+
+/* ── Desktop drag & drop ───────────────────────────────────── */
+function fbDragStart(e, word) {
+    if (_fbAnswered) { e.preventDefault(); return; }
+    _fbDragWord = word;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', word);
+    e.currentTarget.classList.add('dragging');
+}
+function fbDragEnd(e) {
+    e.currentTarget.classList.remove('dragging');
+    _fbDragWord = null;
+}
+function fbDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    e.currentTarget.classList.add('highlight');
+}
+function fbDragLeave(e) {
+    e.currentTarget.classList.remove('highlight');
+}
+function fbDrop(e) {
+    e.preventDefault();
+    const blank = e.currentTarget;
+    blank.classList.remove('highlight');
+    const word = e.dataTransfer.getData('text/plain') || _fbDragWord;
+    if (!word) return;
+    fillBlankWith(word);
+}
+
+/* ── Mobile touch drag ─────────────────────────────────────── */
+let _fbGhost = null;
+let _fbTouchChip = null;
+
+function fbTouchStart(e) {
+    if (_fbAnswered) return;
+    e.preventDefault();
+    _fbTouchChip = e.currentTarget;
+    const word = _fbTouchChip.textContent;
+    _fbGhost = document.createElement('div');
+    _fbGhost.className = 'fb-drag-ghost';
+    _fbGhost.textContent = word;
+    document.body.appendChild(_fbGhost);
+    const t = e.touches[0];
+    _fbGhost.style.left = t.clientX + 'px';
+    _fbGhost.style.top  = t.clientY + 'px';
+    _fbTouchChip.classList.add('dragging');
+}
+function fbTouchMove(e) {
+    e.preventDefault();
+    if (!_fbGhost) return;
+    const t = e.touches[0];
+    _fbGhost.style.left = t.clientX + 'px';
+    _fbGhost.style.top  = t.clientY + 'px';
+    // Highlight blank if finger is over it
+    const blank = document.getElementById('fbBlank');
+    if (blank) {
+        const r = blank.getBoundingClientRect();
+        const over = t.clientX >= r.left && t.clientX <= r.right && t.clientY >= r.top && t.clientY <= r.bottom;
+        blank.classList.toggle('highlight', over);
+    }
+}
+function fbTouchEnd(e) {
+    e.preventDefault();
+    if (_fbGhost) { _fbGhost.remove(); _fbGhost = null; }
+    if (!_fbTouchChip) return;
+    _fbTouchChip.classList.remove('dragging');
+
+    const t = e.changedTouches[0];
+    const blank = document.getElementById('fbBlank');
+    if (blank) {
+        blank.classList.remove('highlight');
+        const r = blank.getBoundingClientRect();
+        const dropped = t.clientX >= r.left && t.clientX <= r.right && t.clientY >= r.top && t.clientY <= r.bottom;
+        if (dropped) {
+            fillBlankWith(_fbTouchChip.textContent);
+            _fbTouchChip = null;
+            return;
+        }
+    }
+    _fbTouchChip = null;
+}
+
+/* ── Shared fill helper ───────────────────────────────────── */
+function fillBlankWith(word) {
+    const blank = document.getElementById('fbBlank');
+    if (!blank) return;
+    const prevWord = blank.dataset.filled;
+    if (prevWord) returnWordToBank(prevWord);
+
+    blank.textContent    = word;
+    blank.dataset.filled = word.toLowerCase();
+    blank.classList.remove('empty', 'highlight');
+    blank.classList.add('pop');
+    setTimeout(() => blank.classList.remove('pop'), 300);
+
+    const chipId = 'fbChip-' + word.toLowerCase().replace(/\s+/g,'_');
+    const chip   = document.getElementById(chipId);
+    if (chip) { chip.classList.add('used'); chip.classList.remove('selected'); }
+    _fbSelectedChip = null;
+}
+
+/* ── Check & next ─────────────────────────────────────────── */
+async function checkFillBlank() {
+    if (_fbAnswered) return;
+    const blank = document.getElementById('fbBlank');
+    if (!blank || !blank.dataset.filled) { showToast('💡 Hãy điền từ vào chỗ trống trước!'); return; }
+
+    _fbAnswered = true;
+    document.getElementById('fbCheckBtn').style.display = 'none';
+    document.getElementById('fbNextBtn').style.display  = 'flex';
+    // Vô hiệu hoá chips
+    document.querySelectorAll('.fb-chip').forEach(c => c.style.pointerEvents = 'none');
+    blank.onclick = null;
+
+    const target    = reviewPool[currentReviewIdx];
+    const userWord  = blank.dataset.filled.trim().toLowerCase();
+    const correct   = target.word.toLowerCase();
+    const isCorrect = userWord === correct || smartMatch(userWord, correct);
+
+    const fb = document.getElementById('fbFeedback');
+    fb.style.display = 'block';
+
+    if (isCorrect) {
+        blank.classList.add('correct-slot');
+        blank.classList.remove('empty');
+        fb.style.cssText = 'display:block;padding:12px 16px;font-weight:800;font-size:.88rem;text-align:center;border-radius:12px;margin-top:16px;background:linear-gradient(135deg,#d1fae5,#a7f3d0);color:#065f46;';
+        fb.innerHTML = `✅ Chính xác! <span style="font-weight:600;font-size:.82rem;">${target.word}</span>`;
+
+        const ref  = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(target.word.toLowerCase());
+        const snap = await ref.get();
+        const item = snap.exists ? snap.data() : {};
+        const srs  = srsUpdate(item, true);
+        await ref.set({ correct_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
+        await addXP(10); await recordDailyActivity(1, 1);
+        trackAnswerStreak(true); trackSessionResult(true);
+        currentReviewIdx++;
+    } else {
+        blank.classList.add('wrong-slot');
+        fb.style.cssText = 'display:block;padding:12px 16px;font-weight:800;font-size:.88rem;text-align:center;border-radius:12px;margin-top:16px;background:linear-gradient(135deg,#fee2e2,#fecaca);color:#991b1b;letter-spacing:.03em;';
+        fb.innerHTML = `❌ Chưa đúng!<div style="margin-top:5px;font-size:.82rem;font-weight:600;color:#7f1d1d;text-transform:none;letter-spacing:0;">Đáp án: <strong>${target.word}</strong></div>`;
+
+        // Highlight đáp án đúng trong wordbank
+        const correctChipId = 'fbChip-' + correct.replace(/\s+/g,'_');
+        const correctChip   = document.getElementById(correctChipId);
+        if (correctChip) {
+            correctChip.classList.remove('used');
+            correctChip.style.cssText = 'background:var(--success-bg);border-color:var(--success);color:var(--success);pointer-events:none;';
+        }
+
+        const ref  = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(target.word.toLowerCase());
+        const snap = await ref.get();
+        const item = snap.exists ? snap.data() : {};
+        const srs  = srsUpdate(item, false);
+        await ref.set({ incorrect_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
+        await recordDailyActivity(1, 0);
+        trackAnswerStreak(false); trackSessionResult(false);
+
+        if (window._currentReviewSource === 'mastered') {
+            currentReviewIdx++;
+        } else {
+            reviewPool.push(reviewPool.splice(currentReviewIdx, 1)[0]);
+        }
+    }
+}
+
+function nextFillBlank() {
+    showFillBlank();
+}
+
+function speakFB() {
+    if (!currentWord) return;
+    const btn = document.getElementById('fbTtsBtn');
+    btn.classList.add('speaking');
+    speak(currentWord.word, 'en-US');
+    setTimeout(() => btn.classList.remove('speaking'), 1800);
+}
+
+function escapeRegExp(s) {
+    return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function shuffle(arr){ return [...arr].sort(()=>Math.random()-.5); }
