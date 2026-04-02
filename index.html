@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Be Heard |Lexi Learning</title>
+    <title>Be Heard | Lexi Learning</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
@@ -834,7 +834,7 @@
                 <!-- Word count badge -->
                 <div style="text-align:center;background:var(--primary-light);border-radius:14px;padding:14px 22px;min-width:120px;align-self:center;">
                     <div style="font-family:'Nunito',sans-serif;font-size:2rem;font-weight:800;color:var(--primary);" id="gameWordCount">0</div>
-                    <div style="font-size:.72rem;font-weight:700;color:var(--muted);">từ sẵn sàng</div>
+                    <div style="font-size:.72rem;font-weight:700;color:var(--muted);" id="gameWordCountLabel">từ sẵn sàng</div>
                 </div>
             </div>
         </div>
@@ -1560,15 +1560,15 @@ function openEditWord(word) {
     const item = fullLibrary.find(i => i.word.toLowerCase() === word.toLowerCase());
     if (!item) return;
     _editingWord = item.word;
-    document.getElementById('editWordDisplay').textContent = item.word;
-    document.getElementById('editWordSubtitle').textContent = item.ipa ? `/${item.ipa}/` : 'Sửa nghĩa và cấp độ';
-    document.getElementById('editWordVn').value = item.vn || '';
+    document.getElementById('editWordWord').value = item.word || '';
+    document.getElementById('editWordIpa').value  = item.ipa  || '';
+    document.getElementById('editWordVn').value   = item.vn   || '';
     // Highlight current level
     document.querySelectorAll('#editLevelBtns .level-btn').forEach(b => {
         b.classList.toggle('active', b.dataset.el === item.level);
     });
     document.getElementById('editWordModal').classList.add('open');
-    setTimeout(() => document.getElementById('editWordVn').focus(), 100);
+    setTimeout(() => document.getElementById('editWordWord').focus(), 100);
 }
 
 function selectEditLevel(level) {
@@ -1583,24 +1583,47 @@ function closeEditWord() {
 }
 
 async function saveEditWord() {
-    const vn = document.getElementById('editWordVn').value.trim();
-    if (!vn) { showToast('⚠️ Vui lòng nhập nghĩa tiếng Việt!'); return; }
+    const newWord = document.getElementById('editWordWord').value.trim();
+    const ipa     = document.getElementById('editWordIpa').value.trim();
+    const vn      = document.getElementById('editWordVn').value.trim();
     const levelBtn = document.querySelector('#editLevelBtns .level-btn.active');
-    const level = levelBtn ? levelBtn.dataset.el : '';
-    if (!level) { showToast('⚠️ Vui lòng chọn cấp độ!'); return; }
+    const level   = levelBtn ? levelBtn.dataset.el : '';
+
+    if (!newWord) { showToast('⚠️ Vui lòng nhập từ vựng!'); return; }
+    if (!vn)      { showToast('⚠️ Vui lòng nhập nghĩa tiếng Việt!'); return; }
+    if (!level)   { showToast('⚠️ Vui lòng chọn cấp độ!'); return; }
 
     const btn = document.getElementById('saveEditWordBtn');
     btn.disabled = true;
     btn.textContent = 'Đang lưu...';
 
     try {
-        await db.collection('users').doc(currentUser.uid)
-            .collection('vocabulary').doc(_editingWord.toLowerCase())
-            .set({ vn, level }, { merge: true });
-        showToast(`✅ Đã cập nhật "${_editingWord}"`);
+        const oldKey = _editingWord.toLowerCase();
+        const newKey = newWord.toLowerCase();
+        const vocabCol = db.collection('users').doc(currentUser.uid).collection('vocabulary');
+
+        if (newKey !== oldKey) {
+            // Từ gốc thay đổi → giữ lại dữ liệu SRS/tiến độ, tạo doc mới, xoá doc cũ
+            const oldSnap = await vocabCol.doc(oldKey).get();
+            const oldData = oldSnap.exists ? oldSnap.data() : {};
+            await vocabCol.doc(newKey).set({
+                ...oldData,
+                word: newWord,
+                ipa,
+                vn,
+                level,
+            });
+            await vocabCol.doc(oldKey).delete();
+        } else {
+            // Chỉ cập nhật các trường
+            await vocabCol.doc(oldKey).set({ word: newWord, ipa, vn, level }, { merge: true });
+        }
+
+        showToast(`✅ Đã cập nhật "${newWord}"`);
         closeEditWord();
         loadLibrary();
     } catch(e) {
+        console.error(e);
         showToast('❌ Lưu thất bại, vui lòng thử lại!');
     } finally {
         btn.disabled = false;
@@ -2463,17 +2486,22 @@ function getGameVocab() {
         const ids = tl ? (tl.wordIds || []) : [];
         return fullLibrary.filter(i => ids.includes((i.word || '').toLowerCase()));
     }
-    // Read all active level buttons
+    // Thu vien tong hop: loai bo tu da thuoc (correct_count >= 10)
+    const notMastered = fullLibrary.filter(i => (i.correct_count || 0) < 10);
     const allActive = document.querySelector('#gameLevelFilter [data-gf="ALL"]')?.classList.contains('active');
-    if (allActive) return fullLibrary;
+    if (allActive) return notMastered;
     const activeLevels = [...document.querySelectorAll('#gameLevelFilter [data-gf]:not([data-gf="ALL"]).active')]
         .map(b => b.dataset.gf);
-    if (!activeLevels.length) return fullLibrary;
-    return fullLibrary.filter(i => activeLevels.includes(i.level));
+    if (!activeLevels.length) return notMastered;
+    return notMastered.filter(i => activeLevels.includes(i.level));
 }
-
 function updateGameWordCount() {
-    document.getElementById('gameWordCount').textContent = getGameVocab().length;
+    const count = getGameVocab().length;
+    document.getElementById('gameWordCount').textContent = count;
+    const label = document.getElementById('gameWordCountLabel');
+    if (label) {
+        label.textContent = (_gameVocabSource === 'all') ? 'từ chưa thuộc' : 'từ sẵn sàng';
+    }
 }
 
 function buildVocabText(list) {
@@ -3137,7 +3165,7 @@ async function checkTypingAnswer() {
             isCorrect = normalizeString(userAnswer) === normalizeString(correctAnswer);
         } else {
             try {
-                const prompt = `Bạn là chuyên gia ngôn ngữ Anh - Việt. Hãy xác định xem bản dịch tiếng Việt "${userAnswer}" có tương đương với nghĩa của từ tiếng Anh "${target.word}" không. Nếu đúng (ví dụ: đồng nghĩa, cách diễn đạt khác nhưng cùng nghĩa), trả về "true". Nếu sai hoàn toàn, trả về "false". Chỉ trả về "true" hoặc "false", không thêm bất kỳ giải thích nào.`;
+                const prompt = `Bạn là chuyên gia ngôn ngữ Anh - Việt. Hãy xác định xem bản dịch tiếng Việt "${userAnswer}" có tương đương với nghĩa của từ tiếng Anh "${target.word}" không. Nếu đúng hoặc có thể chấp nhận được (ví dụ: đồng nghĩa, cách diễn đạt khác nhưng cùng nghĩa), trả về "true". Nếu sai hoàn toàn, trả về "false". Chỉ trả về "true" hoặc "false", không thêm bất kỳ giải thích nào.`;
                 const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                     method: 'POST',
                     headers: {
@@ -3300,15 +3328,21 @@ function shuffle(arr){ return [...arr].sort(()=>Math.random()-.5); }
         <div class="tl-modal-header">
             <div>
                 <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:1rem;color:var(--primary);">✏️ Chỉnh sửa từ vựng</div>
-                <div style="font-size:.72rem;color:var(--muted);margin-top:2px;" id="editWordSubtitle">Sửa nghĩa và cấp độ</div>
+                <div style="font-size:.72rem;color:var(--muted);margin-top:2px;" id="editWordSubtitle">Sửa từ, phiên âm, nghĩa và cấp độ</div>
             </div>
             <button class="tl-close-btn" onclick="closeEditWord()">✕ Đóng</button>
         </div>
         <div class="tl-modal-body" style="display:flex;flex-direction:column;gap:18px;">
-            <!-- Từ (chỉ đọc) -->
+            <!-- Từ gốc -->
             <div>
                 <div class="section-label" style="margin-bottom:6px;">Từ vựng</div>
-                <div id="editWordDisplay" style="font-family:'Nunito',sans-serif;font-size:1.5rem;font-weight:800;color:var(--primary);padding:10px 14px;background:var(--primary-light);border-radius:12px;"></div>
+                <input id="editWordWord" class="txt-input" placeholder="Nhập từ tiếng Anh..." style="padding:11px 14px;font-family:'Nunito',sans-serif;font-size:1.1rem;font-weight:800;color:var(--primary);">
+                <div style="font-size:.72rem;color:var(--muted);margin-top:5px;">⚠️ Thay đổi từ gốc sẽ tạo bản ghi mới và xoá bản cũ.</div>
+            </div>
+            <!-- Phiên âm -->
+            <div>
+                <div class="section-label" style="margin-bottom:6px;">Phiên âm IPA <span style="font-weight:400;text-transform:none;letter-spacing:0;">(tùy chọn)</span></div>
+                <input id="editWordIpa" class="txt-input" placeholder="Ví dụ: /ˈwɜːrd/..." style="padding:11px 14px;font-family:monospace;font-size:.95rem;">
             </div>
             <!-- Nghĩa -->
             <div>
