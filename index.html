@@ -3232,36 +3232,40 @@ async function checkTypingAnswer() {
                 isCorrect = false;
             } else {
                 try {
-                    const systemPrompt = `Bạn là giáo viên tiếng Anh chuyên chấm bài dịch Anh–Việt cho học sinh Việt Nam. Nhiệm vụ của bạn: xác định xem câu trả lời của học sinh có được chấp nhận hay không, so với đáp án chuẩn đã được lưu sẵn.
+                    const systemPrompt = `Bạn là chuyên gia ngôn ngữ Anh–Việt, chuyên đánh giá bài dịch theo nghĩa, KHÔNG theo từng chữ.
 
-Tiêu chí chấp nhận (trả về true):
-- Giống hoặc gần giống đáp án chuẩn (viết hoa/thường, dấu câu, khoảng trắng không quan trọng)
-- Đồng nghĩa hoặc cách diễn đạt khác nhưng cùng nghĩa với đáp án chuẩn
-- Viết tắt hoặc dạng rút gọn thông dụng của đáp án chuẩn
-- Bỏ sót từ phụ không thay đổi nghĩa cốt lõi (ví dụ: bỏ "sự", "tính", "thuyết")
-- Dùng số thay chữ hoặc ngược lại (ví dụ: "2" thay vì "hai", "3rd" thay vì "thứ ba")
+QUY TẮC VÀNG: Đáp án lưu sẵn chỉ là MỘT TRONG NHIỀU cách dịch đúng. Nhiệm vụ của bạn là xác định xem học sinh có HIỂU ĐÚNG NGHĨA của từ/cụm từ tiếng Anh không — không phải xem họ có viết giống đáp án lưu không.
 
-Không chấp nhận (trả về false):
-- Sai nghĩa hoàn toàn, không liên quan
-- Mô tả vòng vo thay vì dịch trực tiếp
-- Quá mơ hồ đến mức không xác định được nghĩa
+CHẤP NHẬN (true) nếu:
+- Cùng nghĩa với đáp án lưu, dù diễn đạt khác (đồng nghĩa, paraphrase, cách nói khác)
+- Dịch đúng nghĩa gốc dù không khớp đáp án lưu
+- Bỏ từ phụ không đổi nghĩa cốt lõi (bỏ "sự/tính/thuyết/cái/việc")
+- Dùng số thay chữ hoặc ngược lại ("2" = "hai")
+- Viết hoa/thường/dấu câu khác nhau
 
-Ví dụ:
-- Từ: "relativism", Đáp án chuẩn: "thuyết tương đối", Học sinh gõ: "tương đối" → true
-- Từ: "ambiguous", Đáp án chuẩn: "mơ hồ, không rõ ràng", Học sinh gõ: "mập mờ" → true
-- Từ: "ambiguous", Đáp án chuẩn: "mơ hồ, không rõ ràng", Học sinh gõ: "rõ ràng" → false
-- Từ: "economy", Đáp án chuẩn: "nền kinh tế", Học sinh gõ: "kinh tế" → true
-- Từ: "economy", Đáp án chuẩn: "nền kinh tế", Học sinh gõ: "tiết kiệm" → false
-- Từ: "second", Đáp án chuẩn: "thứ hai", Học sinh gõ: "thứ 2" → true
-- Từ: "pair", Đáp án chuẩn: "một cặp, hai cái", Học sinh gõ: "2 cái" → true
+KHÔNG CHẤP NHẬN (false) nếu:
+- Sai nghĩa hoàn toàn so với từ/cụm từ tiếng Anh gốc
+- Chỉ đúng một phần nhỏ mà bỏ qua nghĩa chính
+- Quá chung chung đến mức không xác định được nghĩa
+
+VÍ DỤ (chú ý: đáp án lưu chỉ là tham khảo, không phải tiêu chí duy nhất):
+- Từ: "take for granted", Lưu: "coi là hiển nhiên", Gõ: "xem như hiển nhiên" → TRUE (cùng nghĩa)
+- Từ: "take for granted", Lưu: "coi là hiển nhiên", Gõ: "xem điều gì đó như là hiển nhiên" → TRUE (cùng nghĩa, thêm từ phụ)
+- Từ: "take for granted", Lưu: "coi là hiển nhiên", Gõ: "không trân trọng" → TRUE (nghĩa thực tế của idiom)
+- Từ: "ambiguous", Lưu: "mơ hồ, không rõ ràng", Gõ: "mập mờ" → TRUE (đồng nghĩa)
+- Từ: "ambiguous", Lưu: "mơ hồ, không rõ ràng", Gõ: "rõ ràng" → FALSE (trái nghĩa)
+- Từ: "procrastinate", Lưu: "trì hoãn", Gõ: "hay hoãn việc" → TRUE (diễn đạt đúng nghĩa)
+- Từ: "economy", Lưu: "nền kinh tế", Gõ: "kinh tế" → TRUE (bỏ từ phụ)
+- Từ: "economy", Lưu: "nền kinh tế", Gõ: "tiết kiệm" → FALSE (sai nghĩa trong ngữ cảnh này)
+- Từ: "break the ice", Lưu: "phá vỡ sự im lặng", Gõ: "làm không khí bớt căng thẳng" → TRUE (đúng nghĩa idiom)
 
 Chỉ trả về đúng một từ: true hoặc false.`;
 
-                    const userPrompt = `Từ tiếng Anh: "${target.word}"${target.ipa ? ` (${target.ipa})` : ''}
-Đáp án chuẩn (đã lưu): "${target.vn}"${target.example ? `\nVí dụ sử dụng: "${target.example}"` : ''}
+                    const userPrompt = `Từ/cụm từ tiếng Anh: "${target.word}"${target.ipa ? ` (${target.ipa})` : ''}
+Đáp án tham khảo (một cách dịch đúng): "${target.vn}"${target.example ? `\nCâu ví dụ: "${target.example}"` : ''}
 Học sinh gõ: "${userAnswer}"
 
-Câu trả lời của học sinh có chấp nhận được không?`;
+Học sinh có hiểu đúng nghĩa không?`;
 
                     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                         method: 'POST',
