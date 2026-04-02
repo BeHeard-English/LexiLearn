@@ -3559,9 +3559,9 @@ async function showFillBlank() {
     fbIpa.style.display = 'none'; 
     fbMeaning.textContent = `💡 Nghĩa: ${target.vn}`;
     fbMeaning.style.display = 'none';
-    // THÊM DÒNG NÀY: Ẩn nút loa khi bắt đầu câu hỏi
-    const fbSpeak = document.getElementById('fbSpeak');
-    if (fbSpeak) fbSpeak.style.display = 'none';
+    // ĐÂY LÀ DÒNG QUAN TRỌNG: Ẩn nút loa (TTS)
+    const fbTtsBtn = document.getElementById('fbTtsBtn');
+    if (fbTtsBtn) fbTtsBtn.style.display = 'none';
 
     const sentenceDiv = document.getElementById('fbSentence');
     // Hiển thị trạng thái đang tải
@@ -3808,9 +3808,9 @@ async function checkFillBlank() {
     document.getElementById('fbIpa').style.display = 'block';
     document.getElementById('fbMeaning').style.display = 'block';
 
-    // THÊM DÒNG NÀY: Hiện lại nút loa để học viên luyện phát âm sau khi làm xong
-    const fbSpeak = document.getElementById('fbSpeak');
-    if (fbSpeak) fbSpeak.style.display = 'flex';
+    // HIỂN THỊ LẠI nút loa (TTS)
+    const fbTtsBtn = document.getElementById('fbTtsBtn');
+    if (fbTtsBtn) fbTtsBtn.style.display = 'flex';
 
     const target    = reviewPool[currentReviewIdx];
     const userWord  = blank.dataset.filled.trim().toLowerCase();
