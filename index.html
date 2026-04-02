@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Be Heard |Lexi Learning</title>
+    <title>Be Heard | Lexi Learning</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
@@ -3559,6 +3559,9 @@ async function showFillBlank() {
     fbIpa.style.display = 'none'; 
     fbMeaning.textContent = `💡 Nghĩa: ${target.vn}`;
     fbMeaning.style.display = 'none';
+    // THÊM DÒNG NÀY: Ẩn nút loa khi bắt đầu câu hỏi
+    const fbSpeak = document.getElementById('fbSpeak');
+    if (fbSpeak) fbSpeak.style.display = 'none';
 
     const sentenceDiv = document.getElementById('fbSentence');
     // Hiển thị trạng thái đang tải
@@ -3804,6 +3807,10 @@ async function checkFillBlank() {
     // HIỂN THỊ LẠI IPA và Nghĩa sau khi chốt đáp án
     document.getElementById('fbIpa').style.display = 'block';
     document.getElementById('fbMeaning').style.display = 'block';
+
+    // THÊM DÒNG NÀY: Hiện lại nút loa để học viên luyện phát âm sau khi làm xong
+    const fbSpeak = document.getElementById('fbSpeak');
+    if (fbSpeak) fbSpeak.style.display = 'flex';
 
     const target    = reviewPool[currentReviewIdx];
     const userWord  = blank.dataset.filled.trim().toLowerCase();
