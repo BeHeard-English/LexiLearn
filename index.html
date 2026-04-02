@@ -3553,8 +3553,16 @@ function showFillBlank() {
     document.getElementById('fbFeedback').style.display = 'none';
     document.getElementById('fbCheckBtn').style.display  = 'flex';
     document.getElementById('fbNextBtn').style.display   = 'none';
-    document.getElementById('fbIpa').textContent = target.ipa ? `/${target.ipa}/` : '';
-    document.getElementById('fbMeaning').textContent = `💡 Nghĩa: ${target.vn}`;
+    
+    // Gán dữ liệu nhưng ẨN CHÚNG ĐI lúc bắt đầu
+    const fbIpa = document.getElementById('fbIpa');
+    const fbMeaning = document.getElementById('fbMeaning');
+    
+    fbIpa.textContent = target.ipa ? `/${target.ipa}/` : '';
+    fbIpa.style.display = 'none'; // Ẩn IPA
+    
+    fbMeaning.textContent = `💡 Nghĩa: ${target.vn}`;
+    fbMeaning.style.display = 'none'; // Ẩn Nghĩa
 
     // Tạo câu với blank — thay từ đúng (case-insensitive) bằng blank đầu tiên tìm được
     const regex   = new RegExp('\\b(' + escapeRegExp(target.word) + ')\\b', 'i');
@@ -3759,6 +3767,10 @@ async function checkFillBlank() {
     // Vô hiệu hoá chips
     document.querySelectorAll('.fb-chip').forEach(c => c.style.pointerEvents = 'none');
     blank.onclick = null;
+
+    // HIỂN THỊ LẠI IPA và Nghĩa sau khi chốt đáp án
+    document.getElementById('fbIpa').style.display = 'block';
+    document.getElementById('fbMeaning').style.display = 'block';
 
     const target    = reviewPool[currentReviewIdx];
     const userWord  = blank.dataset.filled.trim().toLowerCase();
