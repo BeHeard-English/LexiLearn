@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Be Heard | Lexi Learning</title>
+    <title>Be Heard |Lexi Learning</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
@@ -3165,7 +3165,35 @@ async function checkTypingAnswer() {
             isCorrect = normalizeString(userAnswer) === normalizeString(correctAnswer);
         } else {
             try {
-                const prompt = `Bạn là chuyên gia ngôn ngữ Anh - Việt. Hãy xác định xem bản dịch tiếng Việt "${userAnswer}" có tương đương với nghĩa của từ tiếng Anh "${target.word}" không. Nếu đúng hoặc có thể chấp nhận được (ví dụ: đồng nghĩa, cách diễn đạt khác nhưng cùng nghĩa), trả về "true". Nếu sai hoàn toàn, trả về "false". Chỉ trả về "true" hoặc "false", không thêm bất kỳ giải thích nào.`;
+                const systemPrompt = `Bạn là giáo viên tiếng Anh chuyên chấm bài dịch Anh–Việt cho học sinh Việt Nam. Nhiệm vụ của bạn: xác định xem câu trả lời của học sinh có được chấp nhận hay không, so với đáp án chuẩn đã được lưu sẵn.
+
+Tiêu chí chấp nhận (trả về true):
+- Giống hoặc gần giống đáp án chuẩn (viết hoa/thường, dấu câu, khoảng trắng không quan trọng)
+- Đồng nghĩa hoặc cách diễn đạt khác nhưng cùng nghĩa với đáp án chuẩn
+- Viết tắt hoặc dạng rút gọn thông dụng của đáp án chuẩn
+- Bỏ sót từ phụ không thay đổi nghĩa cốt lõi (ví dụ: bỏ "sự", "tính", "thuyết")
+
+Không chấp nhận (trả về false):
+- Sai nghĩa hoàn toàn, không liên quan
+- Mô tả vòng vo thay vì dịch trực tiếp
+- Quá mơ hồ đến mức không xác định được nghĩa
+
+Ví dụ:
+- Từ: "relativism", Đáp án chuẩn: "thuyết tương đối", Học sinh gõ: "thuyết tương đối" → true
+- Từ: "relativism", Đáp án chuẩn: "thuyết tương đối", Học sinh gõ: "tương đối" → true
+- Từ: "ambiguous", Đáp án chuẩn: "mơ hồ, không rõ ràng", Học sinh gõ: "mập mờ" → true
+- Từ: "ambiguous", Đáp án chuẩn: "mơ hồ, không rõ ràng", Học sinh gõ: "rõ ràng" → false
+- Từ: "economy", Đáp án chuẩn: "nền kinh tế", Học sinh gõ: "kinh tế" → true
+- Từ: "economy", Đáp án chuẩn: "nền kinh tế", Học sinh gõ: "tiết kiệm" → false
+
+Chỉ trả về đúng một từ: true hoặc false.`;
+
+                const userPrompt = `Từ tiếng Anh: "${target.word}"${target.ipa ? ` (${target.ipa})` : ''}
+Đáp án chuẩn (đã lưu): "${target.vn}"${target.example ? `\nVí dụ sử dụng: "${target.example}"` : ''}
+Học sinh gõ: "${userAnswer}"
+
+Câu trả lời của học sinh có chấp nhận được không?`;
+
                 const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                     method: 'POST',
                     headers: {
@@ -3175,16 +3203,16 @@ async function checkTypingAnswer() {
                     body: JSON.stringify({
                         model: 'llama-3.3-70b-versatile',
                         messages: [
-                            { role: 'system', content: 'Bạn là chuyên gia ngôn ngữ Anh - Việt, trả lời chính xác và ngắn gọn.' },
-                            { role: 'user', content: prompt }
+                            { role: 'system', content: systemPrompt },
+                            { role: 'user', content: userPrompt }
                         ],
                         temperature: 0,
-                        max_tokens: 10
+                        max_tokens: 5
                     })
                 });
                 const data = await res.json();
-                const answer = data.choices[0].message.content.trim().toLowerCase();
-                isCorrect = answer === 'true';
+                const answer = data.choices?.[0]?.message?.content?.trim().toLowerCase() || '';
+                isCorrect = answer.startsWith('true');
             } catch (err) {
                 console.error(err);
                 isCorrect = normalizeString(userAnswer) === normalizeString(correctAnswer);
