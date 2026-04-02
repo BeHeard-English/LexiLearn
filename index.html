@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Be Heard | Lexi Learning</title>
+    <title>Be Heard|Lexi Learning</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
@@ -3106,8 +3106,47 @@ renderLibrary = function() {
     updateGameWordCount();
 };
 // ================== TYPING MODE ==================
+// Bảng số → chữ tiếng Việt (và ngược lại)
+const VI_NUM_TO_WORD = {
+    '0':'không','1':'một','2':'hai','3':'ba','4':'bốn',
+    '5':'năm','6':'sáu','7':'bảy','8':'tám','9':'chín','10':'mười',
+    '11':'mười một','12':'mười hai','20':'hai mươi','100':'một trăm'
+};
+const VI_WORD_TO_NUM = Object.fromEntries(Object.entries(VI_NUM_TO_WORD).map(([k,v])=>[v,k]));
+
 function normalizeString(s) {
-    return s.toLowerCase().trim().replace(/[^\w\s]/g, '').replace(/\s+/g, ' ');
+    // Giữ nguyên ký tự tiếng Việt, chỉ loại dấu câu và chuẩn hoá khoảng trắng
+    return s.toLowerCase().trim()
+        .replace(/[.,/#!$%^&*;:{}=\-_`~()"'[\]]/g, '')
+        .replace(/\s+/g, ' ');
+}
+
+function normalizeNumbers(s) {
+    // Thay số bằng chữ tiếng Việt: "2" → "hai", "3" → "ba"
+    // Thay chữ bằng số: "hai" → "2" (để so sánh cả hai chiều)
+    let result = s;
+    // Số → chữ (ưu tiên số dài trước)
+    Object.entries(VI_NUM_TO_WORD).sort((a,b) => b[0].length - a[0].length)
+        .forEach(([num, word]) => {
+            result = result.replace(new RegExp('\\b' + num + '\\b', 'g'), word);
+        });
+    return result;
+}
+
+function smartMatch(userAnswer, correctAnswer) {
+    const ua = normalizeString(userAnswer);
+    const ca = normalizeString(correctAnswer);
+    // So khớp trực tiếp
+    if (ua === ca) return true;
+    // So khớp sau khi chuẩn hoá số → chữ
+    if (normalizeNumbers(ua) === normalizeNumbers(ca)) return true;
+    if (normalizeNumbers(ca) === normalizeNumbers(ua)) return true;
+    // Đáp án chuẩn có nhiều nghĩa cách nhau bởi ", " hoặc "; " → khớp một trong số đó
+    const variants = ca.split(/[,;\/]/).map(v => v.trim()).filter(Boolean);
+    if (variants.length > 1) {
+        if (variants.some(v => ua === v || normalizeNumbers(ua) === normalizeNumbers(v))) return true;
+    }
+    return false;
 }
 
 function updateTypingProgress() {
@@ -3175,23 +3214,32 @@ async function checkTypingAnswer() {
     let isCorrect = false;
     const useAI = document.getElementById('useAIGrading')?.checked || false;
 
-    if (useAI && reviewMode === 'normal' && studyType === 'typing') {
-        feedbackDiv.style.cssText = 'display:block;padding:12px 18px;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;text-align:center;border-radius:12px;margin-bottom:12px;background:#334155;color:#f1f5f9;';
-        feedbackDiv.innerText = '🤖 AI đang kiểm tra...';
-        feedbackDiv.style.display = 'block';
+    // ── Bước 1: Kiểm tra nhanh bằng smartMatch (không cần gọi AI) ──────
+    const localMatch = smartMatch(userAnswer, correctAnswer);
 
-        const key = document.getElementById('apiKey').value.trim() || document.getElementById('apiKeyMobile').value.trim();
-        if (!key) {
-            isCorrect = normalizeString(userAnswer) === normalizeString(correctAnswer);
+    if (useAI && reviewMode === 'normal' && studyType === 'typing') {
+        if (localMatch) {
+            // Khớp hoàn toàn → đúng ngay, không cần gọi AI
+            isCorrect = true;
         } else {
-            try {
-                const systemPrompt = `Bạn là giáo viên tiếng Anh chuyên chấm bài dịch Anh–Việt cho học sinh Việt Nam. Nhiệm vụ của bạn: xác định xem câu trả lời của học sinh có được chấp nhận hay không, so với đáp án chuẩn đã được lưu sẵn.
+            // ── Bước 2: Gọi AI chỉ khi local check fail ─────────────────
+            feedbackDiv.style.cssText = 'display:block;padding:12px 18px;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;text-align:center;border-radius:12px;margin-bottom:12px;background:#334155;color:#f1f5f9;';
+            feedbackDiv.innerText = '🤖 AI đang kiểm tra...';
+            feedbackDiv.style.display = 'block';
+
+            const key = document.getElementById('apiKey').value.trim() || document.getElementById('apiKeyMobile').value.trim();
+            if (!key) {
+                isCorrect = false;
+            } else {
+                try {
+                    const systemPrompt = `Bạn là giáo viên tiếng Anh chuyên chấm bài dịch Anh–Việt cho học sinh Việt Nam. Nhiệm vụ của bạn: xác định xem câu trả lời của học sinh có được chấp nhận hay không, so với đáp án chuẩn đã được lưu sẵn.
 
 Tiêu chí chấp nhận (trả về true):
 - Giống hoặc gần giống đáp án chuẩn (viết hoa/thường, dấu câu, khoảng trắng không quan trọng)
 - Đồng nghĩa hoặc cách diễn đạt khác nhưng cùng nghĩa với đáp án chuẩn
 - Viết tắt hoặc dạng rút gọn thông dụng của đáp án chuẩn
 - Bỏ sót từ phụ không thay đổi nghĩa cốt lõi (ví dụ: bỏ "sự", "tính", "thuyết")
+- Dùng số thay chữ hoặc ngược lại (ví dụ: "2" thay vì "hai", "3rd" thay vì "thứ ba")
 
 Không chấp nhận (trả về false):
 - Sai nghĩa hoàn toàn, không liên quan
@@ -3199,47 +3247,49 @@ Không chấp nhận (trả về false):
 - Quá mơ hồ đến mức không xác định được nghĩa
 
 Ví dụ:
-- Từ: "relativism", Đáp án chuẩn: "thuyết tương đối", Học sinh gõ: "thuyết tương đối" → true
 - Từ: "relativism", Đáp án chuẩn: "thuyết tương đối", Học sinh gõ: "tương đối" → true
 - Từ: "ambiguous", Đáp án chuẩn: "mơ hồ, không rõ ràng", Học sinh gõ: "mập mờ" → true
 - Từ: "ambiguous", Đáp án chuẩn: "mơ hồ, không rõ ràng", Học sinh gõ: "rõ ràng" → false
 - Từ: "economy", Đáp án chuẩn: "nền kinh tế", Học sinh gõ: "kinh tế" → true
 - Từ: "economy", Đáp án chuẩn: "nền kinh tế", Học sinh gõ: "tiết kiệm" → false
+- Từ: "second", Đáp án chuẩn: "thứ hai", Học sinh gõ: "thứ 2" → true
+- Từ: "pair", Đáp án chuẩn: "một cặp, hai cái", Học sinh gõ: "2 cái" → true
 
 Chỉ trả về đúng một từ: true hoặc false.`;
 
-                const userPrompt = `Từ tiếng Anh: "${target.word}"${target.ipa ? ` (${target.ipa})` : ''}
+                    const userPrompt = `Từ tiếng Anh: "${target.word}"${target.ipa ? ` (${target.ipa})` : ''}
 Đáp án chuẩn (đã lưu): "${target.vn}"${target.example ? `\nVí dụ sử dụng: "${target.example}"` : ''}
 Học sinh gõ: "${userAnswer}"
 
 Câu trả lời của học sinh có chấp nhận được không?`;
 
-                const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${key}`
-                    },
-                    body: JSON.stringify({
-                        model: 'llama-3.3-70b-versatile',
-                        messages: [
-                            { role: 'system', content: systemPrompt },
-                            { role: 'user', content: userPrompt }
-                        ],
-                        temperature: 0,
-                        max_tokens: 5
-                    })
-                });
-                const data = await res.json();
-                const answer = data.choices?.[0]?.message?.content?.trim().toLowerCase() || '';
-                isCorrect = answer.startsWith('true');
-            } catch (err) {
-                console.error(err);
-                isCorrect = normalizeString(userAnswer) === normalizeString(correctAnswer);
+                    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${key}`
+                        },
+                        body: JSON.stringify({
+                            model: 'llama-3.3-70b-versatile',
+                            messages: [
+                                { role: 'system', content: systemPrompt },
+                                { role: 'user', content: userPrompt }
+                            ],
+                            temperature: 0,
+                            max_tokens: 5
+                        })
+                    });
+                    const data = await res.json();
+                    const answer = data.choices?.[0]?.message?.content?.trim().toLowerCase() || '';
+                    isCorrect = answer.startsWith('true');
+                } catch (err) {
+                    console.error(err);
+                    isCorrect = false;
+                }
             }
         }
     } else {
-        isCorrect = normalizeString(userAnswer) === normalizeString(correctAnswer);
+        isCorrect = smartMatch(userAnswer, correctAnswer);
     }
 
     if (isCorrect) {
