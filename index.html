@@ -116,7 +116,7 @@ nav {
 
 .hero p {
   font-size: clamp(.95rem, 2vw, 1.15rem);
-  color: rgba(255,255,255,.6); line-height: 1.7;
+  color: rgba(255,255,255,.88); line-height: 1.7;
   max-width: 540px; margin: 0 auto 40px;
   animation: fadeUp .6s .2s ease both;
 }
@@ -155,7 +155,7 @@ nav {
   background: linear-gradient(135deg, var(--white), var(--accent));
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
-.stat-label { font-size: .72rem; font-weight: 600; color: rgba(255,255,255,.4); text-transform: uppercase; letter-spacing: .08em; margin-top: 2px; }
+.stat-label { font-size: .72rem; font-weight: 600; color: rgba(255,255,255,.75); text-transform: uppercase; letter-spacing: .08em; margin-top: 2px; }
 .stat-divider { width: 1px; background: rgba(255,255,255,.1); align-self: stretch; }
 
 /* floating cards */
@@ -175,7 +175,7 @@ nav {
 .hero-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,.3); }
 .hero-card-icon { font-size: 1.6rem; flex-shrink: 0; }
 .hero-card-text strong { display: block; font-size: .82rem; font-weight: 800; color: #fff; }
-.hero-card-text span { font-size: .72rem; color: rgba(255,255,255,.5); }
+.hero-card-text span { font-size: .72rem; color: rgba(255,255,255,.82); }
 
 /* ─── SECTION COMMON ─── */
 section { position: relative; z-index: 1; }
@@ -192,7 +192,7 @@ section { position: relative; z-index: 1; }
   margin-bottom: 14px;
 }
 .section-sub {
-  font-size: .95rem; color: rgba(255,255,255,.5); line-height: 1.7;
+  font-size: .95rem; color: rgba(255,255,255,.82); line-height: 1.7;
   max-width: 520px;
 }
 
@@ -222,7 +222,7 @@ section { position: relative; z-index: 1; }
 }
 .step-icon { font-size: 2rem; margin-bottom: 16px; }
 .step-title { font-family: 'Baloo 2', sans-serif; font-size: 1.05rem; font-weight: 700; margin-bottom: 10px; }
-.step-desc { font-size: .85rem; color: rgba(255,255,255,.55); line-height: 1.65; }
+.step-desc { font-size: .85rem; color: rgba(255,255,255,.85); line-height: 1.65; }
 
 /* ─── FEATURES ─── */
 .features-section { padding: 100px 0; }
@@ -248,7 +248,7 @@ section { position: relative; z-index: 1; }
   flex-shrink: 0;
 }
 .feat-title { font-family: 'Baloo 2', sans-serif; font-size: .95rem; font-weight: 700; margin-bottom: 8px; }
-.feat-desc { font-size: .82rem; color: rgba(255,255,255,.5); line-height: 1.65; }
+.feat-desc { font-size: .82rem; color: rgba(255,255,255,.82); line-height: 1.65; }
 .feat-tag {
   display: inline-block; margin-top: 12px;
   font-size: .62rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em;
@@ -271,7 +271,7 @@ section { position: relative; z-index: 1; }
 .mode-card:hover { transform: translateY(-3px); }
 .mode-icon { font-size: 2.2rem; flex-shrink: 0; margin-top: 2px; }
 .mode-title { font-family: 'Baloo 2', sans-serif; font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
-.mode-desc { font-size: .82rem; color: rgba(255,255,255,.55); line-height: 1.6; }
+.mode-desc { font-size: .82rem; color: rgba(255,255,255,.85); line-height: 1.6; }
 
 /* ─── GAMIFICATION ─── */
 .gamify-section { padding: 100px 0; }
@@ -287,7 +287,7 @@ section { position: relative; z-index: 1; }
 .gamify-card:hover { transform: translateY(-4px); }
 .gamify-icon { font-size: 2.6rem; margin-bottom: 12px; display: block; }
 .gamify-title { font-family: 'Baloo 2', sans-serif; font-size: .92rem; font-weight: 700; margin-bottom: 6px; }
-.gamify-desc { font-size: .78rem; color: rgba(255,255,255,.5); line-height: 1.6; }
+.gamify-desc { font-size: .78rem; color: rgba(255,255,255,.82); line-height: 1.6; }
 
 /* ─── CTA FINAL ─── */
 .cta-section {
@@ -316,7 +316,7 @@ section { position: relative; z-index: 1; }
   background: linear-gradient(90deg, var(--accent), var(--gold2));
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
-.cta-box p { font-size: .95rem; color: rgba(255,255,255,.55); max-width: 420px; margin: 0 auto 36px; line-height: 1.7; }
+.cta-box p { font-size: .95rem; color: rgba(255,255,255,.85); max-width: 420px; margin: 0 auto 36px; line-height: 1.7; }
 
 /* ─── FOOTER ─── */
 footer {
@@ -324,7 +324,7 @@ footer {
   border-top: 1px solid rgba(255,255,255,.07);
   padding: 24px 40px;
   display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
-  font-size: .78rem; color: rgba(255,255,255,.35);
+  font-size: .78rem; color: rgba(255,255,255,.55);
 }
 
 /* ─── LOADING OVERLAY ─── */
@@ -591,7 +591,7 @@ footer {
     <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:32px;margin-bottom:56px;">
       <div>
         <div class="section-tag">Gamification</div>
-        <h2 class="section-title">Học có phần thưởng<br>mới chịu học lâu</h2>
+        <h2 class="section-title">Học có phần thưởng<br>động lực học lâu dài</h2>
       </div>
       <p class="section-sub" style="max-width:360px;margin:0;padding-top:48px;">Hệ thống động lực được thiết kế để bạn muốn quay lại mỗi ngày — không phải vì bắt buộc, mà vì thú vị.</p>
     </div>
@@ -620,7 +620,7 @@ footer {
       <div class="gamify-card">
         <span class="gamify-icon">🔊</span>
         <div class="gamify-title">Phản hồi âm thanh</div>
-        <div class="gamify-desc">Âm thanh và rung nhẹ khi trả lời đúng/sai — phản hồi tức thì giúp não ghi nhớ nhanh và chính xác hơn.</div>
+        <div class="gamify-desc">Âm thanh khi trả lời đúng/sai — phản hồi tức thì giúp não ghi nhớ nhanh và chính xác hơn.</div>
       </div>
       <div class="gamify-card">
         <span class="gamify-icon">🚀</span>
@@ -635,8 +635,8 @@ footer {
 <section class="cta-section reveal">
   <div class="section-inner">
     <div class="cta-box">
-      <h2>Sẵn sàng bắt đầu<br><span>hành trình từ vựng?</span></h2>
-      <p>Đăng nhập bằng Google trong 10 giây. Miễn phí hoàn toàn. Bắt đầu học ngay hôm nay.</p>
+      <h2>Bạn đã<br><span>sẵn sàng chưa?</span></h2>
+      <p>Đăng nhập bằng Google trong vài giây. Miễn phí hoàn toàn. Bắt đầu học ngay hôm nay.</p>
       <button class="btn-google" onclick="handleLogin()" style="margin:0 auto;box-shadow:0 12px 40px rgba(0,0,0,.3);">
         <svg width="20" height="20" viewBox="0 0 24 24">
           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -644,7 +644,7 @@ footer {
           <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
           <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
         </svg>
-        Đăng nhập với Google — Miễn phí
+        Đăng nhập với Google
       </button>
     </div>
   </div>
@@ -654,7 +654,7 @@ footer {
 <footer>
   <div style="display:flex;align-items:center;gap:8px;">
     <div class="logo-icon" style="width:26px;height:26px;border-radius:8px;font-size:.8rem;">B</div>
-    <span style="font-weight:700;color:rgba(255,255,255,.5);">Be Heard</span>
+    <span style="font-weight:700;color:rgba(255,255,255,.82);">Be Heard</span>
   </div>
   <div>© 2025 Be Heard English Center. Tất cả quyền được bảo lưu.</div>
 </footer>
