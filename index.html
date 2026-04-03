@@ -437,7 +437,7 @@
 <div class="settings-panel" id="settingsPanel">
     <p class="section-label">Nhập Key</p>
     <div style="display:flex;gap:8px;">
-        <input type="password" id="apiKeyMobile" placeholder="Nhập Key tại đây" style="flex:1;padding:9px 12px;border:2px solid var(--border);border-radius:10px;font-family:inherit;font-size:.82rem;outline:none;">
+        <input type="password" id="apiKeyMobile" placeholder="Nhập API Key..." style="flex:1;padding:9px 12px;border:2px solid var(--border);border-radius:10px;font-family:inherit;font-size:.82rem;outline:none;">
         <button id="saveKeyMobileBtn" class="btn-primary" style="padding:9px 14px;border-radius:10px;">Lưu</button>
     </div>
     <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
@@ -1415,14 +1415,14 @@ document.getElementById('saveKeyBtn').onclick = () => {
     const k = document.getElementById('apiKey').value.trim();
     localStorage.setItem('vflow_api_key', k);
     document.getElementById('apiKeyMobile').value = k;
-    showToast('✅ Đã lưu Key!');
+    showToast('✅ Đã lưu API Key!');
 };
 document.getElementById('saveKeyMobileBtn').onclick = () => {
     const k = document.getElementById('apiKeyMobile').value.trim();
     localStorage.setItem('vflow_api_key', k);
     document.getElementById('apiKey').value = k;
     document.getElementById('settingsPanel').classList.remove('open');
-    showToast('✅ Đã lưu Key!');
+    showToast('✅ Đã lưu API Key!');
 };
 document.getElementById('settingsToggle').onclick = () => document.getElementById('settingsPanel').classList.toggle('open');
 document.addEventListener('click', e => { if (!e.target.closest('#settingsPanel')&&!e.target.closest('#settingsToggle')) document.getElementById('settingsPanel').classList.remove('open'); });
@@ -1954,6 +1954,7 @@ async function startReviewQuiz() {
     window._wordCorrectCount = {};
     window._wordWrongCount = {};
     window._typingProceed = null;
+    window._sessionReviewedWords = new Set(); // Chỉ đếm mỗi từ 1 lần/session
 
     const snap = await db.collection('users').doc(currentUser.uid).collection('vocabulary').where('correct_count','<',10).get();
     let pool = snap.docs.map(d=>d.data()).filter(i=>levels.includes(i.level));
@@ -2097,7 +2098,7 @@ async function checkAnswer(btn, selected, correct, word) {
         // Cập nhật đúng: tăng correct_count, áp dụng SRS
         await ref.set({ correct_count: firebase.firestore.FieldValue.increment(1), ...srs }, {merge:true});
         await addXP(10);
-        await recordDailyActivity(1, 1);
+        await recordWordReview(word, true);
         trackAnswerStreak(true);
         trackSessionResult(true);
         if(reviewMode==='reverse') speak(word,'en-US');
@@ -2109,7 +2110,7 @@ async function checkAnswer(btn, selected, correct, word) {
         overlay.innerHTML=`✍️ Chưa chính xác — Ôn lại sau!<div style="margin-top:6px;font-size:.8rem;font-weight:600;color:#7f1d1d;text-transform:none;letter-spacing:0;">Đáp án đúng: <strong style="color:#991b1b;">${correct}</strong></div>`;
         playFeedback(false);
         await addXP(2);
-        await recordDailyActivity(1, 0);
+        await recordWordReview(word, false);
         trackAnswerStreak(false);
         trackSessionResult(false);
 
@@ -2969,7 +2970,7 @@ async function rateFC(rating) {
         // Đúng: tăng correct_count
         await ref.set({ correct_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
         await addXP(rating === 'easy' ? 15 : 10);
-        await recordDailyActivity(1, 1);
+        await recordWordReview(word, true);
         playFeedback(true);
         trackAnswerStreak(true);
         trackSessionResult(true);
@@ -2992,7 +2993,7 @@ async function rateFC(rating) {
         }
 
         // Ghi nhận hoạt động
-        await recordDailyActivity(1, 0);
+        await recordWordReview(word, false);
         trackAnswerStreak(false);
         trackSessionResult(false);
 
@@ -3024,6 +3025,17 @@ async function rateFC(rating) {
 function todayKey() {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+// Chỉ đếm mỗi từ 1 lần/session — lần làm lại (retry) không tính thêm
+function recordWordReview(wordKey, isCorrect) {
+    const key = (wordKey || '').toLowerCase();
+    const isFirstTime = !window._sessionReviewedWords?.has(key);
+    if (isFirstTime && window._sessionReviewedWords) {
+        window._sessionReviewedWords.add(key);
+    }
+    // Chỉ tăng reviewed khi là lần đầu gặp từ này trong session
+    return recordDailyActivity(isFirstTime ? 1 : 0, isCorrect ? 1 : 0);
 }
 
 async function recordDailyActivity(reviewed = 1, correct = 0) {
@@ -3545,7 +3557,7 @@ Học sinh có hiểu đúng nghĩa không?`;
         }
 
         await ref.set({ correct_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
-        await recordDailyActivity(1, 1);
+        await recordWordReview(target.word, true);
         trackAnswerStreak(true);
         trackSessionResult(true);
         currentReviewIdx++;
@@ -3555,7 +3567,7 @@ Học sinh có hiểu đúng nghĩa không?`;
         let wrongCount = window._wordWrongCount[wordKey];
 
         await ref.set({ incorrect_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
-        await recordDailyActivity(1, 0);
+        await recordWordReview(target.word, false);
         trackAnswerStreak(false);
         trackSessionResult(false);
 
@@ -3953,7 +3965,7 @@ async function checkFillBlank() {
         const item = snap.exists ? snap.data() : {};
         const srs  = srsUpdate(item, true);
         await ref.set({ correct_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
-        await addXP(10); await recordDailyActivity(1, 1);
+        await addXP(10); await recordWordReview(target.word, true);
         trackAnswerStreak(true); trackSessionResult(true);
         currentReviewIdx++;
     } else {
@@ -3975,7 +3987,7 @@ async function checkFillBlank() {
         const item = snap.exists ? snap.data() : {};
         const srs  = srsUpdate(item, false);
         await ref.set({ incorrect_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
-        await recordDailyActivity(1, 0);
+        await recordWordReview(target.word, false);
         trackAnswerStreak(false); trackSessionResult(false);
 
         if (window._currentReviewSource === 'mastered') {
