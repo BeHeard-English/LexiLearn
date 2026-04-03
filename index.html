@@ -290,10 +290,10 @@
         .fc-btn-xp{font-size:.68rem;font-weight:700;opacity:.7;}
 
         /* ── LEADERBOARD / PROGRESS CHART ── */
-        .chart-bar-wrap{display:flex;align-items:flex-end;gap:6px;height:100px;padding:0 4px;}
+        .chart-bar-wrap{display:flex;align-items:flex-end;gap:6px;height:100px;padding:22px 4px 0;box-sizing:content-box;}
         .chart-bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
         .chart-bar{width:100%;border-radius:6px 6px 0 0;transition:height .6s cubic-bezier(.4,0,.2,1);min-height:4px;position:relative;}
-        .chart-bar-val{font-size:.6rem;font-weight:800;color:var(--primary);position:absolute;top:-16px;width:100%;text-align:center;}
+        .chart-bar-val{font-size:.6rem;font-weight:800;color:var(--primary);position:absolute;top:-18px;left:0;right:0;text-align:center;white-space:nowrap;}
         .chart-label{font-size:.62rem;font-weight:700;color:var(--muted);}
         .chart-today .chart-bar{background:linear-gradient(180deg,var(--accent),var(--primary));}
         .chart-today .chart-label{color:var(--primary);font-weight:800;}
@@ -570,7 +570,7 @@
 
                 <!-- LEADERBOARD — 7-day progress chart -->
                 <div id="progressChartCard" class="hidden" style="background:var(--card);border:1px solid var(--border);border-radius:18px;padding:20px 22px;margin-bottom:20px;">
-                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:8px;">
                         <div>
                             <div style="font-weight:800;font-size:.95rem;color:var(--text);">📈 Tiến độ 7 ngày</div>
                             <div style="font-size:.72rem;color:var(--muted);margin-top:2px;">Số từ ôn tập mỗi ngày</div>
