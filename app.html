@@ -1559,7 +1559,8 @@ auth.onAuthStateChanged(async user => {
     }
 });
 document.getElementById('loginBtn').onclick  = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
-document.getElementById('logoutBtn').onclick = () => auth.signOut();
+document.getElementById('logoutBtn').onclick = () => 
+  auth.signOut().then(() => window.location.href = 'index.html');
 
 function switchTab(name) {
     document.querySelectorAll('[id^="tab-"]').forEach(el => { el.classList.add('hidden'); el.classList.remove('fade-in'); });
