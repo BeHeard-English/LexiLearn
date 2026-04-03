@@ -402,7 +402,7 @@
 <nav class="nav-bar">
     <div class="flex items-center gap-4">
         <div class="nav-logo">
-            <div class="nav-logo-icon">B</div>
+            <div class="nav-logo-icon">V</div>
             BeHeard <span>LexiLearning</span>
         </div>
         <div id="desktopTabs" class="desktop-tabs hidden">
@@ -1260,6 +1260,55 @@
     </div>
 </div>
 
+<!-- ══ SESSION SUMMARY MODAL ══ -->
+<div id="sessionSummaryModal" class="badge-modal" style="z-index:8500;">
+    <div onclick="event.stopPropagation()" style="background:var(--card);border-radius:24px;width:92%;max-width:420px;box-shadow:0 24px 64px rgba(3,19,131,.2);overflow:hidden;animation:badgeModalPop .4s cubic-bezier(.4,0,.2,1) both;">
+
+        <!-- Header gradient -->
+        <div id="ssHeader" style="padding:28px 28px 22px;text-align:center;background:linear-gradient(135deg,var(--primary),var(--primary-mid));">
+            <div id="ssEmoji" style="font-size:3.2rem;line-height:1;margin-bottom:10px;">🎉</div>
+            <div id="ssTitle" style="font-family:'Nunito',sans-serif;font-size:1.3rem;font-weight:900;color:#fff;margin-bottom:4px;">Xuất sắc!</div>
+            <div id="ssPraise" style="font-size:.82rem;color:rgba(255,255,255,.8);line-height:1.5;max-width:300px;margin:0 auto;"></div>
+        </div>
+
+        <!-- Stats row -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--border);">
+            <div style="padding:16px 8px;text-align:center;border-right:1px solid var(--border);">
+                <div id="ssAccuracy" style="font-family:'Nunito',sans-serif;font-size:1.6rem;font-weight:900;color:var(--primary);">—</div>
+                <div style="font-size:.62rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:2px;">Chính xác</div>
+            </div>
+            <div style="padding:16px 8px;text-align:center;border-right:1px solid var(--border);">
+                <div id="ssScore" style="font-family:'Nunito',sans-serif;font-size:1.6rem;font-weight:900;color:var(--success);">—</div>
+                <div style="font-size:.62rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:2px;">Đúng / Tổng</div>
+            </div>
+            <div style="padding:16px 8px;text-align:center;">
+                <div id="ssTime" style="font-family:'Nunito',sans-serif;font-size:1.6rem;font-weight:900;color:var(--warn);">—</div>
+                <div style="font-size:.62rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:2px;">Thời gian</div>
+            </div>
+        </div>
+
+        <!-- XP earned -->
+        <div id="ssXpRow" style="display:flex;align-items:center;justify-content:center;gap:8px;padding:14px 20px;background:linear-gradient(90deg,#fffbeb,#fef3c7);border-bottom:1px solid #fde68a;">
+            <span style="font-size:1.1rem;">⚡</span>
+            <span id="ssXp" style="font-family:'Nunito',sans-serif;font-size:1.1rem;font-weight:900;color:#92400e;">+0 XP</span>
+            <span style="font-size:.78rem;font-weight:600;color:#a16207;">kiếm được trong phiên này</span>
+        </div>
+
+        <!-- Wrong words -->
+        <div id="ssWrongWrap" style="padding:14px 20px;border-bottom:1px solid var(--border);display:none;">
+            <div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px;">📌 Từ cần ôn thêm</div>
+            <div id="ssWrongList" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+        </div>
+
+        <!-- Buttons -->
+        <div style="padding:16px 20px;display:flex;gap:10px;">
+            <button onclick="closeSessionSummary(true)" style="flex:1;background:var(--primary-light);color:var(--primary);border:none;border-radius:12px;padding:12px;font-family:'Be Vietnam Pro',sans-serif;font-weight:800;font-size:.85rem;cursor:pointer;transition:.2s;" onmouseover="this.style.background='#d4dbff'" onmouseout="this.style.background='var(--primary-light)'">📚 Về thư viện</button>
+            <button onclick="closeSessionSummary(false)" style="flex:1;background:var(--primary);color:#fff;border:none;border-radius:12px;padding:12px;font-family:'Be Vietnam Pro',sans-serif;font-weight:800;font-size:.85rem;cursor:pointer;transition:.2s;" onmouseover="this.style.background='var(--primary-hover)'" onmouseout="this.style.background='var(--primary)'">🚀 Học tiếp</button>
+        </div>
+
+    </div>
+</div>
+
 <script>
 // ══════════════════════════════════════════
 // FIREBASE
@@ -1312,6 +1361,7 @@ async function getUserXP() {
 }
 async function addXP(amount) {
     if (!currentUser) return;
+    _sessionXpEarned += amount; // track session XP
     await db.collection('users').doc(currentUser.uid).set({ xp: firebase.firestore.FieldValue.increment(amount) }, { merge:true });
     const xp = await getUserXP();
     updateXPUI(xp);
@@ -2095,8 +2145,8 @@ async function showReviewQuestion() {
         document.getElementById('reviewStart').classList.remove('hidden');
         updateProgress();
         showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} câu.`);
-        await finalizeSessionBadges();
-        loadSRSDueCount(); switchTab('library'); return;
+        await showSessionSummary();
+        return;
     }
     updateProgress();
     const target = reviewPool[currentReviewIdx];
@@ -2934,9 +2984,7 @@ function showFlashcard() {
         document.getElementById('flashcardArea').style.display = 'none';
         document.getElementById('reviewStart').classList.remove('hidden');
         showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} thẻ.`);
-        finalizeSessionBadges().then(() => {
-            loadSRSDueCount(); switchTab('library');
-        });
+        showSessionSummary();
         return;
     }
     updateFCProgress();
@@ -3067,9 +3115,7 @@ async function rateFC(rating) {
         document.getElementById('flashcardArea').style.display = 'none';
         document.getElementById('reviewStart').classList.remove('hidden');
         showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} thẻ.`);
-        await finalizeSessionBadges();
-        loadSRSDueCount();
-        switchTab('library');
+        await showSessionSummary();
     }
 }
 
@@ -3271,6 +3317,8 @@ let _currentAnswerStreak = 0;
 let _sessionStartTime = 0;
 let _sessionCorrect = 0;
 let _sessionTotal = 0;
+let _sessionXpEarned = 0;
+let _sessionWrongWords = [];
 
 async function loadBadges(xp) {
     if (!currentUser) return;
@@ -3360,7 +3408,7 @@ function openBadgeDetail(badgeId) {
     const body = document.getElementById('bdBody');
     if (unlocked) {
         body.style.cssText = 'border-radius:14px;padding:14px 16px;font-size:.85rem;line-height:1.65;text-align:left;margin-bottom:20px;background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1px solid #fde68a;color:#78350f;';
-        body.innerHTML     = `<div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#d97706;margin-bottom:6px;">💬 Lời nhắn gửi bạn</div>${badge.motivation}`;
+        body.innerHTML     = `<div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#d97706;margin-bottom:6px;">💬 Lời động viên</div>${badge.motivation}`;
     } else {
         body.style.cssText = 'border-radius:14px;padding:14px 16px;font-size:.85rem;line-height:1.65;text-align:left;margin-bottom:20px;background:var(--primary-light);border:1px solid #c7d2ff;color:var(--primary);';
         body.innerHTML     = `<div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--primary-mid);margin-bottom:6px;">🗺️ Cách đạt được</div>${badge.hint}`;
@@ -3488,10 +3536,16 @@ function startSessionTimer(total) {
     _sessionStartTime = Date.now();
     _sessionCorrect = 0;
     _sessionTotal = total;
+    _sessionXpEarned = 0;
+    _sessionWrongWords = [];
 }
 
 function trackSessionResult(correct) {
     _sessionCorrect += correct ? 1 : 0;
+    if (!correct && currentWord) {
+        const w = currentWord.word;
+        if (!_sessionWrongWords.includes(w)) _sessionWrongWords.push(w);
+    }
 }
 
 async function finalizeSessionBadges() {
@@ -3508,6 +3562,80 @@ async function finalizeSessionBadges() {
         const xp = await getUserXP();
         await checkAndAwardBadges(xp);
     }
+}
+
+// ══════════════════════════════════════════
+// SESSION SUMMARY
+// ══════════════════════════════════════════
+const SESSION_PRAISE = [
+    { min: 100, emoji: '🏆', title: 'Hoàn hảo tuyệt đối!',  praise: 'Không một sai sót! Bạn thực sự đã nắm vững những từ này. Bộ nhớ của bạn thật đáng kinh ngạc!' },
+    { min: 90,  emoji: '🌟', title: 'Xuất sắc!',             praise: 'Gần như hoàn hảo! Chỉ vài từ nhỏ thôi — tiếp tục đà này và bạn sẽ chinh phục tất cả.' },
+    { min: 75,  emoji: '💪', title: 'Rất tốt!',              praise: 'Bạn đang tiến bộ rõ rệt! Những từ chưa đúng sẽ là bạn đồng hành ở phiên tiếp theo.' },
+    { min: 60,  emoji: '📚', title: 'Khá tốt!',              praise: 'Mỗi lần ôn là một bước tiến. Đừng nản — SRS sẽ tự động đưa những từ khó trở lại để bạn luyện thêm.' },
+    { min: 40,  emoji: '🌱', title: 'Cố lên nào!',           praise: 'Học là hành trình, không phải cuộc đua. Những từ khó hôm nay sẽ là vũ khí bạn nắm vững nhất sau này.' },
+    { min: 0,   emoji: '🤗', title: 'Khởi đầu tốt!',         praise: 'Không sao cả — ngày đầu bao giờ cũng khó nhất. Hệ thống SRS đã ghi nhớ và sẽ giúp bạn ôn lại đúng lúc.' },
+];
+
+async function showSessionSummary() {
+    await finalizeSessionBadges();
+    loadSRSDueCount();
+
+    const elapsed  = Math.round((Date.now() - _sessionStartTime) / 1000);
+    const accuracy = _sessionTotal > 0 ? Math.round((_sessionCorrect / _sessionTotal) * 100) : 0;
+    const mins     = Math.floor(elapsed / 60);
+    const secs     = elapsed % 60;
+    const timeStr  = mins > 0 ? `${mins}p${secs < 10 ? '0'+secs : secs}s` : `${secs}s`;
+
+    const praise = SESSION_PRAISE.find(p => accuracy >= p.min) || SESSION_PRAISE[SESSION_PRAISE.length - 1];
+
+    // Màu accuracy
+    const accColor = accuracy === 100 ? '#059669' : accuracy >= 75 ? '#2563eb' : accuracy >= 50 ? '#d97706' : '#dc2626';
+
+    document.getElementById('ssEmoji').textContent    = praise.emoji;
+    document.getElementById('ssTitle').textContent    = praise.title;
+    document.getElementById('ssPraise').textContent   = praise.praise;
+    document.getElementById('ssAccuracy').textContent = accuracy + '%';
+    document.getElementById('ssAccuracy').style.color = accColor;
+    document.getElementById('ssScore').textContent    = `${_sessionCorrect}/${_sessionTotal}`;
+    document.getElementById('ssTime').textContent     = timeStr;
+    document.getElementById('ssXp').textContent       = `+${_sessionXpEarned} XP`;
+
+    // Gradient header theo kết quả
+    const headerEl = document.getElementById('ssHeader');
+    if (accuracy === 100) {
+        headerEl.style.background = 'linear-gradient(135deg,#065f46,#059669)';
+    } else if (accuracy >= 75) {
+        headerEl.style.background = 'linear-gradient(135deg,var(--primary),var(--primary-mid))';
+    } else if (accuracy >= 50) {
+        headerEl.style.background = 'linear-gradient(135deg,#92400e,#d97706)';
+    } else {
+        headerEl.style.background = 'linear-gradient(135deg,#1e3a5f,#3b52d4)';
+    }
+
+    // Từ sai
+    const wrongWrap = document.getElementById('ssWrongWrap');
+    const wrongList = document.getElementById('ssWrongList');
+    if (_sessionWrongWords.length > 0) {
+        wrongWrap.style.display = 'block';
+        wrongList.innerHTML = _sessionWrongWords.map(w =>
+            `<span style="background:var(--danger-bg);color:var(--danger);font-size:.72rem;font-weight:700;padding:3px 10px;border-radius:8px;border:1px solid #fca5a5;">${w}</span>`
+        ).join('');
+    } else {
+        wrongWrap.style.display = 'none';
+    }
+
+    document.getElementById('sessionSummaryModal').classList.add('open');
+}
+
+function closeSessionSummary(goToLibrary) {
+    document.getElementById('sessionSummaryModal').classList.remove('open');
+    document.getElementById('reviewStart').classList.remove('hidden');
+    // Ẩn tất cả area ôn tập
+    ['reviewQuizArea','flashcardArea','typingArea','fillBlankArea'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+    });
+    if (goToLibrary) switchTab('library');
 }
 
 const _origRenderLibrary = renderLibrary;
@@ -3571,9 +3699,7 @@ async function showTypingQuestion() {
         document.getElementById('reviewStart').classList.remove('hidden');
         updateTypingProgress();
         showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} câu.`);
-        await finalizeSessionBadges();
-        loadSRSDueCount();
-        switchTab('library');
+        await showSessionSummary();
         return;
     }
     updateTypingProgress();
@@ -3780,10 +3906,7 @@ Học sinh có hiểu đúng nghĩa không?`;
             document.getElementById('typingArea').style.display = 'none';
             document.getElementById('reviewStart').classList.remove('hidden');
             showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} câu.`);
-            finalizeSessionBadges().then(() => {
-                loadSRSDueCount();
-                switchTab('library');
-            });
+            showSessionSummary();
         }
     };
 
@@ -3853,7 +3976,7 @@ async function showFillBlank() {
         document.getElementById('reviewStart').classList.remove('hidden');
         updateFBProgress();
         showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} câu.`);
-        finalizeSessionBadges().then(() => { loadSRSDueCount(); switchTab('library'); });
+        showSessionSummary();
         return;
     }
     updateFBProgress();
