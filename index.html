@@ -412,6 +412,11 @@
                 <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
             </button>
         </div>
+        <!-- Sound toggle — desktop only, mobile dùng settings panel -->
+        <button class="settings-btn" id="desktopSoundToggle" title="Bật/tắt âm thanh & rung" style="display:none;">
+            <svg id="soundIconOn" xmlns="http://www.w3.org/2000/svg" style="width:18px;height:18px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M12 6v12m-3.536-9.536a5 5 0 000 7.072"/></svg>
+            <svg id="soundIconOff" xmlns="http://www.w3.org/2000/svg" style="width:18px;height:18px;display:none;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/></svg>
+        </button>
         <button class="settings-btn" id="settingsToggle" style="display:none;">
             <svg xmlns="http://www.w3.org/2000/svg" style="width:18px;height:18px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
         </button>
@@ -432,7 +437,7 @@
 <div class="settings-panel" id="settingsPanel">
     <p class="section-label">Nhập Key</p>
     <div style="display:flex;gap:8px;">
-        <input type="password" id="apiKeyMobile" placeholder="Nhập API Key..." style="flex:1;padding:9px 12px;border:2px solid var(--border);border-radius:10px;font-family:inherit;font-size:.82rem;outline:none;">
+        <input type="password" id="apiKeyMobile" placeholder="Nhập Key tại đây" style="flex:1;padding:9px 12px;border:2px solid var(--border);border-radius:10px;font-family:inherit;font-size:.82rem;outline:none;">
         <button id="saveKeyMobileBtn" class="btn-primary" style="padding:9px 14px;border-radius:10px;">Lưu</button>
     </div>
     <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
@@ -1410,35 +1415,60 @@ document.getElementById('saveKeyBtn').onclick = () => {
     const k = document.getElementById('apiKey').value.trim();
     localStorage.setItem('vflow_api_key', k);
     document.getElementById('apiKeyMobile').value = k;
-    showToast('✅ Đã lưu API Key!');
+    showToast('✅ Đã lưu Key!');
 };
 document.getElementById('saveKeyMobileBtn').onclick = () => {
     const k = document.getElementById('apiKeyMobile').value.trim();
     localStorage.setItem('vflow_api_key', k);
     document.getElementById('apiKey').value = k;
     document.getElementById('settingsPanel').classList.remove('open');
-    showToast('✅ Đã lưu API Key!');
+    showToast('✅ Đã lưu Key!');
 };
 document.getElementById('settingsToggle').onclick = () => document.getElementById('settingsPanel').classList.toggle('open');
 document.addEventListener('click', e => { if (!e.target.closest('#settingsPanel')&&!e.target.closest('#settingsToggle')) document.getElementById('settingsPanel').classList.remove('open'); });
 
 // ── Toggle âm thanh & rung ──
 (function() {
-    const toggle = document.getElementById('feedbackSoundToggle');
-    const slider = document.getElementById('feedbackSoundSlider');
-    const knob   = slider.querySelector('span');
+    const toggle         = document.getElementById('feedbackSoundToggle');
+    const slider         = document.getElementById('feedbackSoundSlider');
+    const knob           = slider.querySelector('span');
+    const desktopBtn     = document.getElementById('desktopSoundToggle');
+    const iconOn         = document.getElementById('soundIconOn');
+    const iconOff        = document.getElementById('soundIconOff');
+
     function updateUI(on) {
+        // Mobile settings panel toggle
         slider.style.background = on ? 'var(--primary)' : '#cbd5e1';
         knob.style.transform    = on ? 'translateX(18px)' : 'translateX(0)';
+        // Desktop nav button
+        desktopBtn.style.opacity = on ? '1' : '0.45';
+        iconOn.style.display  = on ? 'block' : 'none';
+        iconOff.style.display = on ? 'none'  : 'block';
     }
-    toggle.addEventListener('change', () => {
-        updateUI(toggle.checked);
-        localStorage.setItem('lexipro_feedback_sound', toggle.checked ? '1' : '0');
-    });
+
+    function setSoundEnabled(on) {
+        toggle.checked = on;
+        localStorage.setItem('lexipro_feedback_sound', on ? '1' : '0');
+        updateUI(on);
+    }
+
+    // Mobile toggle trong settings panel
+    toggle.addEventListener('change', () => setSoundEnabled(toggle.checked));
+
+    // Desktop nav button
+    desktopBtn.addEventListener('click', () => setSoundEnabled(!toggle.checked));
+
+    // Hiện nút đúng theo breakpoint
+    function applyBreakpoint() {
+        const isMobile = window.innerWidth <= 480;
+        desktopBtn.style.display    = isMobile ? 'none' : 'flex';
+    }
+    window.addEventListener('resize', applyBreakpoint);
+    applyBreakpoint();
+
     // Khôi phục trạng thái từ localStorage
     const saved = localStorage.getItem('lexipro_feedback_sound');
-    if (saved === '0') { toggle.checked = false; }
-    updateUI(toggle.checked);
+    setSoundEnabled(saved !== '0');
 })();
 
 // ══════════════════════════════════════════
