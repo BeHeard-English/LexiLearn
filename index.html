@@ -435,6 +435,18 @@
         <input type="password" id="apiKeyMobile" placeholder="Nhập API Key..." style="flex:1;padding:9px 12px;border:2px solid var(--border);border-radius:10px;font-family:inherit;font-size:.82rem;outline:none;">
         <button id="saveKeyMobileBtn" class="btn-primary" style="padding:9px 14px;border-radius:10px;">Lưu</button>
     </div>
+    <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+        <div>
+            <div style="font-size:.8rem;font-weight:700;color:var(--text);">🔊 Âm thanh & Rung</div>
+            <div style="font-size:.7rem;color:var(--muted);margin-top:2px;">Phản hồi khi trả lời đúng/sai</div>
+        </div>
+        <label style="position:relative;display:inline-block;width:40px;height:22px;cursor:pointer;">
+            <input type="checkbox" id="feedbackSoundToggle" checked style="opacity:0;width:0;height:0;">
+            <span id="feedbackSoundSlider" style="position:absolute;inset:0;background:#cbd5e1;border-radius:99px;transition:.25s;">
+                <span style="position:absolute;top:3px;left:3px;width:16px;height:16px;background:#fff;border-radius:50%;transition:.25s;box-shadow:0 1px 4px rgba(0,0,0,.2);"></span>
+            </span>
+        </label>
+    </div>
 </div>
 
 <main class="main-wrap">
@@ -1410,6 +1422,25 @@ document.getElementById('saveKeyMobileBtn').onclick = () => {
 document.getElementById('settingsToggle').onclick = () => document.getElementById('settingsPanel').classList.toggle('open');
 document.addEventListener('click', e => { if (!e.target.closest('#settingsPanel')&&!e.target.closest('#settingsToggle')) document.getElementById('settingsPanel').classList.remove('open'); });
 
+// ── Toggle âm thanh & rung ──
+(function() {
+    const toggle = document.getElementById('feedbackSoundToggle');
+    const slider = document.getElementById('feedbackSoundSlider');
+    const knob   = slider.querySelector('span');
+    function updateUI(on) {
+        slider.style.background = on ? 'var(--primary)' : '#cbd5e1';
+        knob.style.transform    = on ? 'translateX(18px)' : 'translateX(0)';
+    }
+    toggle.addEventListener('change', () => {
+        updateUI(toggle.checked);
+        localStorage.setItem('lexipro_feedback_sound', toggle.checked ? '1' : '0');
+    });
+    // Khôi phục trạng thái từ localStorage
+    const saved = localStorage.getItem('lexipro_feedback_sound');
+    if (saved === '0') { toggle.checked = false; }
+    updateUI(toggle.checked);
+})();
+
 // ══════════════════════════════════════════
 // TOAST
 // ══════════════════════════════════════════
@@ -2032,6 +2063,7 @@ async function checkAnswer(btn, selected, correct, word) {
         btn.classList.add('correct');
         overlay.style.cssText='display:block;padding:12px 18px;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;text-align:center;border-radius:12px;margin-top:14px;background:linear-gradient(135deg,#d1fae5,#a7f3d0);color:#065f46;';
         overlay.innerText='✅ Chính xác!';
+        playFeedback(true);
         // Cập nhật đúng: tăng correct_count, áp dụng SRS
         await ref.set({ correct_count: firebase.firestore.FieldValue.increment(1), ...srs }, {merge:true});
         await addXP(10);
@@ -2045,6 +2077,7 @@ async function checkAnswer(btn, selected, correct, word) {
         allBtns.forEach(b=>{ if(b.innerText.includes(correct)) b.classList.add('correct'); });
         overlay.style.cssText='display:block;padding:12px 18px;font-weight:800;font-size:.85rem;letter-spacing:.04em;text-align:center;border-radius:12px;margin-top:14px;background:linear-gradient(135deg,#fee2e2,#fecaca);color:#991b1b;';
         overlay.innerHTML=`✍️ Chưa chính xác — Ôn lại sau!<div style="margin-top:6px;font-size:.8rem;font-weight:600;color:#7f1d1d;text-transform:none;letter-spacing:0;">Đáp án đúng: <strong style="color:#991b1b;">${correct}</strong></div>`;
+        playFeedback(false);
         await addXP(2);
         await recordDailyActivity(1, 0);
         trackAnswerStreak(false);
@@ -2907,11 +2940,13 @@ async function rateFC(rating) {
         await ref.set({ correct_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
         await addXP(rating === 'easy' ? 15 : 10);
         await recordDailyActivity(1, 1);
+        playFeedback(true);
         trackAnswerStreak(true);
         trackSessionResult(true);
         currentReviewIdx++; // Chuyển sang thẻ tiếp theo
     } else {
         // Sai (hard)
+        playFeedback(false);
         window._wordHardCount[word] = (window._wordHardCount[word] || 0) + 1;
         let skipWord = window._wordHardCount[word] >= 2;
 
@@ -3159,6 +3194,59 @@ function renderBadges() {
     document.getElementById('badgesCard').classList.remove('hidden');
 }
 
+// ══════════════════════════════════════════
+// FEEDBACK: ÂM THANH & RUNG
+// ══════════════════════════════════════════
+let _audioCtx = null;
+function _getAudioCtx() {
+    if (!_audioCtx) _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    return _audioCtx;
+}
+
+function playFeedbackSound(isCorrect) {
+    try {
+        const ctx = _getAudioCtx();
+        if (isCorrect) {
+            // Âm đúng: hai nốt lên (ding-ding)
+            [[880, 0, 0.06], [1320, 0.1, 0.12]].forEach(([freq, delay, dur]) => {
+                const osc  = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.type = 'sine'; osc.frequency.value = freq;
+                const t = ctx.currentTime + delay;
+                gain.gain.setValueAtTime(0, t);
+                gain.gain.linearRampToValueAtTime(0.22, t + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+                osc.start(t); osc.stop(t + dur + 0.02);
+            });
+        } else {
+            // Âm sai: tiếng "thud" trầm
+            [[220, 0, 0.18], [180, 0.05, 0.22]].forEach(([freq, delay, dur]) => {
+                const osc  = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.type = 'sawtooth'; osc.frequency.value = freq;
+                const t = ctx.currentTime + delay;
+                gain.gain.setValueAtTime(0, t);
+                gain.gain.linearRampToValueAtTime(0.18, t + 0.03);
+                gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+                osc.start(t); osc.stop(t + dur + 0.02);
+            });
+        }
+    } catch(e) { /* Trình duyệt không hỗ trợ */ }
+}
+
+function triggerVibration(isCorrect) {
+    if (!navigator.vibrate) return;
+    navigator.vibrate(isCorrect ? [40] : [80, 60, 80]);
+}
+
+function playFeedback(isCorrect) {
+    if (!document.getElementById('feedbackSoundToggle')?.checked) return;
+    playFeedbackSound(isCorrect);
+    triggerVibration(isCorrect);
+}
+
 function trackAnswerStreak(isCorrect) {
     if (isCorrect) {
         _currentAnswerStreak++;
@@ -3397,10 +3485,12 @@ Học sinh có hiểu đúng nghĩa không?`;
         feedbackDiv.style.cssText = 'display:block;padding:12px 18px;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;text-align:center;border-radius:12px;margin-bottom:12px;background:linear-gradient(135deg,#d1fae5,#a7f3d0);color:#065f46;';
         if (useAI && reviewMode === 'normal') feedbackDiv.innerText = '✅ Chính xác! (AI)';
         else feedbackDiv.innerText = '✅ Chính xác!';
+        playFeedback(true);
     } else {
         feedbackDiv.style.cssText = 'display:block;padding:12px 18px;font-weight:800;font-size:.85rem;letter-spacing:.04em;text-align:center;border-radius:12px;margin-bottom:12px;background:linear-gradient(135deg,#fee2e2,#fecaca);color:#991b1b;';
         if (useAI && reviewMode === 'normal') feedbackDiv.innerHTML = `❌ Chưa chính xác! (AI)<div style="margin-top:6px;font-size:.8rem;font-weight:600;color:#7f1d1d;text-transform:none;letter-spacing:0;">Đáp án đúng: <strong>${correctAnswer}</strong></div>`;
         else feedbackDiv.innerHTML = `❌ Chưa chính xác!<div style="margin-top:6px;font-size:.8rem;font-weight:600;color:#7f1d1d;text-transform:none;letter-spacing:0;">Đáp án đúng: <strong>${correctAnswer}</strong></div>`;
+        playFeedback(false);
     }
 
     const ref = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(target.word.toLowerCase());
@@ -3826,6 +3916,7 @@ async function checkFillBlank() {
         blank.classList.remove('empty');
         fb.style.cssText = 'display:block;padding:12px 16px;font-weight:800;font-size:.88rem;text-align:center;border-radius:12px;margin-top:16px;background:linear-gradient(135deg,#d1fae5,#a7f3d0);color:#065f46;';
         fb.innerHTML = `✅ Chính xác! <span style="font-weight:600;font-size:.82rem;">${target.word}</span>`;
+        playFeedback(true);
 
         const ref  = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(target.word.toLowerCase());
         const snap = await ref.get();
@@ -3839,6 +3930,7 @@ async function checkFillBlank() {
         blank.classList.add('wrong-slot');
         fb.style.cssText = 'display:block;padding:12px 16px;font-weight:800;font-size:.88rem;text-align:center;border-radius:12px;margin-top:16px;background:linear-gradient(135deg,#fee2e2,#fecaca);color:#991b1b;letter-spacing:.03em;';
         fb.innerHTML = `❌ Chưa đúng!<div style="margin-top:5px;font-size:.82rem;font-weight:600;color:#7f1d1d;text-transform:none;letter-spacing:0;">Đáp án: <strong>${target.word}</strong></div>`;
+        playFeedback(false);
 
         // Highlight đáp án đúng trong wordbank
         const correctChipId = 'fbChip-' + correct.replace(/\s+/g,'_');
