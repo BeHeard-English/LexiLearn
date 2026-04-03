@@ -437,7 +437,7 @@
 <div class="settings-panel" id="settingsPanel">
     <p class="section-label">Nhập Key</p>
     <div style="display:flex;gap:8px;">
-        <input type="password" id="apiKeyMobile" placeholder="Nhập API Key..." style="flex:1;padding:9px 12px;border:2px solid var(--border);border-radius:10px;font-family:inherit;font-size:.82rem;outline:none;">
+        <input type="password" id="apiKeyMobile" placeholder="Nhập Key tại đây" style="flex:1;padding:9px 12px;border:2px solid var(--border);border-radius:10px;font-family:inherit;font-size:.82rem;outline:none;">
         <button id="saveKeyMobileBtn" class="btn-primary" style="padding:9px 14px;border-radius:10px;">Lưu</button>
     </div>
     <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
@@ -1207,6 +1207,26 @@
     </div>
 </div>
 
+<!-- BADGE DETAIL MODAL -->
+<div id="badgeDetailModal" class="badge-modal" onclick="closeBadgeDetail()">
+    <div class="badge-modal-box" onclick="event.stopPropagation()" style="max-width:360px;">
+        <!-- Icon + trạng thái -->
+        <div style="position:relative;display:inline-block;margin-bottom:4px;">
+            <span id="bdIcon" style="font-size:4rem;display:block;line-height:1.2;">🏆</span>
+            <span id="bdStatusBadge" style="position:absolute;bottom:-4px;right:-8px;font-size:1.1rem;"></span>
+        </div>
+        <!-- Nhãn đạt / chưa đạt -->
+        <div id="bdStatusLabel" style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;"></div>
+        <!-- Tên badge -->
+        <div id="bdName" style="font-family:'Nunito',sans-serif;font-size:1.25rem;font-weight:800;color:var(--text);margin-bottom:4px;"></div>
+        <!-- Điều kiện -->
+        <div id="bdDesc" style="font-size:.8rem;color:var(--muted);margin-bottom:16px;"></div>
+        <!-- Nội dung chính: lời động viên hoặc hướng dẫn -->
+        <div id="bdBody" style="border-radius:14px;padding:14px 16px;font-size:.85rem;line-height:1.65;text-align:left;margin-bottom:20px;"></div>
+        <button onclick="closeBadgeDetail()" style="background:var(--primary);color:#fff;border:none;border-radius:12px;padding:11px 28px;font-family:'Be Vietnam Pro',sans-serif;font-weight:800;font-size:.88rem;cursor:pointer;width:100%;"></button>
+    </div>
+</div>
+
 <script>
 // ══════════════════════════════════════════
 // FIREBASE
@@ -1415,14 +1435,14 @@ document.getElementById('saveKeyBtn').onclick = () => {
     const k = document.getElementById('apiKey').value.trim();
     localStorage.setItem('vflow_api_key', k);
     document.getElementById('apiKeyMobile').value = k;
-    showToast('✅ Đã lưu API Key!');
+    showToast('✅ Đã lưu Key!');
 };
 document.getElementById('saveKeyMobileBtn').onclick = () => {
     const k = document.getElementById('apiKeyMobile').value.trim();
     localStorage.setItem('vflow_api_key', k);
     document.getElementById('apiKey').value = k;
     document.getElementById('settingsPanel').classList.remove('open');
-    showToast('✅ Đã lưu API Key!');
+    showToast('✅ Đã lưu Key!');
 };
 document.getElementById('settingsToggle').onclick = () => document.getElementById('settingsPanel').classList.toggle('open');
 document.addEventListener('click', e => { if (!e.target.closest('#settingsPanel')&&!e.target.closest('#settingsToggle')) document.getElementById('settingsPanel').classList.remove('open'); });
@@ -3137,30 +3157,78 @@ function closeMasteredModal() {
 // BADGES — ACHIEVEMENT SYSTEM
 // ══════════════════════════════════════════
 const BADGES = [
-    { id:'first_word',   icon:'🌱', name:'Bước đầu tiên',      desc:'Thêm từ đầu tiên vào thư viện',                    check:(lib)=>lib.length>=1 },
-    { id:'words_10',     icon:'📚', name:'Chăm chỉ',            desc:'Có 10 từ trong thư viện',                          check:(lib)=>lib.length>=10 },
-    { id:'words_50',     icon:'🎓', name:'Sinh viên xuất sắc',  desc:'Có 50 từ trong thư viện',                          check:(lib)=>lib.length>=50 },
-    { id:'words_100',    icon:'🏛️', name:'Bách khoa',           desc:'Đạt 100 từ trong thư viện',                        check:(lib)=>lib.length>=100 },
-    { id:'words_300',    icon:'📖', name:'Từ điển sống',         desc:'Đạt 300 từ — thử thách thực sự!',                  check:(lib)=>lib.length>=300 },
-    { id:'words_500',    icon:'🧠', name:'Bộ não từ vựng',       desc:'Đạt 500 từ trong thư viện',                        check:(lib)=>lib.length>=500 },
-    { id:'mastered_5',   icon:'⭐', name:'Ngôi sao đang lên',   desc:'Thuộc hoàn toàn 5 từ',                             check:(lib)=>lib.filter(i=>(i.correct_count||0)>=10).length>=5 },
-    { id:'mastered_20',  icon:'🌟', name:'Ngôi sao sáng',        desc:'Thuộc hoàn toàn 20 từ',                            check:(lib)=>lib.filter(i=>(i.correct_count||0)>=10).length>=20 },
-    { id:'mastered_50',  icon:'💫', name:'Siêu sao',             desc:'Thuộc hoàn toàn 50 từ',                            check:(lib)=>lib.filter(i=>(i.correct_count||0)>=10).length>=50 },
-    { id:'mastered_100', icon:'🏆', name:'Nhà vô địch',          desc:'Thuộc hoàn toàn 100 từ!',                          check:(lib)=>lib.filter(i=>(i.correct_count||0)>=10).length>=100 },
-    { id:'level_b1',     icon:'🔵', name:'B1 Bứt phá',           desc:'Có ít nhất 10 từ cấp B1',                          check:(lib)=>lib.filter(i=>i.level==='B1').length>=10 },
-    { id:'level_b2',     icon:'🟣', name:'B2 Chuyên nghiệp',     desc:'Có ít nhất 10 từ cấp B2',                          check:(lib)=>lib.filter(i=>i.level==='B2').length>=10 },
-    { id:'level_c',      icon:'🔴', name:'C-Level Warrior',      desc:'Có ít nhất 5 từ cấp C1 hoặc C2',                   check:(lib)=>lib.filter(i=>i.level==='C1'||i.level==='C2').length>=5 },
-    { id:'level_c_hard', icon:'💎', name:'C-Level Master',       desc:'Có ít nhất 20 từ cấp C1 hoặc C2',                  check:(lib)=>lib.filter(i=>i.level==='C1'||i.level==='C2').length>=20 },
-    { id:'all_levels',   icon:'🌈', name:'Toàn diện',             desc:'Có ít nhất 5 từ ở mỗi cấp A1→C2',                 check:(lib)=>['A1','A2','B1','B2','C1','C2'].every(lv=>lib.filter(i=>i.level===lv).length>=5) },
-    { id:'polyglot',     icon:'🌍', name:'Đa ngôn',               desc:'Có ít nhất 10 từ ở mỗi cấp A1→C2',               check:(lib)=>['A1','A2','B1','B2','C1','C2'].every(lv=>lib.filter(i=>i.level===lv).length>=10) },
-    { id:'xp_500',       icon:'⚡', name:'Năng lượng',            desc:'Tích lũy 500 XP',                                  check:(_,xp)=>xp>=500 },
-    { id:'xp_2000',      icon:'🔥', name:'Bùng cháy',             desc:'Tích lũy 2000 XP',                                 check:(_,xp)=>xp>=2000 },
-    { id:'xp_5000',      icon:'🚀', name:'Tên lửa XP',            desc:'Tích lũy 5000 XP',                                 check:(_,xp)=>xp>=5000 },
-    { id:'xp_10000',     icon:'👑', name:'Hoàng đế XP',           desc:'Tích lũy 10000 XP — huyền thoại!',                 check:(_,xp)=>xp>=10000 },
-    { id:'perfect_10',   icon:'🎯', name:'Thiện xạ',              desc:'Trả lời đúng 10 lần liên tiếp',                    check:(_,__,ex)=>(ex?.perfectStreak||0)>=10 },
-    { id:'no_mistake',   icon:'🛡️', name:'Bất khả chiến bại',    desc:'Hoàn thành phiên 15 câu không sai 1 lần',           check:(_,__,ex)=>ex?.perfectSession||false },
-    { id:'librarian',    icon:'📜', name:'Thủ thư',               desc:'Nhập từ vựng qua file .docx',                       check:(_,__,ex)=>ex?.importedDocx||false },
-    { id:'speed_review', icon:'⏩', name:'Tốc độ ánh sáng',       desc:'Hoàn thành phiên 20 câu trong dưới 3 phút',         check:(_,__,ex)=>ex?.speedReview||false },
+    { id:'first_word',   icon:'🌱', name:'Bước đầu tiên',      desc:'Thêm từ đầu tiên vào thư viện',                    check:(lib)=>lib.length>=1,
+      motivation:'Mọi hành trình đều bắt đầu từ một bước nhỏ — và bạn đã làm được! Tiếp tục xây dựng thư viện của mình nhé.',
+      hint:'Phân tích một đoạn văn bản tiếng Anh và thêm ít nhất 1 từ vào thư viện.' },
+    { id:'words_10',     icon:'📚', name:'Chăm chỉ',            desc:'Có 10 từ trong thư viện',                          check:(lib)=>lib.length>=10,
+      motivation:'10 từ — tưởng nhỏ nhưng đây là nền tảng! Người ta học ngôn ngữ từng từ một, và bạn đang đi đúng hướng.',
+      hint:'Thêm đủ 10 từ vào thư viện. Hãy thử phân tích một bài đọc ngắn để tìm từ mới nhanh hơn.' },
+    { id:'words_50',     icon:'🎓', name:'Sinh viên xuất sắc',  desc:'Có 50 từ trong thư viện',                          check:(lib)=>lib.length>=50,
+      motivation:'50 từ là con số đáng nể! Với vốn từ này bạn đã có thể hiểu phần lớn các đoạn hội thoại đơn giản.',
+      hint:'Tích lũy đủ 50 từ trong thư viện. Đừng quên đa dạng cấp độ từ A1 đến B1 để học hiệu quả hơn.' },
+    { id:'words_100',    icon:'🏛️', name:'Bách khoa',           desc:'Đạt 100 từ trong thư viện',                        check:(lib)=>lib.length>=100,
+      motivation:'100 từ! Bạn đã bước vào nhóm những người học nghiêm túc. Đây là cột mốc mà nhiều người bỏ cuộc trước khi đạt.',
+      hint:'Thêm đủ 100 từ vào thư viện. Hãy tải lên tài liệu .docx để phân tích nhanh hơn.' },
+    { id:'words_300',    icon:'📖', name:'Từ điển sống',         desc:'Đạt 300 từ — thử thách thực sự!',                  check:(lib)=>lib.length>=300,
+      motivation:'300 từ — bạn thực sự là một cuốn từ điển sống! Nghiên cứu cho thấy 300 từ thường dùng chiếm tới 65% ngôn ngữ hàng ngày.',
+      hint:'Cần đạt 300 từ trong thư viện. Thử phân tích nhiều thể loại văn bản khác nhau: bài báo, hội thoại, tiểu thuyết...' },
+    { id:'words_500',    icon:'🧠', name:'Bộ não từ vựng',       desc:'Đạt 500 từ trong thư viện',                        check:(lib)=>lib.length>=500,
+      motivation:'500 từ! Bộ não bạn đang lưu trữ một kho tàng ngôn ngữ thực sự. Ở cột mốc này, bạn có thể đọc báo tiếng Anh khá tự tin.',
+      hint:'Thêm đủ 500 từ vào thư viện — đây là thử thách lớn, hãy kiên trì mỗi ngày thêm vài từ mới.' },
+    { id:'mastered_5',   icon:'⭐', name:'Ngôi sao đang lên',   desc:'Thuộc hoàn toàn 5 từ',                             check:(lib)=>lib.filter(i=>(i.correct_count||0)>=10).length>=5,
+      motivation:'5 từ đã thực sự nằm lòng! Thuộc từ khác với biết từ — bạn đang xây dựng ký ức dài hạn thật sự.',
+      hint:'Ôn tập đúng 10 lần liên tiếp cho ít nhất 5 từ. Hãy dùng chế độ Flashcard đều đặn mỗi ngày.' },
+    { id:'mastered_20',  icon:'🌟', name:'Ngôi sao sáng',        desc:'Thuộc hoàn toàn 20 từ',                            check:(lib)=>lib.filter(i=>(i.correct_count||0)>=10).length>=20,
+      motivation:'20 từ đã vào tủ vĩnh viễn! Khoa học ghi nhận: từ được ôn lặp đúng cách sẽ ở lại ký ức hàng chục năm.',
+      hint:'Đạt 20 từ được thuộc hoàn toàn (ôn đúng 10 lần). Ưu tiên ôn những từ SRS nhắc đến trước.' },
+    { id:'mastered_50',  icon:'💫', name:'Siêu sao',             desc:'Thuộc hoàn toàn 50 từ',                            check:(lib)=>lib.filter(i=>(i.correct_count||0)>=10).length>=50,
+      motivation:'50 từ thuộc lòng — bạn là siêu sao thực sự! Ít người có đủ kiên nhẫn để đạt đến đây. Tự hào đi nhé!',
+      hint:'Cần 50 từ được học thuộc hoàn toàn. Duy trì thói quen ôn tập hằng ngày là chìa khóa.' },
+    { id:'mastered_100', icon:'🏆', name:'Nhà vô địch',          desc:'Thuộc hoàn toàn 100 từ!',                          check:(lib)=>lib.filter(i=>(i.correct_count||0)>=10).length>=100,
+      motivation:'100 từ thuộc lòng — bạn là nhà vô địch thực thụ! Đây là thành tích mà cực ít người đạt được. Bạn đã chứng minh rằng kiên trì thắng tất cả.',
+      hint:'Cần 100 từ được học thuộc hoàn toàn. Hãy ôn tập mỗi ngày và đừng bỏ qua những từ bạn hay quên.' },
+    { id:'level_b1',     icon:'🔵', name:'B1 Bứt phá',           desc:'Có ít nhất 10 từ cấp B1',                          check:(lib)=>lib.filter(i=>i.level==='B1').length>=10,
+      motivation:'10 từ B1! Cấp độ này là ngưỡng "giao tiếp được" trong tiếng Anh. Bạn đang bứt phá thật sự.',
+      hint:'Thêm ít nhất 10 từ cấp B1 vào thư viện. Hãy thử phân tích bài đọc trình độ intermediate.' },
+    { id:'level_b2',     icon:'🟣', name:'B2 Chuyên nghiệp',     desc:'Có ít nhất 10 từ cấp B2',                          check:(lib)=>lib.filter(i=>i.level==='B2').length>=10,
+      motivation:'10 từ B2 — bạn đang chạm tới ngưỡng chuyên nghiệp! Ở cấp độ này bạn có thể làm việc và học tập hoàn toàn bằng tiếng Anh.',
+      hint:'Thêm ít nhất 10 từ cấp B2. Hãy đọc tài liệu chuyên ngành hoặc bài báo tiếng Anh để tìm từ B2.' },
+    { id:'level_c',      icon:'🔴', name:'C-Level Warrior',      desc:'Có ít nhất 5 từ cấp C1 hoặc C2',                   check:(lib)=>lib.filter(i=>i.level==='C1'||i.level==='C2').length>=5,
+      motivation:'Từ vựng C-Level! Đây là ngôn ngữ của người bản xứ và học thuật. Bạn đang chinh phục những đỉnh cao thực sự.',
+      hint:'Thêm ít nhất 5 từ cấp C1 hoặc C2. Thử phân tích tạp chí học thuật, tiểu thuyết văn học hoặc bài phát biểu TEDx.' },
+    { id:'level_c_hard', icon:'💎', name:'C-Level Master',       desc:'Có ít nhất 20 từ cấp C1 hoặc C2',                  check:(lib)=>lib.filter(i=>i.level==='C1'||i.level==='C2').length>=20,
+      motivation:'20 từ C-Level! Bạn đang sở hữu vốn từ của một học giả. Không nhiều người dám leo đến đỉnh này — nhưng bạn đã làm được!',
+      hint:'Cần 20 từ cấp C1/C2. Đây là thử thách dài hơi — hãy đọc nhiều tài liệu chuyên sâu và kiên nhẫn.' },
+    { id:'all_levels',   icon:'🌈', name:'Toàn diện',             desc:'Có ít nhất 5 từ ở mỗi cấp A1→C2',                 check:(lib)=>['A1','A2','B1','B2','C1','C2'].every(lv=>lib.filter(i=>i.level===lv).length>=5),
+      motivation:'Toàn diện! Bạn đã trải đều vốn từ từ nền tảng đến nâng cao — đây là cách học ngôn ngữ bài bản và khoa học nhất.',
+      hint:'Cần ít nhất 5 từ ở mỗi cấp A1, A2, B1, B2, C1, C2. Hãy kiểm tra tab Thư Viện để biết cấp nào còn thiếu.' },
+    { id:'polyglot',     icon:'🌍', name:'Đa ngôn',               desc:'Có ít nhất 10 từ ở mỗi cấp A1→C2',               check:(lib)=>['A1','A2','B1','B2','C1','C2'].every(lv=>lib.filter(i=>i.level===lv).length>=10),
+      motivation:'Đa ngôn toàn diện! Với 10 từ ở mỗi cấp độ, bạn sở hữu một nền tảng từ vựng cực kỳ vững chắc và cân bằng.',
+      hint:'Cần ít nhất 10 từ ở mỗi cấp. Xem Thư Viện để xác định cấp nào đang thiếu và tập trung bổ sung.' },
+    { id:'xp_500',       icon:'⚡', name:'Năng lượng',            desc:'Tích lũy 500 XP',                                  check:(_,xp)=>xp>=500,
+      motivation:'500 XP rồi! Bạn đang tích lũy năng lượng học tập thực sự. Mỗi điểm XP là một nỗ lực bạn đã bỏ ra.',
+      hint:'Tích lũy 500 XP bằng cách ôn tập đều đặn. Trả lời đúng cho 10 XP, trả lời sai vẫn được 2 XP.' },
+    { id:'xp_2000',      icon:'🔥', name:'Bùng cháy',             desc:'Tích lũy 2000 XP',                                 check:(_,xp)=>xp>=2000,
+      motivation:'2000 XP — bạn đang bùng cháy! Đây là bằng chứng của hàng trăm giờ luyện tập nghiêm túc.',
+      hint:'Cần 2000 XP tổng cộng. Ôn tập mỗi ngày và duy trì chuỗi trả lời đúng để tích XP nhanh hơn.' },
+    { id:'xp_5000',      icon:'🚀', name:'Tên lửa XP',            desc:'Tích lũy 5000 XP',                                 check:(_,xp)=>xp>=5000,
+      motivation:'5000 XP! Bạn đã phóng vụt lên như tên lửa. Ở cột mốc này, học tiếng Anh đã thực sự trở thành thói quen của bạn.',
+      hint:'Cần 5000 XP. Đây là hành trình dài — hãy ôn tập mỗi ngày và đừng để streak bị gián đoạn.' },
+    { id:'xp_10000',     icon:'👑', name:'Hoàng đế XP',           desc:'Tích lũy 10000 XP — huyền thoại!',                 check:(_,xp)=>xp>=10000,
+      motivation:'10.000 XP — bạn là hoàng đế! Đây là thành tích huyền thoại mà chỉ những người thực sự kiên định mới chạm tới. Cúi đầu bái phục! 👑',
+      hint:'Cần 10.000 XP — đây là đỉnh cao. Hãy ôn tập mỗi ngày, không có con đường tắt nào cả.' },
+    { id:'perfect_10',   icon:'🎯', name:'Thiện xạ',              desc:'Trả lời đúng 10 lần liên tiếp',                    check:(_,__,ex)=>(ex?.perfectStreak||0)>=10,
+      motivation:'10 lần đúng liên tiếp! Đây là sự tập trung và chính xác thực sự. Bạn không chỉ học — bạn thành thạo.',
+      hint:'Trả lời đúng 10 câu liên tiếp không sai lần nào. Hãy ôn ở cấp độ phù hợp và tập trung hoàn toàn.' },
+    { id:'no_mistake',   icon:'🛡️', name:'Bất khả chiến bại',    desc:'Hoàn thành phiên 15 câu không sai 1 lần',           check:(_,__,ex)=>ex?.perfectSession||false,
+      motivation:'Phiên học hoàn hảo! Không một sai sót nào trong 15 câu — đây là sự tự tin và vốn từ thực thụ.',
+      hint:'Hoàn thành phiên ôn 15 câu mà không sai lần nào. Hãy chọn từ vựng ở cấp bạn tự tin nhất trước.' },
+    { id:'librarian',    icon:'📜', name:'Thủ thư',               desc:'Nhập từ vựng qua file .docx',                       check:(_,__,ex)=>ex?.importedDocx||false,
+      motivation:'Thủ thư chính hiệu! Bạn đã biết cách khai thác tài liệu thực tế để làm giàu vốn từ — đây là cách học thông minh.',
+      hint:'Tải lên một file .docx trong tab Soạn Bài và phân tích nó để thêm từ vào thư viện.' },
+    { id:'speed_review', icon:'⏩', name:'Tốc độ ánh sáng',       desc:'Hoàn thành phiên 20 câu trong dưới 3 phút',         check:(_,__,ex)=>ex?.speedReview||false,
+      motivation:'Tốc độ ánh sáng! Hoàn thành 20 câu trong 3 phút chứng tỏ từ vựng đã ngấm sâu vào phản xạ của bạn.',
+      hint:'Chọn 20 câu trong phiên ôn và hoàn thành trong vòng 3 phút. Hãy luyện những từ đã quen để phản xạ nhanh hơn.' },
 ];
 
 let _unlockedBadges = new Set();
@@ -3224,16 +3292,55 @@ function renderBadges() {
     const sorted = [...BADGES].sort((a,b) => (_unlockedBadges.has(b.id)?1:0) - (_unlockedBadges.has(a.id)?1:0));
     grid.innerHTML = sorted.map(badge => {
         const ok = _unlockedBadges.has(badge.id);
-        return `<div class="badge-chip ${ok?'unlocked':'locked'}" title="${badge.desc}">
+        return `<div class="badge-chip ${ok?'unlocked':'locked'}" onclick="openBadgeDetail('${badge.id}')" style="cursor:pointer;" title="${ok?'Xem thông tin huy hiệu':'Xem cách đạt huy hiệu'}">
             <div class="badge-chip-icon">${badge.icon}</div>
             <div class="badge-chip-text">
                 <div class="badge-chip-name">${badge.name}</div>
                 <div class="badge-chip-desc">${badge.desc}</div>
-                <div style="font-size:.6rem;font-weight:700;margin-top:2px;${ok?'color:#d97706;':'color:#94a3b8;'}">${ok?'✅ Đã mở khóa':'🔒 Chưa đạt'}</div>
+                <div style="font-size:.6rem;font-weight:700;margin-top:2px;${ok?'color:#d97706;':'color:#94a3b8;'}">${ok?'✅ Đã mở khóa':'🔒 Chưa đạt — nhấn để xem gợi ý'}</div>
             </div>
         </div>`;
     }).join('');
     document.getElementById('badgesCard').classList.remove('hidden');
+}
+
+function openBadgeDetail(badgeId) {
+    const badge   = BADGES.find(b => b.id === badgeId);
+    if (!badge) return;
+    const unlocked = _unlockedBadges.has(badgeId);
+
+    document.getElementById('bdIcon').textContent        = badge.icon;
+    document.getElementById('bdName').textContent        = badge.name;
+    document.getElementById('bdDesc').textContent        = badge.desc;
+    document.getElementById('bdStatusBadge').textContent = unlocked ? '✅' : '🔒';
+
+    const label = document.getElementById('bdStatusLabel');
+    if (unlocked) {
+        label.textContent  = '✨ Đã đạt được';
+        label.style.color  = 'var(--gold)';
+    } else {
+        label.textContent  = 'Chưa mở khóa';
+        label.style.color  = 'var(--muted)';
+    }
+
+    const body = document.getElementById('bdBody');
+    if (unlocked) {
+        body.style.cssText = 'border-radius:14px;padding:14px 16px;font-size:.85rem;line-height:1.65;text-align:left;margin-bottom:20px;background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1px solid #fde68a;color:#78350f;';
+        body.innerHTML     = `<div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#d97706;margin-bottom:6px;">💬 Lời động viên</div>${badge.motivation}`;
+    } else {
+        body.style.cssText = 'border-radius:14px;padding:14px 16px;font-size:.85rem;line-height:1.65;text-align:left;margin-bottom:20px;background:var(--primary-light);border:1px solid #c7d2ff;color:var(--primary);';
+        body.innerHTML     = `<div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--primary-mid);margin-bottom:6px;">🗺️ Cách đạt được</div>${badge.hint}`;
+    }
+
+    const btn = document.querySelector('#badgeDetailModal button');
+    btn.textContent = unlocked ? 'Cảm ơn! 🌟' : 'Hiểu rồi, mình sẽ cố! 💪';
+    btn.style.background = unlocked ? 'var(--gold)' : 'var(--primary)';
+
+    document.getElementById('badgeDetailModal').classList.add('open');
+}
+
+function closeBadgeDetail() {
+    document.getElementById('badgeDetailModal').classList.remove('open');
 }
 
 // ══════════════════════════════════════════
