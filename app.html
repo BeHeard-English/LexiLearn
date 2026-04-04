@@ -62,6 +62,11 @@
         /* MAIN */
         .main-wrap{max-width:1400px;margin:0 auto;padding:20px 16px;}
         @media(min-width:768px){.main-wrap{padding:28px 24px;}}
+        /* Khi đang chơi quiz trên mobile: bỏ padding để quiz chiếm full height */
+        @media(max-width:767px){
+            body.quiz-active .main-wrap { padding:8px 10px; }
+            body.quiz-active #tab-review { height:calc(100dvh - var(--nav-h) - 60px); overflow:hidden; }
+        }
 
         /* CARDS */
         .card{background:var(--card);border-radius:18px;border:1px solid var(--border);box-shadow:0 2px 16px rgba(3,19,131,.06);}
@@ -171,6 +176,77 @@
         .quiz-card{background:var(--card);border-radius:22px;border:1px solid var(--border);padding:28px 24px;box-shadow:0 6px 32px rgba(3,19,131,.1);}
         .quiz-word{font-family:'Nunito',sans-serif;font-size:2.4rem;font-weight:800;color:var(--primary);letter-spacing:-.02em;margin:6px 0 16px;word-break:break-word;}
         .quiz-prompt-label{font-size:.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;}
+
+        /* ── Mobile quiz: full-screen, no scroll ── */
+        @media(max-width:767px){
+            /* Toàn bộ quiz area chiếm đúng khoảng giữa nav và bottom nav */
+            #reviewQuizArea {
+                display:flex !important;
+                flex-direction:column;
+                height:calc(100dvh - var(--nav-h) - 60px); /* 60px = bottom nav */
+                overflow:hidden;
+            }
+            #reviewQuizArea .quiz-card {
+                flex:1;
+                display:flex;
+                flex-direction:column;
+                padding:16px 16px 14px;
+                border-radius:18px;
+                overflow:hidden;
+                min-height:0;
+            }
+            /* Khu vực từ + câu hỏi */
+            #reviewQuizArea .quiz-card > div:first-child {
+                flex-shrink:0;
+            }
+            /* Danh sách đáp án chiếm không gian còn lại */
+            #qChoices {
+                flex:1;
+                display:flex !important;
+                flex-direction:column;
+                gap:7px !important;
+                overflow:hidden;
+                min-height:0;
+                justify-content:stretch;
+            }
+            /* Mỗi nút đáp án chiếm đều nhau */
+            #qChoices .choice-btn {
+                flex:1;
+                padding:0 14px !important;
+                font-size:.82rem !important;
+                min-height:0;
+                display:flex;
+                align-items:center;
+                border-radius:12px !important;
+            }
+            /* Chữ câu hỏi: scale theo độ dài */
+            #qWord.quiz-word {
+                font-size:clamp(1.25rem, 5.5vw, 2.2rem) !important;
+                margin:4px 0 10px !important;
+                line-height:1.2;
+            }
+            #qIpa { font-size:.78rem !important; }
+            /* Feedback compact hơn */
+            #feedbackOverlay {
+                padding:8px 12px !important;
+                font-size:.78rem !important;
+                margin-top:8px !important;
+                flex-shrink:0;
+            }
+            /* Nút tiếp theo */
+            #nextReviewBtn {
+                padding:11px !important;
+                margin-top:8px !important;
+                font-size:.88rem !important;
+                flex-shrink:0;
+            }
+            /* Progress bar */
+            #reviewQuizArea > div:first-child {
+                padding:0 2px;
+                margin-bottom:10px;
+                flex-shrink:0;
+            }
+        }
 
         /* LIBRARY */
         .lib-search{width:100%;padding:10px 14px 10px 38px;border:2px solid var(--border);border-radius:12px;font-family:inherit;font-size:.88rem;outline:none;transition:.2s;background:#fafbff;}
@@ -1443,6 +1519,7 @@ let learningData     = [];
 let reviewPool       = [];
 let currentReviewIdx = 0;
 let totalReviewCount = 0;
+let _reviewTransitioning = false; // Lock khi đang chuyển câu
 let reviewMode       = 'normal';
 let currentWord      = null;
 let fullLibrary      = [];
@@ -2168,6 +2245,7 @@ async function startReviewQuiz() {
     if(!levels.length){ showToast('⚠️ Hãy chọn ít nhất 1 cấp độ!'); return; }
 
     window._wordHardCount = {};
+    _reviewTransitioning = false;
     window._wordCorrectCount = {};
     window._wordWrongCount = {};
     window._typingProceed = null;
@@ -2232,7 +2310,8 @@ async function startReviewQuiz() {
         document.getElementById('typingArea').style.display = 'none';
         showFillBlank();
     } else {
-        document.getElementById('reviewQuizArea').style.display = 'block';
+        document.getElementById('reviewQuizArea').style.display = window.innerWidth <= 767 ? 'flex' : 'block';
+        document.body.classList.add('quiz-active');
         document.getElementById('flashcardArea').style.display = 'none';
         document.getElementById('typingArea').style.display = 'none';
         document.getElementById('fillBlankArea').style.display = 'none';
@@ -2252,6 +2331,8 @@ function updateProgress() {
 function esc(s){ return (s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
 
 async function showReviewQuestion() {
+    if (_reviewTransitioning) return;
+    _reviewTransitioning = true;
     if(currentReviewIdx>=reviewPool.length){
         document.getElementById('reviewQuizArea').style.display='none';
         document.getElementById('flashcardArea').style.display='none';
@@ -2290,12 +2371,14 @@ async function showReviewQuestion() {
                 <span style="display:inline-flex;width:22px;height:22px;background:var(--primary-light);color:var(--primary);border-radius:6px;font-size:.72rem;font-weight:800;align-items:center;justify-content:center;margin-right:10px;flex-shrink:0;">${'ABCD'[idx]}</span>${c}
             </button>`).join('');
     }
+    _reviewTransitioning = false; // Mở lock sau khi câu hỏi đã render xong
 }
 
 // ══════════════════════════════════════════
 // REVIEW — CHECK ANSWER
 // ══════════════════════════════════════════
 async function checkAnswer(btn, selected, correct, word) {
+    if (_reviewTransitioning) return;
     const allBtns = document.querySelectorAll('.choice-btn');
     const overlay = document.getElementById('feedbackOverlay');
     const ref     = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(word.toLowerCase());
@@ -2870,12 +2953,29 @@ async function openTopicListDetail(listId) {
     document.getElementById('tdIcon').textContent = tl.icon || '📋';
     document.getElementById('tdName').textContent = tl.name;
     document.getElementById('tdSearch').value = '';
+    document.getElementById('tdCount').textContent = `Đang tải...`;
     document.getElementById('topicDetailModal').classList.add('open');
 
-    // Load words from main vocabulary that match wordIds
-    const wordIds = tl.wordIds || [];
-    document.getElementById('tdCount').textContent = `${wordIds.length} từ vựng`;
-    renderTopicDetailTable(wordIds);
+    // Luôn fetch fresh từ Firestore để tránh dùng cache cũ
+    const [tlSnap, vocabSnap] = await Promise.all([
+        db.collection('users').doc(currentUser.uid).collection('topicLists').doc(listId).get(),
+        db.collection('users').doc(currentUser.uid).collection('vocabulary').get()
+    ]);
+
+    // Cập nhật wordIds local từ Firestore
+    const freshWordIds = (tlSnap.exists && tlSnap.data().wordIds) || [];
+    tl.wordIds = freshWordIds;
+
+    // Cập nhật fullLibrary để chắc chắn có đủ từ
+    const freshVocab = vocabSnap.docs.map(d => d.data());
+    // Merge vào fullLibrary: giữ từ cũ, bổ sung từ mới
+    const existingKeys = new Set(fullLibrary.map(w => w.word?.toLowerCase()));
+    freshVocab.forEach(w => {
+        if (!existingKeys.has(w.word?.toLowerCase())) fullLibrary.push(w);
+    });
+
+    document.getElementById('tdCount').textContent = `${freshWordIds.length} từ vựng`;
+    renderTopicDetailTable(freshWordIds);
 
     // Wire up add-word button in detail modal
     document.getElementById('topicAddWordInput').onchange = async e => {
@@ -4046,6 +4146,7 @@ async function showSessionSummary() {
 function closeSessionSummary(goToLibrary) {
     document.getElementById('sessionSummaryModal').classList.remove('open');
     document.getElementById('reviewStart').classList.remove('hidden');
+    document.body.classList.remove('quiz-active');
     // Ẩn tất cả area ôn tập
     ['reviewQuizArea','flashcardArea','typingArea','fillBlankArea'].forEach(id => {
         const el = document.getElementById(id);
@@ -4110,6 +4211,8 @@ function updateTypingProgress() {
 }
 
 async function showTypingQuestion() {
+    if (_reviewTransitioning) return;
+    _reviewTransitioning = true;
     if (currentReviewIdx >= reviewPool.length) {
         document.getElementById('typingArea').style.display = 'none';
         document.getElementById('reviewStart').classList.remove('hidden');
@@ -4145,6 +4248,7 @@ async function showTypingQuestion() {
     const inputEl = document.getElementById('typingInput');
     inputEl.removeEventListener('keypress', typingEnterHandler);
     inputEl.addEventListener('keypress', typingEnterHandler);
+    _reviewTransitioning = false;
 }
 
 async function checkTypingAnswer() {
@@ -4387,6 +4491,8 @@ function updateFBProgress() {
 }
 
 async function showFillBlank() {
+    if (_reviewTransitioning) return;
+    _reviewTransitioning = true;
     if (currentReviewIdx >= reviewPool.length) {
         document.getElementById('fillBlankArea').style.display = 'none';
         document.getElementById('reviewStart').classList.remove('hidden');
@@ -4497,6 +4603,7 @@ async function showFillBlank() {
         chip.addEventListener('touchmove',  fbTouchMove,  { passive: false });
         chip.addEventListener('touchend',   fbTouchEnd,   { passive: false });
     });
+    _reviewTransitioning = false;
 }
 
 /* ── Click-to-fill ─────────────────────────────────────────── */
