@@ -407,7 +407,7 @@
 <nav class="nav-bar">
     <div class="flex items-center gap-4">
         <div class="nav-logo">
-            <div class="nav-logo-icon">V</div>
+            <div class="nav-logo-icon">B</div>
             BeHeard <span>LexiLearning</span>
         </div>
         <div id="desktopTabs" class="desktop-tabs hidden">
@@ -1243,6 +1243,7 @@
                 </div>
             </div>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                <button id="tdBulkDeleteBtn" onclick="bulkDeleteFromTopic()" style="display:none;background:var(--danger-bg);color:var(--danger);border:1px solid #fca5a5;border-radius:10px;padding:7px 14px;font-size:.8rem;font-weight:700;cursor:pointer;transition:.2s;">🗑 Xoá đã chọn (<span id="tdSelectedCount">0</span>)</button>
                 <button onclick="document.getElementById('topicAddWordInput').click()" class="btn-primary" style="padding:7px 14px;font-size:.8rem;">📂 Tải file</button>
                 <button onclick="openTopicDetailPaste()" class="btn-primary" style="padding:7px 14px;font-size:.8rem;background:var(--success);">📋 Dán từ</button>
                 <input type="file" id="topicAddWordInput" style="display:none" accept=".docx">
@@ -1258,6 +1259,9 @@
             <div style="overflow-x:auto;border-radius:12px;border:1px solid var(--border);">
                 <table class="td-table">
                     <thead><tr>
+                        <th style="width:36px;text-align:center;padding:10px 8px;">
+                            <input type="checkbox" id="tdSelectAll" onchange="toggleSelectAllTopic(this)" style="width:15px;height:15px;cursor:pointer;accent-color:var(--primary);">
+                        </th>
                         <th>Từ vựng</th>
                         <th>Nghĩa</th>
                         <th>Cấp</th>
@@ -2412,7 +2416,7 @@ function updatePasteWordCount() {
 
 async function processPasteWords() {
     const key = document.getElementById('apiKey').value.trim() || document.getElementById('apiKeyMobile').value.trim();
-    if (!key) { showToast('⚠️ Vui lòng nhập API Key!'); return; }
+    if (!key) { showToast('⚠️ Vui lòng nhập Key!'); return; }
 
     const text = document.getElementById('pasteWordsInput').value.trim();
     if (!text) { showToast('⚠️ Vui lòng dán danh sách từ vào ô nhập!'); return; }
@@ -2725,7 +2729,7 @@ function openTopicDetailPaste() {
     const btn = document.getElementById('processPasteBtn');
     btn.onclick = async () => {
         const key = document.getElementById('apiKey').value.trim() || document.getElementById('apiKeyMobile').value.trim();
-        if (!key) { showToast('⚠️ Vui lòng nhập API Key!'); return; }
+        if (!key) { showToast('⚠️ Vui lòng nhập Key!'); return; }
         const text = document.getElementById('pasteWordsInput').value.trim();
         if (!text) { showToast('⚠️ Vui lòng dán danh sách từ!'); return; }
         btn.disabled = true; btn.innerHTML = '⏳ Đang xử lý...';
@@ -2741,7 +2745,7 @@ function openTopicDetailPaste() {
 // ─── Core: paste text → topic list ───
 async function processPasteForTopicList(listId, text) {
     const key = document.getElementById('apiKey').value.trim() || document.getElementById('apiKeyMobile').value.trim();
-    if (!key) { showToast('⚠️ Vui lòng nhập API Key!'); return; }
+    if (!key) { showToast('⚠️ Vui lòng nhập Key!'); return; }
 
     const parsedWords = parsePasteLines(text);
     if (!parsedWords.length) { showToast('⚠️ Không tìm thấy từ hợp lệ. Định dạng: từ: nghĩa'); return; }
@@ -2890,6 +2894,11 @@ function renderTopicDetailTable(wordIds) {
     empty.classList.add('hidden');
     tbody.innerHTML = words.map(item => `
         <tr>
+            <td style="text-align:center;padding:8px;">
+                <input type="checkbox" class="td-row-check" data-word="${item.word.toLowerCase()}"
+                    onchange="updateTopicSelection()"
+                    style="width:15px;height:15px;cursor:pointer;accent-color:var(--primary);">
+            </td>
             <td>
                 <div style="display:flex;align-items:center;gap:6px;">
                     <span style="font-weight:800;color:var(--primary);">${item.word}</span>
@@ -2902,23 +2911,75 @@ function renderTopicDetailTable(wordIds) {
             <td style="font-size:.82rem;">${item.vn||''}</td>
             <td><span class="level-badge ${lvClass(item.level)}">${item.level||'—'}</span></td>
             <td style="text-align:center;">
-                <button onclick="removeWordFromTopic('${item.word}')" class="del-btn" title="Xoá khỏi danh sách">
+                <button onclick="removeWordFromTopic('${item.word}')" class="del-btn" title="Xoá từ này">
                     <svg xmlns="http://www.w3.org/2000/svg" style="width:15px;height:15px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                 </button>
             </td>
         </tr>`).join('');
+    // Reset selection state
+    updateTopicSelection();
 }
 
 async function removeWordFromTopic(word) {
-    if (!confirm(`Xoá "${word}" khỏi danh sách? (Từ vẫn còn trong thư viện tổng hợp)`)) return;
+    if (!confirm(`Xoá "${word}" khỏi danh sách và thư viện tổng hợp?`)) return;
+    await _deleteWordsFromTopicAndLibrary([word.toLowerCase()]);
+}
+
+function toggleSelectAllTopic(checkbox) {
+    document.querySelectorAll('.td-row-check').forEach(c => c.checked = checkbox.checked);
+    updateTopicSelection();
+}
+
+function updateTopicSelection() {
+    const checks   = document.querySelectorAll('.td-row-check');
+    const selected = [...checks].filter(c => c.checked);
+    const btn      = document.getElementById('tdBulkDeleteBtn');
+    const allChk   = document.getElementById('tdSelectAll');
+
+    document.getElementById('tdSelectedCount').textContent = selected.length;
+    btn.style.display = selected.length > 0 ? 'inline-flex' : 'none';
+
+    // Trạng thái indeterminate cho "chọn tất cả"
+    if (allChk) {
+        allChk.indeterminate = selected.length > 0 && selected.length < checks.length;
+        allChk.checked       = checks.length > 0 && selected.length === checks.length;
+    }
+}
+
+async function bulkDeleteFromTopic() {
+    const selected = [...document.querySelectorAll('.td-row-check:checked')].map(c => c.dataset.word);
+    if (!selected.length) return;
+    if (!confirm(`Xoá ${selected.length} từ đã chọn khỏi danh sách và thư viện tổng hợp?`)) return;
+    await _deleteWordsFromTopicAndLibrary(selected);
+}
+
+async function _deleteWordsFromTopicAndLibrary(wordKeys) {
     const tl = topicLists.find(t => t.id === currentTopicListId);
     if (!tl) return;
-    tl.wordIds = (tl.wordIds || []).filter(id => id !== word.toLowerCase());
-    await db.collection('users').doc(currentUser.uid).collection('topicLists').doc(currentTopicListId).update({ wordIds: tl.wordIds });
+
+    const batch = db.batch();
+
+    // 1. Xoá khỏi Firestore vocabulary collection
+    wordKeys.forEach(key => {
+        const ref = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(key);
+        batch.delete(ref);
+    });
+    await batch.commit();
+
+    // 2. Xoá khỏi wordIds của topic list
+    tl.wordIds = (tl.wordIds || []).filter(id => !wordKeys.includes(id));
+    await db.collection('users').doc(currentUser.uid).collection('topicLists').doc(currentTopicListId)
+        .update({ wordIds: tl.wordIds });
+
+    // 3. Cập nhật fullLibrary local
+    fullLibrary = fullLibrary.filter(w => !wordKeys.includes(w.word?.toLowerCase()));
+
+    // 4. Refresh UI
     renderTopicLists();
     populateReviewVocabSelect();
     renderTopicDetailTable(tl.wordIds);
-    showToast(`🗑️ Đã xoá "${word}" khỏi danh sách.`);
+    renderLibrary();
+    showToast(`🗑️ Đã xoá ${wordKeys.length} từ khỏi danh sách và thư viện.`);
 }
 
 async function confirmDeleteTopicList() {
