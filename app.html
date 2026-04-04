@@ -179,14 +179,13 @@
 
         /* ── Mobile quiz: full-screen, no scroll ── */
         @media(max-width:767px){
-            /* Toàn bộ quiz area chiếm đúng khoảng giữa nav và bottom nav */
-            #reviewQuizArea {
-                display:flex !important;
+            /* Khi quiz đang hiển thị (body.quiz-active), chiếm đúng khoảng trống */
+            body.quiz-active #reviewQuizArea {
                 flex-direction:column;
-                height:calc(100dvh - var(--nav-h) - 60px); /* 60px = bottom nav */
+                height:calc(100dvh - var(--nav-h) - 60px);
                 overflow:hidden;
             }
-            #reviewQuizArea .quiz-card {
+            body.quiz-active #reviewQuizArea .quiz-card {
                 flex:1;
                 display:flex;
                 flex-direction:column;
@@ -195,12 +194,10 @@
                 overflow:hidden;
                 min-height:0;
             }
-            /* Khu vực từ + câu hỏi */
-            #reviewQuizArea .quiz-card > div:first-child {
+            body.quiz-active #reviewQuizArea .quiz-card > div:first-child {
                 flex-shrink:0;
             }
-            /* Danh sách đáp án chiếm không gian còn lại */
-            #qChoices {
+            body.quiz-active #qChoices {
                 flex:1;
                 display:flex !important;
                 flex-direction:column;
@@ -209,8 +206,7 @@
                 min-height:0;
                 justify-content:stretch;
             }
-            /* Mỗi nút đáp án chiếm đều nhau */
-            #qChoices .choice-btn {
+            body.quiz-active #qChoices .choice-btn {
                 flex:1;
                 padding:0 14px !important;
                 font-size:.82rem !important;
@@ -219,31 +215,27 @@
                 align-items:center;
                 border-radius:12px !important;
             }
-            /* Chữ câu hỏi: scale theo độ dài */
-            #qWord.quiz-word {
-                font-size:clamp(1.25rem, 5.5vw, 2.2rem) !important;
-                margin:4px 0 10px !important;
+            body.quiz-active #qWord.quiz-word {
+                font-size:clamp(1.1rem, 5vw, 2rem) !important;
+                margin:4px 0 8px !important;
                 line-height:1.2;
             }
-            #qIpa { font-size:.78rem !important; }
-            /* Feedback compact hơn */
-            #feedbackOverlay {
+            body.quiz-active #qIpa { font-size:.75rem !important; }
+            body.quiz-active #feedbackOverlay {
                 padding:8px 12px !important;
                 font-size:.78rem !important;
-                margin-top:8px !important;
+                margin-top:6px !important;
                 flex-shrink:0;
             }
-            /* Nút tiếp theo */
-            #nextReviewBtn {
+            body.quiz-active #nextReviewBtn {
                 padding:11px !important;
-                margin-top:8px !important;
+                margin-top:6px !important;
                 font-size:.88rem !important;
                 flex-shrink:0;
             }
-            /* Progress bar */
-            #reviewQuizArea > div:first-child {
+            body.quiz-active #reviewQuizArea > div:first-child {
                 padding:0 2px;
-                margin-bottom:10px;
+                margin-bottom:8px;
                 flex-shrink:0;
             }
         }
