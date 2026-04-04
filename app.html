@@ -2342,10 +2342,18 @@ async function checkAnswer(btn, selected, correct, word) {
             await ref.set({ incorrect_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
         }
 
-        // Nếu không phải mastered, đẩy từ về cuối để ôn lại
+        // Nếu không phải mastered, đẩy từ về cuối để ôn lại (tối đa 1 lần)
         if (window._currentReviewSource !== 'mastered') {
-            reviewPool.push(reviewPool.splice(currentReviewIdx, 1)[0]);
-            // Không tăng currentReviewIdx vì sẽ lấy từ vừa đẩy xuống cuối
+            const wordKey = word.toLowerCase();
+            window._wordWrongCount[wordKey] = (window._wordWrongCount[wordKey] || 0) + 1;
+            if (window._wordWrongCount[wordKey] < 2) {
+                // Lần sai đầu tiên: đẩy về cuối để ôn lại 1 lần
+                reviewPool.push(reviewPool.splice(currentReviewIdx, 1)[0]);
+            } else {
+                // Sai lần 2: bỏ qua, không lặp lại nữa
+                overlay.innerHTML += `<div style="margin-top:4px;font-size:.75rem;font-weight:600;color:#7f1d1d;">📌 Từ này sẽ được ôn lại ở phiên sau.</div>`;
+                currentReviewIdx++;
+            }
         } else {
             // Nếu là mastered, chuyển sang từ tiếp theo (bỏ qua từ hiện tại)
             currentReviewIdx++;
@@ -4295,9 +4303,9 @@ Học sinh có hiểu đúng nghĩa không?`;
             await ref.set({ correct_count: newCorrect }, { merge: true });
             fullLibrary = fullLibrary.map(i => i.word === target.word ? {...i, correct_count: newCorrect} : i);
             skipWord = true;
-        } else if (wrongCount >= 3) {
+        } else if (wrongCount >= 2) {
             skipWord = true;
-            feedbackDiv.innerText += ` (Đã sai ${wrongCount} lần, bỏ qua từ này)`;
+            feedbackDiv.innerHTML += `<div style="font-size:.76rem;font-weight:600;margin-top:4px;color:#7f1d1d;">📌 Từ này sẽ được ôn lại ở phiên sau.</div>`;
         }
 
         if (!skipWord) {
@@ -4707,7 +4715,14 @@ async function checkFillBlank() {
         if (window._currentReviewSource === 'mastered') {
             currentReviewIdx++;
         } else {
-            reviewPool.push(reviewPool.splice(currentReviewIdx, 1)[0]);
+            const wordKey = target.word.toLowerCase();
+            window._wordWrongCount[wordKey] = (window._wordWrongCount[wordKey] || 0) + 1;
+            if (window._wordWrongCount[wordKey] < 2) {
+                reviewPool.push(reviewPool.splice(currentReviewIdx, 1)[0]);
+            } else {
+                fb.innerHTML += `<div style="font-size:.75rem;font-weight:600;margin-top:4px;color:#7f1d1d;">📌 Từ này sẽ được ôn lại ở phiên sau.</div>`;
+                currentReviewIdx++;
+            }
         }
     }
 }
