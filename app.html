@@ -312,6 +312,11 @@
         .badge-desc{font-size:.65rem;color:var(--muted);line-height:1.4;}
         .badge-new{position:absolute;top:-6px;right:-6px;background:var(--danger);color:#fff;font-size:.58rem;font-weight:800;padding:2px 6px;border-radius:99px;}
 
+        /* Modal tabs (create list / add to existing) */
+        .cl-tab-btn{font-size:.75rem;font-weight:700;padding:7px 14px;border-radius:9px;border:1.5px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:.18s;}
+        .cl-tab-btn.active{background:var(--primary);color:#fff;border-color:var(--primary);}
+        .cl-tab-btn:hover:not(.active){background:var(--primary-light);color:var(--primary);border-color:var(--primary-mid);}
+
         /* Badge gallery */
         .bg-filter-btn{font-size:.72rem;font-weight:700;padding:5px 12px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:.18s;}
         .bg-filter-btn.active{background:var(--primary);color:#fff;border-color:var(--primary);}
@@ -1126,7 +1131,7 @@
         <div class="tl-modal-header">
             <div>
                 <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:1rem;color:var(--primary);" id="createListModalTitle">✨ Tạo danh sách mới</div>
-                <div style="font-size:.72rem;color:var(--muted);margin-top:2px;">Nhập tên, chọn icon rồi tải file lên</div>
+                <div style="font-size:.72rem;color:var(--muted);margin-top:2px;">Nhập tên, chọn icon và thêm từ vựng</div>
             </div>
             <button class="tl-close-btn" onclick="closeCreateListModal()">✕ Đóng</button>
         </div>
@@ -1139,12 +1144,32 @@
                 <div class="section-label" style="margin-bottom:10px;">Chọn icon đại diện</div>
                 <div id="iconPicker" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
             </div>
-            <div style="background:var(--primary-light);border-radius:14px;padding:16px;">
-                <div class="section-label" style="margin-bottom:6px;">Tải từ vựng (tùy chọn)</div>
-                <p style="font-size:.8rem;color:var(--muted);margin-bottom:12px;">Có thể tải file .docx ngay hoặc thêm từ sau khi tạo danh sách.</p>
-                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-                    <button onclick="document.getElementById('topicFileInput').click()" class="btn-primary" style="padding:9px 16px;font-size:.82rem;">📂 Chọn file .docx</button>
-                    <span id="topicFileChosen" style="font-size:.8rem;color:var(--muted);"></span>
+            <!-- Tabs: file vs paste -->
+            <div>
+                <div class="section-label" style="margin-bottom:10px;">Thêm từ vựng <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#94a3b8;">(tùy chọn)</span></div>
+                <div style="display:flex;gap:6px;margin-bottom:12px;">
+                    <button class="cl-tab-btn active" data-tab="file" onclick="switchCreateListTab('file',this)">📂 Tải file .docx</button>
+                    <button class="cl-tab-btn" data-tab="paste" onclick="switchCreateListTab('paste',this)">📋 Dán danh sách từ</button>
+                </div>
+                <!-- File pane -->
+                <div id="clFilePane" style="background:var(--primary-light);border-radius:14px;padding:14px 16px;">
+                    <p style="font-size:.8rem;color:var(--muted);margin-bottom:10px;">Có thể tải file .docx ngay hoặc thêm từ sau khi tạo danh sách.</p>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                        <button onclick="document.getElementById('topicFileInput').click()" class="btn-primary" style="padding:9px 16px;font-size:.82rem;">📂 Chọn file .docx</button>
+                        <span id="topicFileChosen" style="font-size:.8rem;color:var(--muted);"></span>
+                    </div>
+                </div>
+                <!-- Paste pane -->
+                <div id="clPastePane" style="display:none;">
+                    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:10px 14px;margin-bottom:10px;font-size:.75rem;color:#166534;line-height:1.7;">
+                        Định dạng mỗi dòng: <strong>từ tiếng Anh: nghĩa tiếng Việt</strong><br>
+                        Ví dụ: <span style="font-family:monospace;">resilient: kiên cường, dẻo dai</span>
+                    </div>
+                    <textarea id="clPasteInput" class="txt-input" rows="7"
+                        placeholder="resilient: kiên cường, dẻo dai&#10;eloquent: hùng hồn, lưu loát&#10;..."
+                        style="resize:vertical;font-family:monospace;font-size:.82rem;line-height:1.7;padding:11px 14px;"
+                        oninput="updateClPasteCount()"></textarea>
+                    <div style="font-size:.7rem;margin-top:5px;" id="clPasteCount" style="color:var(--muted);">0 từ được nhận diện</div>
                 </div>
             </div>
         </div>
@@ -1161,15 +1186,47 @@
         <div class="tl-modal-header">
             <div>
                 <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:1rem;color:var(--primary);">📂 Chọn danh sách</div>
-                <div style="font-size:.72rem;color:var(--muted);margin-top:2px;">Thêm từ vào danh sách chủ đề có sẵn</div>
+                <div style="font-size:.72rem;color:var(--muted);margin-top:2px;" id="ateSubtitle">Thêm từ vào danh sách chủ đề có sẵn</div>
             </div>
             <button class="tl-close-btn" onclick="closeAddToExistingModal()">✕ Đóng</button>
         </div>
         <div class="tl-modal-body">
-            <div id="existingListChoices" style="display:flex;flex-direction:column;gap:8px;"></div>
-            <div id="noExistingLists" class="hidden" style="text-align:center;padding:24px;color:var(--muted);font-size:.85rem;">
-                Chưa có danh sách nào. Hãy tạo danh sách mới trước!
+            <!-- Step 1: pick list -->
+            <div id="ateStep1">
+                <div id="existingListChoices" style="display:flex;flex-direction:column;gap:8px;"></div>
+                <div id="noExistingLists" class="hidden" style="text-align:center;padding:24px;color:var(--muted);font-size:.85rem;">
+                    Chưa có danh sách nào. Hãy tạo danh sách mới trước!
+                </div>
             </div>
+            <!-- Step 2: pick method -->
+            <div id="ateStep2" style="display:none;flex-direction:column;gap:14px;">
+                <div style="font-size:.82rem;font-weight:700;color:var(--text);margin-bottom:2px;">Thêm từ vào: <span id="ateSelectedName" style="color:var(--primary);"></span></div>
+                <div style="display:flex;gap:8px;">
+                    <button class="cl-tab-btn active" data-tab="file" onclick="switchAteTab('file',this)">📂 Tải file .docx</button>
+                    <button class="cl-tab-btn" data-tab="paste" onclick="switchAteTab('paste',this)">📋 Dán danh sách từ</button>
+                </div>
+                <!-- File pane -->
+                <div id="ateFilePane" style="background:var(--primary-light);border-radius:12px;padding:14px 16px;">
+                    <p style="font-size:.8rem;color:var(--muted);margin-bottom:10px;">Chọn file .docx để thêm từ vào danh sách.</p>
+                    <button onclick="triggerAteFile()" class="btn-primary" style="padding:9px 16px;font-size:.82rem;">📂 Chọn file .docx</button>
+                    <span id="ateFileChosen" style="font-size:.8rem;color:var(--muted);margin-left:8px;"></span>
+                </div>
+                <!-- Paste pane -->
+                <div id="atePastePane" style="display:none;">
+                    <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:.75rem;color:#166534;line-height:1.7;">
+                        Định dạng mỗi dòng: <strong>từ tiếng Anh: nghĩa tiếng Việt</strong>
+                    </div>
+                    <textarea id="atePasteInput" class="txt-input" rows="7"
+                        placeholder="resilient: kiên cường, dẻo dai&#10;eloquent: hùng hồn, lưu loát&#10;..."
+                        style="resize:vertical;font-family:monospace;font-size:.82rem;line-height:1.7;padding:11px 14px;"
+                        oninput="updateAtePasteCount()"></textarea>
+                    <div style="font-size:.7rem;margin-top:5px;" id="atePasteCount">0 từ được nhận diện</div>
+                </div>
+            </div>
+        </div>
+        <div id="ateStep2Footer" class="tl-modal-footer" style="display:none;">
+            <button class="tl-close-btn" onclick="ateBackToStep1()">← Quay lại</button>
+            <button id="ateConfirmBtn" class="btn-primary" style="padding:10px 22px;font-size:.88rem;" onclick="confirmAteAdd()">✅ Thêm vào danh sách</button>
         </div>
     </div>
 </div>
@@ -1186,7 +1243,8 @@
                 </div>
             </div>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                <button onclick="document.getElementById('topicAddWordInput').click()" class="btn-primary" style="padding:7px 14px;font-size:.8rem;">📂 Thêm từ</button>
+                <button onclick="document.getElementById('topicAddWordInput').click()" class="btn-primary" style="padding:7px 14px;font-size:.8rem;">📂 Tải file</button>
+                <button onclick="openTopicDetailPaste()" class="btn-primary" style="padding:7px 14px;font-size:.8rem;background:var(--success);">📋 Dán từ</button>
                 <input type="file" id="topicAddWordInput" style="display:none" accept=".docx">
                 <button onclick="confirmDeleteTopicList()" style="background:var(--danger-bg);color:var(--danger);border:none;border-radius:10px;padding:7px 14px;font-size:.8rem;font-weight:700;cursor:pointer;transition:.2s;">🗑 Xoá DS</button>
                 <button class="tl-close-btn" onclick="closeTopicDetail()">✕</button>
@@ -2354,7 +2412,7 @@ function updatePasteWordCount() {
 
 async function processPasteWords() {
     const key = document.getElementById('apiKey').value.trim() || document.getElementById('apiKeyMobile').value.trim();
-    if (!key) { showToast('⚠️ Vui lòng nhập Key!'); return; }
+    if (!key) { showToast('⚠️ Vui lòng nhập API Key!'); return; }
 
     const text = document.getElementById('pasteWordsInput').value.trim();
     if (!text) { showToast('⚠️ Vui lòng dán danh sách từ vào ô nhập!'); return; }
@@ -2479,7 +2537,11 @@ function showCreateNewList() {
     _selectedIcon = TOPIC_ICONS[0];
     document.getElementById('newListName').value = '';
     document.getElementById('topicFileChosen').textContent = '';
+    document.getElementById('clPasteInput').value = '';
+    document.getElementById('clPasteCount').textContent = '0 từ được nhận diện';
     document.getElementById('createListModalTitle').textContent = '✨ Tạo danh sách mới';
+    // Reset to file tab
+    switchCreateListTab('file', document.querySelector('#createListModal .cl-tab-btn[data-tab="file"]'));
     // Build icon picker
     document.getElementById('iconPicker').innerHTML = TOPIC_ICONS.map(ic =>
         `<button onclick="selectListIcon(this,'${ic}')" style="width:40px;height:40px;border-radius:10px;border:2px solid var(--border);background:var(--card);font-size:1.2rem;cursor:pointer;transition:.2s;" title="${ic}">${ic}</button>`
@@ -2524,10 +2586,15 @@ async function confirmCreateList() {
     renderTopicLists();
     populateReviewVocabSelect();
 
-    const fileToProcess = _pendingTopicFile;
+    const activeTab = document.querySelector('#createListModal .cl-tab-btn.active')?.dataset.tab;
+    const fileToProcess  = _pendingTopicFile;
+    const pasteText = document.getElementById('clPasteInput').value.trim();
     closeCreateListModal();
 
-    if (fileToProcess) {
+    if (activeTab === 'paste' && pasteText) {
+        showToast(`✅ Đã tạo danh sách "${name}"! Đang phân tích từ...`);
+        await processPasteForTopicList(docRef.id, pasteText);
+    } else if (fileToProcess) {
         showToast(`✅ Đã tạo danh sách "${name}"! Đang xử lý file...`);
         await processFileForTopicList(docRef.id, fileToProcess);
     } else {
@@ -2560,24 +2627,156 @@ function showAddToExistingList() {
 }
 function closeAddToExistingModal() {
     document.getElementById('addToExistingModal').classList.remove('open');
+    // reset về step 1
+    setTimeout(() => {
+        document.getElementById('ateStep1').style.display = 'block';
+        document.getElementById('ateStep2').style.display = 'none';
+        document.getElementById('ateStep2Footer').style.display = 'none';
+        document.getElementById('atePasteInput').value = '';
+        document.getElementById('atePasteCount').textContent = '0 từ được nhận diện';
+        document.getElementById('ateFileChosen').textContent = '';
+        _ateFile = null;
+    }, 300);
 }
+
+let _ateFile = null;
+
 function pickExistingList(listId) {
     _addToListTargetId = listId;
-    closeAddToExistingModal();
-    document.getElementById('topicFileInput').onchange = async e => {
+    const tl = topicLists.find(t => t.id === listId);
+    document.getElementById('ateSelectedName').textContent = (tl?.icon || '📋') + ' ' + (tl?.name || '');
+    document.getElementById('ateStep1').style.display = 'none';
+    document.getElementById('ateStep2').style.display = 'flex';
+    document.getElementById('ateStep2Footer').style.display = 'flex';
+    // Reset tabs
+    switchAteTab('file', document.querySelector('.cl-tab-btn[data-tab="file"]'));
+}
+
+function ateBackToStep1() {
+    document.getElementById('ateStep1').style.display = 'block';
+    document.getElementById('ateStep2').style.display = 'none';
+    document.getElementById('ateStep2Footer').style.display = 'none';
+    _addToListTargetId = null;
+}
+
+function switchAteTab(tab, btn) {
+    document.querySelectorAll('#ateStep2 .cl-tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('ateFilePane').style.display  = tab === 'file'  ? 'block' : 'none';
+    document.getElementById('atePastePane').style.display = tab === 'paste' ? 'block' : 'none';
+}
+
+function triggerAteFile() {
+    const input = document.createElement('input');
+    input.type = 'file'; input.accept = '.docx';
+    input.onchange = e => {
         const f = e.target.files[0]; if (!f) return;
-        e.target.value = '';
-        await processFileForTopicList(_addToListTargetId, f);
-        _addToListTargetId = null;
-        // Restore normal onchange
-        document.getElementById('topicFileInput').onchange = e2 => {
-            const f2 = e2.target.files[0]; if (!f2) return;
-            _pendingTopicFile = f2;
-            document.getElementById('topicFileChosen').textContent = '✅ ' + f2.name;
-            e2.target.value = '';
-        };
+        _ateFile = f;
+        document.getElementById('ateFileChosen').textContent = '✅ ' + f.name;
     };
-    document.getElementById('topicFileInput').click();
+    input.click();
+}
+
+function updateAtePasteCount() {
+    const parsed = parsePasteLines(document.getElementById('atePasteInput').value);
+    const el = document.getElementById('atePasteCount');
+    el.textContent = parsed.length > 0 ? `${parsed.length} từ được nhận diện` : '0 từ được nhận diện';
+    el.style.color = parsed.length > 0 ? 'var(--success)' : 'var(--muted)';
+}
+
+async function confirmAteAdd() {
+    if (!_addToListTargetId) return;
+    const activeTab = document.querySelector('#ateStep2 .cl-tab-btn.active')?.dataset.tab;
+    if (activeTab === 'file') {
+        if (!_ateFile) { showToast('⚠️ Vui lòng chọn file .docx!'); return; }
+        closeAddToExistingModal();
+        await processFileForTopicList(_addToListTargetId, _ateFile);
+        _ateFile = null; _addToListTargetId = null;
+    } else {
+        const text = document.getElementById('atePasteInput').value.trim();
+        if (!text) { showToast('⚠️ Vui lòng dán danh sách từ!'); return; }
+        closeAddToExistingModal();
+        await processPasteForTopicList(_addToListTargetId, text);
+        _addToListTargetId = null;
+    }
+}
+
+// ─── Create list tab switch ───
+function switchCreateListTab(tab, btn) {
+    document.querySelectorAll('#createListModal .cl-tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('clFilePane').style.display  = tab === 'file'  ? 'block' : 'none';
+    document.getElementById('clPastePane').style.display = tab === 'paste' ? 'block' : 'none';
+}
+
+function updateClPasteCount() {
+    const parsed = parsePasteLines(document.getElementById('clPasteInput').value);
+    const el = document.getElementById('clPasteCount');
+    el.textContent = parsed.length > 0 ? `${parsed.length} từ được nhận diện` : '0 từ được nhận diện';
+    el.style.color = parsed.length > 0 ? 'var(--success)' : 'var(--muted)';
+}
+
+// ─── Topic detail paste ───
+function openTopicDetailPaste() {
+    // Reuse pasteWordsModal but target the current topic list
+    document.getElementById('pasteWordsInput').value = '';
+    document.getElementById('pasteWordCount').textContent = '0 từ được nhận diện';
+    // Override the process button temporarily
+    const btn = document.getElementById('processPasteBtn');
+    btn.onclick = async () => {
+        const key = document.getElementById('apiKey').value.trim() || document.getElementById('apiKeyMobile').value.trim();
+        if (!key) { showToast('⚠️ Vui lòng nhập API Key!'); return; }
+        const text = document.getElementById('pasteWordsInput').value.trim();
+        if (!text) { showToast('⚠️ Vui lòng dán danh sách từ!'); return; }
+        btn.disabled = true; btn.innerHTML = '⏳ Đang xử lý...';
+        closePasteWordsModal();
+        await processPasteForTopicList(currentTopicListId, text);
+        btn.disabled = false;
+        btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" style="width:15px;height:15px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> Phân tích & Thêm vào thư viện`;
+        btn.onclick = processPasteWords; // restore
+    };
+    document.getElementById('pasteWordsModal').classList.add('open');
+}
+
+// ─── Core: paste text → topic list ───
+async function processPasteForTopicList(listId, text) {
+    const key = document.getElementById('apiKey').value.trim() || document.getElementById('apiKeyMobile').value.trim();
+    if (!key) { showToast('⚠️ Vui lòng nhập API Key!'); return; }
+
+    const parsedWords = parsePasteLines(text);
+    if (!parsedWords.length) { showToast('⚠️ Không tìm thấy từ hợp lệ. Định dạng: từ: nghĩa'); return; }
+
+    const tlDoc = await db.collection('users').doc(currentUser.uid).collection('topicLists').doc(listId).get();
+    const existingIds = (tlDoc.data()?.wordIds) || [];
+    const newWords = parsedWords.filter(w => !existingIds.includes(w.word));
+    if (!newWords.length) { showToast('💡 Tất cả từ đã có trong danh sách!'); return; }
+
+    showToast(`✨ AI đang phân tích ${newWords.length} từ...`);
+    try {
+        const prompt = `I have a list of English words and their Vietnamese meanings: { ${newWords.map(w=>`"${w.word}":"${w.vn}"`).join(', ')} }.
+Return a JSON array: [{"word":"string","ipa":"string","vn":"(keep provided Vietnamese)","level":"A1-C2","example":"English sentence"}]
+Only raw JSON, no markdown.`;
+        const aiRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`},
+            body: JSON.stringify({ model:'llama-3.3-70b-versatile', messages:[{ role:'user', content:prompt }] })
+        });
+        const aiData = await aiRes.json();
+        let finalData;
+        try { finalData = JSON.parse(aiData.choices[0].message.content.replace(/```json|```/g,'').trim()); }
+        catch(e) { showToast('❌ AI trả về định dạng không hợp lệ.'); return; }
+
+        await saveVocabToDb(finalData);
+        const newIds = finalData.map(w => w.word.toLowerCase());
+        const allIds = [...new Set([...existingIds, ...newIds])];
+        await db.collection('users').doc(currentUser.uid).collection('topicLists').doc(listId).update({ wordIds: allIds });
+        const tlIdx = topicLists.findIndex(t => t.id === listId);
+        if (tlIdx >= 0) topicLists[tlIdx].wordIds = allIds;
+        renderTopicLists(); populateReviewVocabSelect(); await loadLibrary();
+        if (currentTopicListId === listId) openTopicListDetail(listId);
+        showToast(`✅ Đã thêm ${finalData.length} từ vào danh sách!`);
+    } catch(err) {
+        console.error(err); showToast('❌ Có lỗi xảy ra, vui lòng thử lại.');
+    }
 }
 
 // ══════════════════════════════════════════
