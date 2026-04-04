@@ -552,7 +552,11 @@
         <div id="addWordDropdown" class="add-word-dropdown" style="display:none;">
             <div class="aw-item" onclick="addToMainLibrary()">
                 <div style="width:36px;height:36px;border-radius:10px;background:var(--primary-light);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">📚</div>
-                <div><div class="aw-item-title">Thư viện tổng hợp</div><div class="aw-item-sub">Thêm vào kho từ vựng chung</div></div>
+                <div><div class="aw-item-title">Tải file .docx</div><div class="aw-item-sub">Thêm vào kho từ vựng chung</div></div>
+            </div>
+            <div class="aw-item" onclick="openPasteWordsModal()">
+                <div style="width:36px;height:36px;border-radius:10px;background:#f0fdf4;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">📋</div>
+                <div><div class="aw-item-title">Dán danh sách từ</div><div class="aw-item-sub">Dán văn bản theo định dạng</div></div>
             </div>
             <div class="aw-item" onclick="showAddToExistingList()">
                 <div style="width:36px;height:36px;border-radius:10px;background:#e0f2fe;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">📂</div>
@@ -1217,6 +1221,53 @@
         <div style="font-family:'Nunito',sans-serif;font-size:1.3rem;font-weight:800;color:var(--text);margin-bottom:8px;" id="badgeModalName"></div>
         <div style="font-size:.85rem;color:var(--muted);line-height:1.6;margin-bottom:20px;" id="badgeModalDesc"></div>
         <button onclick="closeBadgeModal()" style="background:var(--primary);color:#fff;border:none;border-radius:12px;padding:12px 28px;font-family:'Be Vietnam Pro',sans-serif;font-weight:800;font-size:.9rem;cursor:pointer;width:100%;">Tuyệt vời! 🎉</button>
+    </div>
+</div>
+
+<!-- ══ PASTE WORDS MODAL ══ -->
+<div id="pasteWordsModal" class="tl-modal" onclick="if(event.target===this)closePasteWordsModal()">
+    <div class="tl-modal-box" style="max-width:520px;">
+        <div class="tl-modal-header">
+            <div>
+                <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:1rem;color:var(--primary);">📋 Dán danh sách từ vựng</div>
+                <div style="font-size:.72rem;color:var(--muted);margin-top:2px;">AI sẽ tự động phân tích IPA và cấp độ CEFR</div>
+            </div>
+            <button class="tl-close-btn" onclick="closePasteWordsModal()">✕ Đóng</button>
+        </div>
+        <div class="tl-modal-body" style="display:flex;flex-direction:column;gap:14px;">
+            <!-- Format hint -->
+            <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:12px 14px;">
+                <div style="font-size:.72rem;font-weight:800;color:#166534;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;">📌 Định dạng hỗ trợ</div>
+                <div style="font-family:monospace;font-size:.78rem;color:#166534;line-height:1.8;">
+                    resilient: kiên cường, dẻo dai<br>
+                    eloquent: hùng hồn, lưu loát<br>
+                    ambiguous: mơ hồ, không rõ ràng
+                </div>
+                <div style="font-size:.7rem;color:#15803d;margin-top:6px;">Mỗi từ một dòng theo định dạng <strong>từ tiếng Anh: nghĩa tiếng Việt</strong></div>
+            </div>
+            <!-- Textarea -->
+            <div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                    <div class="section-label" style="margin-bottom:0;">Danh sách từ của bạn</div>
+                    <button onclick="clearPasteInput()" style="font-size:.7rem;font-weight:700;color:var(--muted);background:none;border:none;cursor:pointer;padding:2px 6px;border-radius:6px;" onmouseover="this.style.background='var(--primary-light)'" onmouseout="this.style.background='none'">🗑 Xóa</button>
+                </div>
+                <textarea id="pasteWordsInput" class="txt-input" rows="10"
+                    placeholder="resilient: kiên cường, dẻo dai&#10;eloquent: hùng hồn, lưu loát&#10;ambiguous: mơ hồ, không rõ ràng&#10;..."
+                    style="resize:vertical;font-family:monospace;font-size:.83rem;line-height:1.7;padding:12px 14px;"
+                    oninput="updatePasteWordCount()"></textarea>
+                <div style="display:flex;justify-content:space-between;margin-top:6px;">
+                    <div style="font-size:.7rem;color:var(--muted);" id="pasteWordCount">0 từ được nhận diện</div>
+                    <div style="font-size:.7rem;color:var(--muted);">Hỗ trợ cả tab và dấu hai chấm làm phân cách</div>
+                </div>
+            </div>
+        </div>
+        <div class="tl-modal-footer">
+            <button class="tl-close-btn" onclick="closePasteWordsModal()">Hủy</button>
+            <button id="processPasteBtn" class="btn-primary" style="padding:10px 24px;" onclick="processPasteWords()">
+                <svg xmlns="http://www.w3.org/2000/svg" style="width:15px;height:15px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                Phân tích & Thêm vào thư viện
+            </button>
+        </div>
     </div>
 </div>
 
@@ -2262,6 +2313,103 @@ function closeAddWordMenu() {
 function addToMainLibrary() {
     closeAddWordMenu();
     document.getElementById('libFileInput').click();
+}
+
+function openPasteWordsModal() {
+    closeAddWordMenu();
+    document.getElementById('pasteWordsInput').value = '';
+    document.getElementById('pasteWordCount').textContent = '0 từ được nhận diện';
+    document.getElementById('pasteWordsModal').classList.add('open');
+}
+
+function closePasteWordsModal() {
+    document.getElementById('pasteWordsModal').classList.remove('open');
+}
+
+function clearPasteInput() {
+    document.getElementById('pasteWordsInput').value = '';
+    document.getElementById('pasteWordCount').textContent = '0 từ được nhận diện';
+}
+
+function parsePasteLines(text) {
+    return text.split('\n')
+        .map(line => {
+            const clean = line.replace(/^[\d\.\-\*\•\s]+/, '').trim();
+            const sep = clean.includes(':') ? ':' : clean.includes('\t') ? '\t' : null;
+            if (!sep) return null;
+            const idx = clean.indexOf(sep);
+            const enWord  = clean.slice(0, idx).trim().toLowerCase();
+            const vnMeaning = clean.slice(idx + 1).trim();
+            return (enWord && vnMeaning) ? { word: enWord, vn: vnMeaning } : null;
+        })
+        .filter(Boolean);
+}
+
+function updatePasteWordCount() {
+    const parsed = parsePasteLines(document.getElementById('pasteWordsInput').value);
+    const el = document.getElementById('pasteWordCount');
+    el.textContent = parsed.length > 0 ? `${parsed.length} từ được nhận diện` : '0 từ được nhận diện';
+    el.style.color = parsed.length > 0 ? 'var(--success)' : 'var(--muted)';
+}
+
+async function processPasteWords() {
+    const key = document.getElementById('apiKey').value.trim() || document.getElementById('apiKeyMobile').value.trim();
+    if (!key) { showToast('⚠️ Vui lòng nhập Key!'); return; }
+
+    const text = document.getElementById('pasteWordsInput').value.trim();
+    if (!text) { showToast('⚠️ Vui lòng dán danh sách từ vào ô nhập!'); return; }
+
+    const parsedWords = parsePasteLines(text);
+    if (parsedWords.length === 0) {
+        showToast('⚠️ Không tìm thấy từ hợp lệ. Hãy dùng định dạng: từ tiếng Anh: nghĩa tiếng Việt');
+        return;
+    }
+
+    // Lọc từ đã có
+    const existingWords = fullLibrary.map(i => i.word.toLowerCase());
+    const newWords = parsedWords.filter(i => !existingWords.includes(i.word));
+    if (newWords.length === 0) {
+        showToast('💡 Tất cả các từ đã có trong thư viện!');
+        return;
+    }
+
+    const btn = document.getElementById('processPasteBtn');
+    btn.disabled = true;
+    btn.innerHTML = '⏳ Đang xử lý...';
+    showToast(`✨ Đang nhờ AI phân tích ${newWords.length} từ mới...`);
+
+    try {
+        const wordsPromptData = newWords.map(w => `"${w.word}": "${w.vn}"`).join(', ');
+        const prompt = `I have a list of English words and their Vietnamese meanings: { ${wordsPromptData} }. 
+Return a JSON array exactly matching this structure:
+[{"word":"string","ipa":"string","vn":"(keep the provided Vietnamese meaning)","level":"A1-C2","example":"English sentence"}]
+Do not output any markdown formatting or extra text, just the raw JSON array.`;
+
+        const aiRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+            body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: [{ role: 'user', content: prompt }] })
+        });
+        const data = await aiRes.json();
+        let jsonStr = data.choices[0].message.content.replace(/```json|```/g, '').trim();
+        let finalData;
+        try { finalData = JSON.parse(jsonStr); }
+        catch(e) { showToast('❌ AI trả về định dạng không hợp lệ, vui lòng thử lại.'); return; }
+
+        await saveVocabToDb(finalData);
+        await loadLibrary();
+        closePasteWordsModal();
+        showToast(`✅ Đã thêm thành công ${finalData.length} từ vựng mới!`);
+        _extraBadgeData.importedDocx = true;
+        db.collection('users').doc(currentUser.uid).set({ badgeExtra:{ importedDocx:true } }, {merge:true});
+        const xp2 = await getUserXP(); checkAndAwardBadges(xp2);
+    } catch(err) {
+        console.error(err);
+        showToast('❌ Có lỗi xảy ra, vui lòng thử lại.');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" style="width:15px;height:15px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> Phân tích & Thêm vào thư viện`;
+    }
 }
 
 // ══════════════════════════════════════════
