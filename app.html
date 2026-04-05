@@ -713,8 +713,11 @@
                         </div>
                         <div style="display:flex;gap:12px;align-items:center;">
                             <button onclick="openStreakModal()" style="display:flex;flex-direction:column;align-items:center;gap:2px;background:linear-gradient(135deg,#fff7ed,#fef3c7);border:1.5px solid #fde68a;border-radius:12px;padding:6px 12px;cursor:pointer;transition:.2s;" title="Xem lịch streak">
+                              <div style="display:flex;align-items:center;gap:6px;">
                                 <div style="font-family:'Nunito',sans-serif;font-size:1.4rem;font-weight:900;color:#d97706;line-height:1;">🔥</div>
-                                <div style="font-size:.6rem;font-weight:800;color:#92400e;text-transform:uppercase;letter-spacing:.05em;">Streak</div>
+                                <div id="streakNumberDisplay" style="font-family:'Nunito',sans-serif;font-size:1.1rem;font-weight:900;color:#d97706;">0</div>
+                              </div>
+                              <div style="font-size:.6rem;font-weight:800;color:#92400e;text-transform:uppercase;letter-spacing:.05em;">ngày liên tiếp</div>
                             </button>
                             <div style="text-align:center;">
                                 <div style="font-family:'Nunito',sans-serif;font-size:1.4rem;font-weight:800;color:var(--primary);" id="chartTotalWeek">0</div>
@@ -1963,6 +1966,8 @@ async function loadLibrary() {
     loadBadges(xp);
     loadTopicLists();
     updateGameWordCount(); // Đảm bảo số từ trong Games tab luôn được cập nhật
+    await fetchAllStreakData();
+    updateStreakDisplay();
 }
 
 function renderLibrary() {
@@ -3868,10 +3873,19 @@ async function recordDailyActivity(reviewed = 1, correct = 0) {
         correct:  firebase.firestore.FieldValue.increment(correct),
         date: key
     }, { merge: true });
+    
+    // Cập nhật streak display ngay sau khi có hoạt động mới
+    if (reviewed > 0) {
+        // Thêm ngày hôm nay vào tập dữ liệu streak (nếu chưa có)
+        if (typeof _streakStudiedSet !== 'undefined') {
+            _streakStudiedSet.add(key);
+        }
+        updateStreakDisplay();
+    }
+    
     if (document.getElementById('tab-library') && !document.getElementById('tab-library').classList.contains('hidden')) {
         renderProgressChart();
     }
-    // Invalidate streak cache khi có hoạt động mới
     _streakDataLoaded = false;
 }
 
@@ -4022,6 +4036,12 @@ function calcCurrentStreak() {
     return streak;
 }
 
+function updateStreakDisplay() {
+    const streak = calcCurrentStreak();
+    const el = document.getElementById('streakNumberDisplay');
+    if (el) el.textContent = streak;
+}
+    
 function calcBestStreak() {
     if (_streakStudiedSet.size === 0) return 0;
     const sorted = [..._streakStudiedSet].sort();
