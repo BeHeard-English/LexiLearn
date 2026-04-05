@@ -294,6 +294,16 @@
         .topic-list-card:hover{border-color:#c7d2ff;transform:translateY(-2px);box-shadow:0 6px 20px rgba(3,19,131,.1);}
         .topic-icon-circle{width:44px;height:44px;border-radius:12px;background:var(--primary-light);display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;}
         .topic-list-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin-bottom:24px;}
+        /* Topic carousel (kéo ngang, giống badge) */
+        .topic-carousel{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;}
+        .topic-carousel::-webkit-scrollbar{height:3px;}
+        .topic-carousel::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px;}
+        .topic-chip{flex-shrink:0;scroll-snap-align:start;display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:14px;border:1.5px solid var(--border);background:var(--card);transition:.2s;cursor:pointer;min-width:0;}
+        .topic-chip:hover{border-color:#c7d2ff;transform:translateY(-2px);box-shadow:0 4px 14px rgba(3,19,131,.1);}
+        .topic-chip-icon{font-size:1.4rem;line-height:1;flex-shrink:0;}
+        .topic-chip-text{min-width:0;}
+        .topic-chip-name{font-size:.78rem;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px;}
+        .topic-chip-count{font-size:.62rem;color:var(--muted);white-space:nowrap;margin-top:1px;}
 
         /* ── ADD WORD DROPDOWN ── */
         .add-word-dropdown{position:absolute;top:calc(100% + 8px);right:0;background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 8px 40px rgba(3,19,131,.18);width:290px;z-index:500;padding:8px;animation:fadeIn .18s ease both;}
@@ -727,17 +737,17 @@
                     <div id="badgesGrid" class="badge-carousel"></div>
                 </div>
                 <!-- Topic Lists Section -->
-                <div id="topicListsSection" style="margin-bottom:24px;">
-                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-                        <div>
-                            <div style="font-weight:800;font-size:.95rem;color:var(--text);">📋 Danh sách theo chủ đề</div>
-                            <div style="font-size:.72rem;color:var(--muted);margin-top:2px;">Nhấn vào danh sách để xem và chỉnh sửa từ vựng</div>
+                <div id="topicListsSection" style="background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px 20px;margin-bottom:20px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                        <div onclick="openTopicListAll()" style="font-weight:800;font-size:.92rem;color:var(--text);cursor:pointer;user-select:none;" title="Xem tất cả danh sách">📋 Topics</div>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <div style="font-size:.65rem;color:#94a3b8;">← kéo ngang →</div>
+                            <button onclick="showCreateNewList()" style="font-size:.73rem;font-weight:700;color:var(--primary);background:var(--primary-light);border:none;border-radius:8px;padding:5px 11px;cursor:pointer;">+ Tạo mới</button>
                         </div>
-                        <button onclick="showCreateNewList()" style="font-size:.75rem;font-weight:700;color:var(--primary);background:var(--primary-light);border:none;border-radius:8px;padding:6px 12px;cursor:pointer;">+ Tạo mới</button>
                     </div>
-                    <div id="topicListGrid" class="topic-list-grid"></div>
-                    <div id="topicListEmpty" class="hidden" style="padding:20px;text-align:center;color:var(--muted);font-size:.85rem;background:#fafbff;border-radius:14px;border:1px dashed var(--border);">
-                        Chưa có danh sách chủ đề nào. Nhấn <strong>Thêm từ</strong> → <strong>Tạo danh sách mới</strong> để bắt đầu!
+                    <div id="topicListGrid" class="topic-carousel"></div>
+                    <div id="topicListEmpty" class="hidden" style="padding:16px;text-align:center;color:var(--muted);font-size:.85rem;background:#fafbff;border-radius:12px;border:1px dashed var(--border);">
+                        Chưa có danh sách chủ đề nào. Nhấn <strong>+ Tạo mới</strong> để bắt đầu!
                     </div>
                 </div>
                 <!-- Stats -->
@@ -2672,15 +2682,38 @@ function renderTopicLists() {
         return;
     }
     empty.classList.add('hidden');
-    grid.innerHTML = topicLists.map(tl => `
-        <div class="topic-list-card" onclick="openTopicListDetail('${tl.id}')">
+    grid.innerHTML = topicLists.map(tl => {
+        const count = getValidWordIds(tl).length;
+        return `<div class="topic-chip" onclick="openTopicListDetail('${tl.id}')">
+            <div class="topic-chip-icon">${tl.icon || '📋'}</div>
+            <div class="topic-chip-text">
+                <div class="topic-chip-name">${tl.name}</div>
+                <div class="topic-chip-count">${count} từ</div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function openTopicListAll() {
+    const modal = document.getElementById('topicListAllModal');
+    const grid  = document.getElementById('topicListAllGrid');
+    if (!modal || !grid) return;
+    grid.innerHTML = topicLists.length ? topicLists.map(tl => {
+        const count = getValidWordIds(tl).length;
+        return `<div class="topic-list-card" onclick="closeTopicListAll();openTopicListDetail('${tl.id}')">
             <div class="topic-icon-circle">${tl.icon || '📋'}</div>
             <div style="flex:1;min-width:0;">
                 <div style="font-weight:800;font-size:.9rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${tl.name}</div>
-                <div style="font-size:.72rem;color:var(--muted);margin-top:2px;">${getValidWordIds(tl).length} từ</div>
+                <div style="font-size:.72rem;color:var(--muted);margin-top:2px;">${count} từ</div>
             </div>
             <svg xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px;color:var(--muted);flex-shrink:0;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-        </div>`).join('');
+        </div>`;
+    }).join('') : `<div style="padding:20px;text-align:center;color:var(--muted);font-size:.85rem;">Chưa có danh sách nào.</div>`;
+    modal.classList.add('open');
+}
+
+function closeTopicListAll() {
+    document.getElementById('topicListAllModal')?.classList.remove('open');
 }
 
 function populateReviewVocabSelect() {
@@ -5138,6 +5171,24 @@ async function syncAllTopicListWordIds() {
     populateReviewVocabSelect();
 }
 </script>
+<!-- ══ MODAL: ALL TOPIC LISTS ══ -->
+<div id="topicListAllModal" class="badge-modal" onclick="if(event.target===this)closeTopicListAll()">
+    <div class="badge-modal-box" style="max-width:600px;width:92%;max-height:82vh;display:flex;flex-direction:column;padding:0;overflow:hidden;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--border);flex-shrink:0;">
+            <div>
+                <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:1rem;color:var(--primary);">📋 Danh sách theo chủ đề</div>
+                <div style="font-size:.72rem;color:var(--muted);margin-top:2px;">Nhấn vào danh sách để xem và chỉnh sửa từ vựng</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <button onclick="closeTopicListAll();showCreateNewList()" style="font-size:.75rem;font-weight:700;color:var(--primary);background:var(--primary-light);border:none;border-radius:8px;padding:7px 13px;cursor:pointer;">+ Tạo mới</button>
+                <button class="tl-close-btn" onclick="closeTopicListAll()">✕ Đóng</button>
+            </div>
+        </div>
+        <div style="overflow-y:auto;padding:20px 24px;flex:1;">
+            <div id="topicListAllGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;"></div>
+        </div>
+    </div>
+</div>
 <!-- ══ MODAL: STREAK CALENDAR ══ -->
 <div id="streakModal" class="streak-modal" onclick="if(event.target===this)closeStreakModal()">
     <div class="streak-box" id="streakBox">
