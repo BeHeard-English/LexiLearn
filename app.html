@@ -151,7 +151,7 @@
         .count-btn:hover:not(.active),.level-btn:hover:not(.active),.mode-btn:hover:not(.active){border-color:var(--primary-mid);color:var(--primary);background:var(--primary-light);}
 
         /* CHOICE BUTTONS */
-        .choice-btn{width:100%;padding:14px 18px;text-align:left;border:2px solid var(--border);border-radius:14px;background:var(--card);font-family:inherit;font-weight:600;font-size:.9rem;color:var(--text);cursor:pointer;transition:.2s;}
+        .choice-btn{width:100%;padding:14px 18px;text-align:left;border:2px solid var(--border);border-radius:14px;background:var(--card);font-family:inherit;font-weight:600;font-size:1.1rem;color:var(--text);cursor:pointer;transition:.2s;}
         .choice-btn:hover:not(:disabled){border-color:var(--primary-mid);background:var(--primary-light);color:var(--primary);transform:translateX(4px);}
         .choice-btn.correct{background:var(--success-bg)!important;border-color:var(--success)!important;color:#065f46!important;}
         .choice-btn.wrong{background:var(--danger-bg)!important;border-color:var(--danger)!important;color:#991b1b!important;}
@@ -210,14 +210,14 @@
                 flex:1;
                 max-height:56px; /* Trần chiều cao mỗi nút */
                 padding:0 12px !important;
-                font-size:.8rem !important;
+                font-size:1.1rem !important;
                 min-height:0;
                 display:flex;
                 align-items:center;
                 border-radius:11px !important;
             }
             body.quiz-active #qWord.quiz-word {
-                font-size:clamp(1.1rem, 5vw, 2rem) !important;
+                font-size:clamp(2rem, 5vw, 1.1rem) !important;
                 margin:4px 0 10px !important;
                 line-height:1.2;
             }
