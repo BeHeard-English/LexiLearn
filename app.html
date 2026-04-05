@@ -151,7 +151,7 @@
         .count-btn:hover:not(.active),.level-btn:hover:not(.active),.mode-btn:hover:not(.active){border-color:var(--primary-mid);color:var(--primary);background:var(--primary-light);}
 
         /* CHOICE BUTTONS */
-        .choice-btn{width:100%;padding:14px 18px;text-align:left;border:2px solid var(--border);border-radius:14px;background:var(--card);font-family:inherit;font-weight:600;font-size:1.1rem;color:var(--text);cursor:pointer;transition:.2s;}
+        .choice-btn{width:100%;padding:20px 22px;text-align:left;border:2px solid var(--border);border-radius:14px;background:var(--card);font-family:inherit;font-weight:600;font-size:1.1rem;color:var(--text);cursor:pointer;transition:.2s;}
         .choice-btn:hover:not(:disabled){border-color:var(--primary-mid);background:var(--primary-light);color:var(--primary);transform:translateX(4px);}
         .choice-btn.correct{background:var(--success-bg)!important;border-color:var(--success)!important;color:#065f46!important;}
         .choice-btn.wrong{background:var(--danger-bg)!important;border-color:var(--danger)!important;color:#991b1b!important;}
@@ -2629,7 +2629,10 @@ function renderTopicLists() {
             <div class="topic-icon-circle">${tl.icon || '📋'}</div>
             <div style="flex:1;min-width:0;">
                 <div style="font-weight:800;font-size:.9rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${tl.name}</div>
-                <div style="font-size:.72rem;color:var(--muted);margin-top:2px;">${(tl.wordIds||[]).length} từ</div>
+                const actualCount = (tl.wordIds || []).filter(id => 
+    fullLibrary.some(w => (w.word || '').toLowerCase() === id.toLowerCase())
+).length;
+<div style="font-size:.75rem;color:var(--muted);">${actualCount} từ vựng</div>
             </div>
             <svg xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px;color:var(--muted);flex-shrink:0;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
         </div>`).join('');
@@ -3025,7 +3028,7 @@ function renderTopicDetailTable(wordIds) {
     const query = (document.getElementById('tdSearch').value || '').toLowerCase();
     let words = fullLibrary.filter(w => ids.includes(w.word ? w.word.toLowerCase() : ''));
     if (query) words = words.filter(w => w.word.toLowerCase().includes(query) || (w.vn||'').toLowerCase().includes(query));
-    document.getElementById('tdCount').textContent = `${ids.length} từ vựng`;
+    document.getElementById('tdCount').textContent = `${words.length} từ vựng`;
     const tbody = document.getElementById('topicDetailBody');
     const empty = document.getElementById('tdEmpty');
     if (!words.length) {
