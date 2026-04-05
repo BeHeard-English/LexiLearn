@@ -1578,7 +1578,7 @@ let _waitingForNext = false;
 // ══════════════════════════════════════════
 // XP SYSTEM
 // ══════════════════════════════════════════
-const XP_THRESHOLDS = [0, 100, 300, 700, 1500, 3000, 6000, 10000, 15000, 22000];
+const XP_THRESHOLDS = [0, 100, 500, 1000, 2500, 5000, 8000, 12000, 20000, 35000];
 const LEVEL_NAMES   = ['','Tập sự','Học viên','Người học','Tiến bộ','Thành thạo','Chuyên gia','Cao thủ','Bậc thầy','Huyền thoại','Siêu nhân'];
 
 function lvFromXP(xp) {
@@ -4196,12 +4196,12 @@ const BADGES = [
     { id:'xp_2000',      icon:'🔥', name:'Bùng cháy',             desc:'Tích lũy 2000 XP',                                 check:(_,xp)=>xp>=2000,
       motivation:'2000 XP! bạn đang bùng cháy! Đây là bằng chứng của hàng trăm giờ luyện tập nghiêm túc.',
       hint:'Cần 2000 XP tổng cộng. Ôn tập mỗi ngày và duy trì chuỗi trả lời đúng để tích XP nhanh hơn.' },
-    { id:'xp_5000',      icon:'🚀', name:'Tên lửa XP',            desc:'Tích lũy 5000 XP',                                 check:(_,xp)=>xp>=5000,
-      motivation:'5000 XP! Bạn đã phóng vụt lên như tên lửa. Ở cột mốc này, học tiếng Anh đã thực sự trở thành thói quen của bạn.',
-      hint:'Cần 5000 XP. Đây là hành trình dài — hãy ôn tập mỗi ngày và đừng để streak bị gián đoạn.' },
-    { id:'xp_10000',     icon:'👑', name:'Hoàng đế XP',           desc:'Tích lũy 10000 XP — huyền thoại!',                 check:(_,xp)=>xp>=10000,
-      motivation:'10.000 XP! Bạn là hoàng đế! Đây là thành tích huyền thoại mà chỉ những người thực sự kiên định mới chạm tới. Cúi đầu bái phục! 👑',
-      hint:'Cần 10.000 XP — đây là đỉnh cao. Hãy ôn tập mỗi ngày, không có con đường tắt nào cả.' },
+    { id:'xp_10000',      icon:'🚀', name:'Tên lửa XP',            desc:'Tích lũy 10000 XP',                                 check:(_,xp)=>xp>=10000,
+      motivation:'10.000 XP! Bạn đã phóng vụt lên như tên lửa. Ở cột mốc này, học tiếng Anh đã thực sự trở thành thói quen của bạn.',
+      hint:'Cần 10.000 XP. Đây là hành trình dài — hãy ôn tập mỗi ngày và đừng để streak bị gián đoạn.' },
+    { id:'xp_20000',     icon:'👑', name:'Hoàng đế XP',           desc:'Tích lũy 20000 XP — huyền thoại!',                 check:(_,xp)=>xp>=20000,
+      motivation:'20.000 XP! Bạn là hoàng đế! Đây là thành tích huyền thoại mà chỉ những người thực sự kiên định mới chạm tới. Cúi đầu bái phục! 👑',
+      hint:'Cần 20.000 XP — đây là đỉnh cao. Hãy ôn tập mỗi ngày, không có con đường tắt nào cả.' },
     { id:'perfect_10',   icon:'🎯', name:'Thiện xạ',              desc:'Trả lời đúng 10 lần liên tiếp',                    check:(_,__,ex)=>(ex?.perfectStreak||0)>=10,
       motivation:'10 lần đúng liên tiếp! Đây là sự tập trung và chính xác thực sự. Bạn không chỉ học - Bạn thành thạo.',
       hint:'Trả lời đúng 10 câu liên tiếp không sai lần nào. Hãy ôn ở cấp độ phù hợp và tập trung hoàn toàn.' },
