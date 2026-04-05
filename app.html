@@ -525,9 +525,9 @@
             BeHeard <span>LexiLearning</span>
         </div>
         <div id="desktopTabs" class="desktop-tabs hidden">
-            <button onclick="switchTab('creator')" class="dtab active" data-tab="creator">Soạn Bài</button>
-            <button onclick="switchTab('library')" class="dtab" data-tab="library">Thư Viện</button>
+            <button onclick="switchTab('library')" class="dtab active" data-tab="library">Thư Viện</button>
             <button onclick="switchTab('review')" class="dtab" data-tab="review">Ôn Tập</button>
+            <button onclick="switchTab('creator')" class="dtab" data-tab="creator">Soạn Bài</button>
             <button onclick="switchTab('games')" class="dtab" data-tab="games">🎮 Games</button>
         </div>
     </div>
@@ -1163,17 +1163,17 @@
 
 <!-- MOBILE BOTTOM NAV -->
 <div id="mobileBottomNav" class="mobile-bottom-nav hidden">
-    <button onclick="switchTab('creator')" class="mbtab active" data-tab="creator">
-        <span class="mbtab-icon">📝</span>
-        <span class="mbtab-label">Soạn Bài</span>
-    </button>
-    <button onclick="switchTab('library')" class="mbtab" data-tab="library">
+    <button onclick="switchTab('library')" class="mbtab active" data-tab="library">
         <span class="mbtab-icon">📚</span>
         <span class="mbtab-label">Thư Viện</span>
     </button>
     <button onclick="switchTab('review')" class="mbtab" data-tab="review">
         <span class="mbtab-icon">🎯</span>
         <span class="mbtab-label">Ôn Tập</span>
+    </button>
+    <button onclick="switchTab('creator')" class="mbtab" data-tab="creator">
+        <span class="mbtab-icon">📝</span>
+        <span class="mbtab-label">Soạn Bài</span>
     </button>
     <button onclick="switchTab('games')" class="mbtab" data-tab="games">
         <span class="mbtab-icon">🎮</span>
@@ -1840,7 +1840,7 @@ auth.onAuthStateChanged(async user => {
         document.getElementById('mobileBottomNav').classList.add('hidden');
         document.getElementById('progressChartCard').classList.add('hidden');
         document.getElementById('badgesCard').classList.add('hidden');
-        switchTab('creator');
+        switchTab('library');
     }
 });
 document.getElementById('loginBtn').onclick  = () => auth.signInWithPopup(new firebase.auth.GoogleAuthProvider());
