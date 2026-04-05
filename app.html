@@ -294,16 +294,6 @@
         .topic-list-card:hover{border-color:#c7d2ff;transform:translateY(-2px);box-shadow:0 6px 20px rgba(3,19,131,.1);}
         .topic-icon-circle{width:44px;height:44px;border-radius:12px;background:var(--primary-light);display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;}
         .topic-list-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin-bottom:24px;}
-        /* Topic carousel (kéo ngang, giống badge) */
-        .topic-carousel{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;}
-        .topic-carousel::-webkit-scrollbar{height:3px;}
-        .topic-carousel::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px;}
-        .topic-chip{flex-shrink:0;scroll-snap-align:start;display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:14px;border:1.5px solid var(--border);background:var(--card);transition:.2s;cursor:pointer;min-width:0;}
-        .topic-chip:hover{border-color:#c7d2ff;transform:translateY(-2px);box-shadow:0 4px 14px rgba(3,19,131,.1);}
-        .topic-chip-icon{font-size:1.4rem;line-height:1;flex-shrink:0;}
-        .topic-chip-text{min-width:0;}
-        .topic-chip-name{font-size:.78rem;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px;}
-        .topic-chip-count{font-size:.62rem;color:var(--muted);white-space:nowrap;margin-top:1px;}
 
         /* ── ADD WORD DROPDOWN ── */
         .add-word-dropdown{position:absolute;top:calc(100% + 8px);right:0;background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 8px 40px rgba(3,19,131,.18);width:290px;z-index:500;padding:8px;animation:fadeIn .18s ease both;}
@@ -382,6 +372,31 @@
         .chart-other .chart-bar-val{color:var(--muted);}
 
         /* ── BADGES ── */
+        /* ── STREAK CALENDAR ── */
+        .streak-modal{display:none;position:fixed;inset:0;z-index:9100;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);pointer-events:none;align-items:center;justify-content:center;}
+        .streak-modal.open{display:flex;pointer-events:auto;}
+        .streak-box{background:var(--card);border-radius:24px;width:92%;max-width:380px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.28);animation:badgeModalPop .4s cubic-bezier(.4,0,.2,1) both;}
+        .streak-header{padding:22px 24px 20px;background:linear-gradient(135deg,#031383,#3b52d4);color:#fff;}
+        .streak-stats{display:flex;gap:24px;margin-top:14px;}
+        .streak-stat-val{font-family:'Nunito',sans-serif;font-size:2.4rem;font-weight:900;line-height:1;}
+        .streak-stat-lbl{font-size:.68rem;font-weight:700;opacity:.75;margin-top:2px;text-transform:uppercase;letter-spacing:.06em;}
+        .streak-body{padding:20px 22px 24px;}
+        .streak-month-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+        .streak-nav-btn{background:var(--primary-light);color:var(--primary);border:none;border-radius:8px;width:30px;height:30px;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;font-weight:800;}
+        .streak-nav-btn:hover{background:#d4dbff;}
+        .streak-month-label{font-weight:800;font-size:.92rem;color:var(--text);}
+        .streak-dow-row{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;margin-bottom:6px;}
+        .streak-dow{font-size:.6rem;font-weight:800;color:var(--muted);text-transform:uppercase;padding:2px 0;}
+        .streak-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+        .streak-day{display:flex;flex-direction:column;align-items:center;gap:3px;padding:2px 0;}
+        .streak-dot{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;transition:.15s;}
+        .streak-dot.studied{background:#059669;color:#fff;box-shadow:0 2px 8px rgba(5,150,105,.35);}
+        .streak-dot.missed{background:#e2e8f0;color:#94a3b8;}
+        .streak-dot.future{background:transparent;color:#cbd5e1;border:1.5px dashed #e2e8f0;}
+        .streak-dot.empty{background:transparent;pointer-events:none;}
+        .streak-dot.today-ring{box-shadow:0 0 0 2.5px var(--primary),0 2px 8px rgba(5,150,105,.35);}
+        .streak-dot.today-ring.missed{box-shadow:0 0 0 2.5px var(--primary);}
+        .streak-day-num{font-size:.58rem;font-weight:700;color:var(--muted);}
         @keyframes badgeUnlock{0%{transform:scale(.5) rotate(-10deg);opacity:0;}60%{transform:scale(1.15) rotate(3deg);}100%{transform:scale(1) rotate(0);opacity:1;}}
         .badge-item{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;border-radius:16px;border:1px solid var(--border);background:var(--card);transition:.2s;text-align:center;position:relative;}
         .badge-item.unlocked{border-color:#fde68a;background:linear-gradient(135deg,#fffbeb,#fef3c7);}
@@ -678,7 +693,11 @@
                             <div style="font-weight:800;font-size:.95rem;color:var(--text);">📈 Tiến độ 7 ngày</div>
                             <div style="font-size:.72rem;color:var(--muted);margin-top:2px;">Số từ ôn tập mỗi ngày</div>
                         </div>
-                        <div style="display:flex;gap:16px;">
+                        <div style="display:flex;gap:12px;align-items:center;">
+                            <button onclick="openStreakModal()" style="display:flex;flex-direction:column;align-items:center;gap:2px;background:linear-gradient(135deg,#fff7ed,#fef3c7);border:1.5px solid #fde68a;border-radius:12px;padding:6px 12px;cursor:pointer;transition:.2s;" title="Xem lịch streak">
+                                <div style="font-family:'Nunito',sans-serif;font-size:1.4rem;font-weight:900;color:#d97706;line-height:1;">🔥</div>
+                                <div style="font-size:.6rem;font-weight:800;color:#92400e;text-transform:uppercase;letter-spacing:.05em;">Streak</div>
+                            </button>
                             <div style="text-align:center;">
                                 <div style="font-family:'Nunito',sans-serif;font-size:1.4rem;font-weight:800;color:var(--primary);" id="chartTotalWeek">0</div>
                                 <div style="font-size:.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;">7 ngày</div>
@@ -708,17 +727,17 @@
                     <div id="badgesGrid" class="badge-carousel"></div>
                 </div>
                 <!-- Topic Lists Section -->
-                <div id="topicListsSection" style="background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px 20px;margin-bottom:20px;">
-                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-                        <div onclick="openTopicListAll()" style="font-weight:800;font-size:.92rem;color:var(--text);cursor:pointer;user-select:none;" title="Xem tất cả danh sách">📋 Danh sách theo chủ đề</div>
-                        <div style="display:flex;align-items:center;gap:10px;">
-                            <div style="font-size:.65rem;color:#94a3b8;">← kéo ngang →</div>
-                            <button onclick="showCreateNewList()" style="font-size:.73rem;font-weight:700;color:var(--primary);background:var(--primary-light);border:none;border-radius:8px;padding:5px 11px;cursor:pointer;">+ Tạo mới</button>
+                <div id="topicListsSection" style="margin-bottom:24px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+                        <div>
+                            <div style="font-weight:800;font-size:.95rem;color:var(--text);">📋 Danh sách theo chủ đề</div>
+                            <div style="font-size:.72rem;color:var(--muted);margin-top:2px;">Nhấn vào danh sách để xem và chỉnh sửa từ vựng</div>
                         </div>
+                        <button onclick="showCreateNewList()" style="font-size:.75rem;font-weight:700;color:var(--primary);background:var(--primary-light);border:none;border-radius:8px;padding:6px 12px;cursor:pointer;">+ Tạo mới</button>
                     </div>
-                    <div id="topicListGrid" class="topic-carousel"></div>
-                    <div id="topicListEmpty" class="hidden" style="padding:16px;text-align:center;color:var(--muted);font-size:.85rem;background:#fafbff;border-radius:12px;border:1px dashed var(--border);">
-                        Chưa có danh sách chủ đề nào. Nhấn <strong>+ Tạo mới</strong> để bắt đầu!
+                    <div id="topicListGrid" class="topic-list-grid"></div>
+                    <div id="topicListEmpty" class="hidden" style="padding:20px;text-align:center;color:var(--muted);font-size:.85rem;background:#fafbff;border-radius:14px;border:1px dashed var(--border);">
+                        Chưa có danh sách chủ đề nào. Nhấn <strong>Thêm từ</strong> → <strong>Tạo danh sách mới</strong> để bắt đầu!
                     </div>
                 </div>
                 <!-- Stats -->
@@ -2653,38 +2672,15 @@ function renderTopicLists() {
         return;
     }
     empty.classList.add('hidden');
-    grid.innerHTML = topicLists.map(tl => {
-        const count = getValidWordIds(tl).length;
-        return `<div class="topic-chip" onclick="openTopicListDetail('${tl.id}')">
-            <div class="topic-chip-icon">${tl.icon || '📋'}</div>
-            <div class="topic-chip-text">
-                <div class="topic-chip-name">${tl.name}</div>
-                <div class="topic-chip-count">${count} từ</div>
-            </div>
-        </div>`;
-    }).join('');
-}
-
-function openTopicListAll() {
-    const modal = document.getElementById('topicListAllModal');
-    const grid  = document.getElementById('topicListAllGrid');
-    if (!modal || !grid) return;
-    grid.innerHTML = topicLists.length ? topicLists.map(tl => {
-        const count = getValidWordIds(tl).length;
-        return `<div class="topic-list-card" onclick="closeTopicListAll();openTopicListDetail('${tl.id}')">
+    grid.innerHTML = topicLists.map(tl => `
+        <div class="topic-list-card" onclick="openTopicListDetail('${tl.id}')">
             <div class="topic-icon-circle">${tl.icon || '📋'}</div>
             <div style="flex:1;min-width:0;">
                 <div style="font-weight:800;font-size:.9rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${tl.name}</div>
-                <div style="font-size:.72rem;color:var(--muted);margin-top:2px;">${count} từ</div>
+                <div style="font-size:.72rem;color:var(--muted);margin-top:2px;">${getValidWordIds(tl).length} từ</div>
             </div>
             <svg xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px;color:var(--muted);flex-shrink:0;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-        </div>`;
-    }).join('') : `<div style="padding:20px;text-align:center;color:var(--muted);font-size:.85rem;">Chưa có danh sách nào.</div>`;
-    modal.classList.add('open');
-}
-
-function closeTopicListAll() {
-    document.getElementById('topicListAllModal')?.classList.remove('open');
+        </div>`).join('');
 }
 
 function populateReviewVocabSelect() {
@@ -3766,6 +3762,8 @@ async function recordDailyActivity(reviewed = 1, correct = 0) {
     if (document.getElementById('tab-library') && !document.getElementById('tab-library').classList.contains('hidden')) {
         renderProgressChart();
     }
+    // Invalidate streak cache khi có hoạt động mới
+    _streakDataLoaded = false;
 }
 
 async function renderProgressChart() {
@@ -3812,7 +3810,169 @@ async function renderProgressChart() {
 }
 
 // ══════════════════════════════════════════
-// MASTERED WORDS MODAL
+// STREAK CALENDAR
+// ══════════════════════════════════════════
+let _streakYear  = null;
+let _streakMonth = null; // 0-based
+let _streakStudiedSet = new Set(); // "YYYY-MM-DD" days đã học
+let _streakDataLoaded = false;
+
+async function openStreakModal() {
+    const now = new Date();
+    _streakYear  = now.getFullYear();
+    _streakMonth = now.getMonth();
+
+    document.getElementById('streakModal').classList.add('open');
+
+    // Fetch tất cả activity 365 ngày gần nhất để tính streak
+    if (!_streakDataLoaded) await fetchAllStreakData();
+    renderStreakStats();
+    renderStreakCalendar();
+
+    // Scroll lên/xuống để đổi tháng
+    const body = document.getElementById('streakCalBody');
+    body._streakWheelHandler = (e) => {
+        e.preventDefault();
+        changeStreakMonth(e.deltaY > 0 ? 1 : -1);
+    };
+    body.addEventListener('wheel', body._streakWheelHandler, { passive: false });
+}
+
+function closeStreakModal() {
+    document.getElementById('streakModal').classList.remove('open');
+    const body = document.getElementById('streakCalBody');
+    if (body._streakWheelHandler) {
+        body.removeEventListener('wheel', body._streakWheelHandler);
+        body._streakWheelHandler = null;
+    }
+}
+
+async function fetchAllStreakData() {
+    if (!currentUser) return;
+    _streakStudiedSet.clear();
+    // Lấy 400 ngày gần nhất
+    const today = new Date();
+    const from  = new Date(); from.setDate(from.getDate() - 400);
+    const fromKey = `${from.getFullYear()}-${String(from.getMonth()+1).padStart(2,'0')}-${String(from.getDate()).padStart(2,'0')}`;
+    const toKey   = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+    try {
+        const snap = await db.collection('users').doc(currentUser.uid).collection('activity')
+            .where('date', '>=', fromKey)
+            .where('date', '<=', toKey)
+            .get();
+        snap.docs.forEach(d => {
+            if ((d.data().reviewed || 0) > 0) _streakStudiedSet.add(d.id);
+        });
+        _streakDataLoaded = true;
+    } catch(e) { console.error('Streak fetch error', e); }
+}
+
+async function changeStreakMonth(dir) {
+    _streakMonth += dir;
+    if (_streakMonth > 11) { _streakMonth = 0; _streakYear++; }
+    if (_streakMonth < 0)  { _streakMonth = 11; _streakYear--; }
+    // Nếu sang tháng mới chưa có dữ liệu → fetch lại
+    const monthKey = `${_streakYear}-${String(_streakMonth+1).padStart(2,'0')}`;
+    const needFetch = [..._streakStudiedSet].length === 0 ||
+        ![..._streakStudiedSet].some(d => d.startsWith(monthKey));
+    if (needFetch) {
+        try {
+            const from = `${_streakYear}-${String(_streakMonth+1).padStart(2,'0')}-01`;
+            const days = new Date(_streakYear, _streakMonth+1, 0).getDate();
+            const to   = `${_streakYear}-${String(_streakMonth+1).padStart(2,'0')}-${String(days).padStart(2,'0')}`;
+            const snap = await db.collection('users').doc(currentUser.uid).collection('activity')
+                .where('date', '>=', from).where('date', '<=', to).get();
+            snap.docs.forEach(d => {
+                if ((d.data().reviewed || 0) > 0) _streakStudiedSet.add(d.id);
+            });
+        } catch(e) {}
+    }
+    renderStreakCalendar();
+}
+
+function calcCurrentStreak() {
+    const today = new Date();
+    let streak = 0;
+    for (let i = 0; i <= 400; i++) {
+        const d = new Date(today); d.setDate(d.getDate() - i);
+        const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        if (_streakStudiedSet.has(key)) { streak++; }
+        else if (i > 0) break; // hôm nay chưa học thì vẫn tính streak từ hôm qua
+    }
+    // Nếu hôm nay chưa học, tính streak từ hôm qua
+    const todayKey2 = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+    if (!_streakStudiedSet.has(todayKey2)) {
+        streak = 0;
+        for (let i = 1; i <= 400; i++) {
+            const d = new Date(today); d.setDate(d.getDate() - i);
+            const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            if (_streakStudiedSet.has(key)) streak++;
+            else break;
+        }
+    }
+    return streak;
+}
+
+function calcBestStreak() {
+    if (_streakStudiedSet.size === 0) return 0;
+    const sorted = [..._streakStudiedSet].sort();
+    let best = 0, cur = 0, prev = null;
+    for (const key of sorted) {
+        if (prev) {
+            const prevDate = new Date(prev + 'T00:00:00');
+            const curDate  = new Date(key  + 'T00:00:00');
+            const diff = (curDate - prevDate) / 86400000;
+            cur = (diff === 1) ? cur + 1 : 1;
+        } else { cur = 1; }
+        if (cur > best) best = cur;
+        prev = key;
+    }
+    return best;
+}
+
+function renderStreakStats() {
+    document.getElementById('streakCurrentVal').textContent = calcCurrentStreak();
+    document.getElementById('streakBestVal').textContent    = calcBestStreak();
+}
+
+function renderStreakCalendar() {
+    const year = _streakYear, month = _streakMonth;
+    const monthNames = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6',
+                        'Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
+    document.getElementById('streakMonthLabel').textContent = `${monthNames[month]} ${year}`;
+
+    const todayD = new Date();
+    const todayStr = `${todayD.getFullYear()}-${String(todayD.getMonth()+1).padStart(2,'0')}-${String(todayD.getDate()).padStart(2,'0')}`;
+
+    const firstDay = new Date(year, month, 1);
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    // Tính offset: thứ 2 = 0 (Monday-first)
+    let startDow = firstDay.getDay(); // 0=Sun,1=Mon,...
+    startDow = (startDow === 0) ? 6 : startDow - 1; // convert to Mon-first
+
+    const cells = [];
+    // Ô trống đầu tháng
+    for (let i = 0; i < startDow; i++) cells.push('<div class="streak-day"><div class="streak-dot empty"></div></div>');
+
+    for (let d = 1; d <= daysInMonth; d++) {
+        const key = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const isToday   = key === todayStr;
+        const isFuture  = key > todayStr;
+        const isStudied = _streakStudiedSet.has(key);
+
+        let dotClass = 'streak-dot ';
+        if (isFuture)       dotClass += 'future';
+        else if (isStudied) dotClass += 'studied' + (isToday ? ' today-ring' : '');
+        else                dotClass += 'missed'  + (isToday ? ' today-ring' : '');
+
+        cells.push(`<div class="streak-day">
+            <div class="${dotClass}" title="${key}">${d}</div>
+        </div>`);
+    }
+
+    document.getElementById('streakCalGrid').innerHTML = cells.join('');
+}
 // ══════════════════════════════════════════
 function openMasteredModal() {
     const mastered = fullLibrary.filter(i => (i.correct_count || 0) >= 10);
@@ -4978,21 +5138,53 @@ async function syncAllTopicListWordIds() {
     populateReviewVocabSelect();
 }
 </script>
-<!-- ══ MODAL: ALL TOPIC LISTS ══ -->
-<div id="topicListAllModal" class="badge-modal" onclick="if(event.target===this)closeTopicListAll()">
-    <div class="badge-modal-box" style="max-width:600px;width:92%;max-height:82vh;display:flex;flex-direction:column;padding:0;overflow:hidden;">
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--border);flex-shrink:0;">
-            <div>
-                <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:1rem;color:var(--primary);">📋 Danh sách theo chủ đề</div>
-                <div style="font-size:.72rem;color:var(--muted);margin-top:2px;">Nhấn vào danh sách để xem và chỉnh sửa từ vựng</div>
+<!-- ══ MODAL: STREAK CALENDAR ══ -->
+<div id="streakModal" class="streak-modal" onclick="if(event.target===this)closeStreakModal()">
+    <div class="streak-box" id="streakBox">
+        <!-- Header gradient -->
+        <div class="streak-header">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+                <div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:1.05rem;">🔥 Streak học tập</div>
+                <button onclick="closeStreakModal()" style="background:rgba(255,255,255,.2);border:none;border-radius:8px;width:28px;height:28px;color:#fff;font-size:.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
             </div>
-            <div style="display:flex;align-items:center;gap:8px;">
-                <button onclick="closeTopicListAll();showCreateNewList()" style="font-size:.75rem;font-weight:700;color:var(--primary);background:var(--primary-light);border:none;border-radius:8px;padding:7px 13px;cursor:pointer;">+ Tạo mới</button>
-                <button class="tl-close-btn" onclick="closeTopicListAll()">✕ Đóng</button>
+            <div class="streak-stats">
+                <div>
+                    <div class="streak-stat-val" id="streakCurrentVal">0</div>
+                    <div class="streak-stat-lbl">ngày liên tiếp</div>
+                </div>
+                <div style="width:1px;background:rgba(255,255,255,.2);margin:4px 0;"></div>
+                <div>
+                    <div class="streak-stat-val" style="color:#fde68a;" id="streakBestVal">0</div>
+                    <div class="streak-stat-lbl">kỷ lục</div>
+                </div>
             </div>
         </div>
-        <div style="overflow-y:auto;padding:20px 24px;flex:1;">
-            <div id="topicListAllGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;"></div>
+        <!-- Calendar body -->
+        <div class="streak-body" id="streakCalBody" style="user-select:none;">
+            <!-- Month nav -->
+            <div class="streak-month-nav">
+                <button class="streak-nav-btn" onclick="changeStreakMonth(-1)">‹</button>
+                <div class="streak-month-label" id="streakMonthLabel">Tháng 1 2025</div>
+                <button class="streak-nav-btn" onclick="changeStreakMonth(1)">›</button>
+            </div>
+            <!-- Day-of-week headers -->
+            <div class="streak-dow-row">
+                <div class="streak-dow">T2</div><div class="streak-dow">T3</div>
+                <div class="streak-dow">T4</div><div class="streak-dow">T5</div>
+                <div class="streak-dow">T6</div><div class="streak-dow">T7</div>
+                <div class="streak-dow">CN</div>
+            </div>
+            <!-- Day grid -->
+            <div class="streak-cal-grid" id="streakCalGrid"></div>
+            <!-- Legend -->
+            <div style="display:flex;gap:16px;margin-top:16px;justify-content:center;">
+                <div style="display:flex;align-items:center;gap:5px;font-size:.7rem;color:var(--muted);">
+                    <div style="width:10px;height:10px;border-radius:50%;background:#059669;"></div> Có học
+                </div>
+                <div style="display:flex;align-items:center;gap:5px;font-size:.7rem;color:var(--muted);">
+                    <div style="width:10px;height:10px;border-radius:50%;background:#e2e8f0;"></div> Không học
+                </div>
+            </div>
         </div>
     </div>
 </div>
