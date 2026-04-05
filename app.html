@@ -805,7 +805,7 @@
             <div id="reviewStart" class="card slide-up" style="padding:32px 28px;text-align:center;">
                 <div style="font-size:2.8rem;margin-bottom:14px;">🎯</div>
                 <div style="font-family:'Nunito',sans-serif;font-size:1.6rem;font-weight:800;color:var(--primary);margin-bottom:8px;">Ôn tập từ vựng</div>
-                <p style="font-size:.9rem;color:var(--muted);margin-bottom:28px;">Từ đến hạn SRS được ưu tiên. Trả lời đúng +10 XP ⚡</p>
+                <p style="font-size:.9rem;color:var(--muted);margin-bottom:28px;">Từ đến hạn SRS được ưu tiên ⚡</p>
 
                 <!-- Vocab source -->
                 <div style="text-align:left;margin-bottom:22px;">
@@ -937,10 +937,10 @@
                             😓 Khó<div class="fc-btn-xp">Ôn sớm</div>
                         </button>
                         <button class="fc-btn fc-btn-ok" onclick="rateFC('ok')">
-                            🤔 Ổn<div class="fc-btn-xp">+10 XP · Bình thường</div>
+                            🤔 Ổn<div class="fc-btn-xp">+5 XP · Bình thường</div>
                         </button>
                         <button class="fc-btn fc-btn-easy" onclick="rateFC('easy')">
-                            😄 Dễ<div class="fc-btn-xp">+15 XP · Ôn muộn hơn</div>
+                            😄 Dễ<div class="fc-btn-xp">+10 XP · Ôn muộn hơn</div>
                         </button>
                     </div>
                     <!-- Feedback hiện đáp án khi bấm Khó -->
@@ -3792,7 +3792,7 @@ async function rateFC(rating) {
     if (isCorrect) {
         // Đúng: tăng correct_count
         await ref.set({ correct_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
-        await addXP(rating === 'easy' ? 15 : 10);
+        await addXP(rating === 'easy' ? 10 : 5);
         await recordWordReview(word, true);
         playFeedback(true);
         trackAnswerStreak(true);
