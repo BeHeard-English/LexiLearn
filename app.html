@@ -1525,7 +1525,7 @@ let _waitingForNext = false;
 // ══════════════════════════════════════════
 // XP SYSTEM
 // ══════════════════════════════════════════
-const XP_THRESHOLDS = [0, 100, 300, 700, 1500, 3000, 5500, 9000, 13500, 18500];
+const XP_THRESHOLDS = [0, 100, 300, 700, 1500, 3000, 6000, 10000, 15000, 22000];
 const LEVEL_NAMES   = ['','Tập sự','Học viên','Người học','Tiến bộ','Thành thạo','Chuyên gia','Cao thủ','Bậc thầy','Huyền thoại','Siêu nhân'];
 
 function lvFromXP(xp) {
@@ -3991,7 +3991,7 @@ function openBadgeDetail(badgeId) {
     const body = document.getElementById('bdBody');
     if (unlocked) {
         body.style.cssText = 'border-radius:14px;padding:14px 16px;font-size:.85rem;line-height:1.65;text-align:left;margin-bottom:20px;background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1px solid #fde68a;color:#78350f;';
-        body.innerHTML     = `<div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#d97706;margin-bottom:6px;">💬 Lời động viên</div>${badge.motivation}`;
+        body.innerHTML     = `<div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#d97706;margin-bottom:6px;">💬 Lời nhắn gửi bạn</div>${badge.motivation}`;
     } else {
         body.style.cssText = 'border-radius:14px;padding:14px 16px;font-size:.85rem;line-height:1.65;text-align:left;margin-bottom:20px;background:var(--primary-light);border:1px solid #c7d2ff;color:var(--primary);';
         body.innerHTML     = `<div style="font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--primary-mid);margin-bottom:6px;">🗺️ Cách đạt được</div>${badge.hint}`;
