@@ -4665,6 +4665,11 @@ async function showFillBlank() {
     }
 
     // Touch drag cho mobile
+    chipsEl.querySelectorAll('.fb-chip').forEach(chip => {
+        chip.addEventListener('touchstart', fbTouchStart, { passive: false });
+        chip.addEventListener('touchmove',  fbTouchMove,  { passive: false });
+        chip.addEventListener('touchend',   fbTouchEnd,   { passive: false });
+    });
     _reviewTransitioning = false;
 }
 
