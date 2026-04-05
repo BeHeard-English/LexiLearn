@@ -1905,6 +1905,7 @@ async function loadLibrary() {
     if(!currentUser) return;
     const snap = await db.collection('users').doc(currentUser.uid).collection('vocabulary').get();
     fullLibrary = snap.docs.map(d=>d.data());
+    await syncAllTopicListWordIds();
     renderLibrary();
     const xp = await getUserXP(); updateXPUI(xp);
     renderProgressChart();
@@ -1977,8 +1978,25 @@ document.getElementById('libLevelFilters').onclick = e => {
 
 async function deleteWord(word) {
     if(!confirm(`Xoá từ "${word}" khỏi thư viện?`)) return;
-    await db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(word.toLowerCase()).delete();
-    showToast(`🗑️ Đã xóa "${word}"`); loadLibrary();
+    const wordKey = word.toLowerCase();
+    // Xóa khỏi vocabulary
+    await db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(wordKey).delete();
+    // Xóa khỏi tất cả topic lists
+    for (const tl of topicLists) {
+        const newIds = (tl.wordIds || []).filter(id => id !== wordKey);
+        if (newIds.length !== (tl.wordIds || []).length) {
+            tl.wordIds = newIds;
+            await db.collection('users').doc(currentUser.uid)
+                .collection('topicLists').doc(tl.id)
+                .update({ wordIds: newIds });
+        }
+    }
+    // Cập nhật fullLibrary và giao diện
+    fullLibrary = fullLibrary.filter(i => i.word.toLowerCase() !== wordKey);
+    renderLibrary();
+    renderTopicLists();
+    populateReviewVocabSelect();
+    showToast(`🗑️ Đã xóa "${word}" và cập nhật danh sách.`);
 }
 
 // ── EDIT WORD ──────────────────────────────────────────────────────
@@ -2630,7 +2648,7 @@ function renderTopicLists() {
             <div class="topic-icon-circle">${tl.icon || '📋'}</div>
             <div style="flex:1;min-width:0;">
                 <div style="font-weight:800;font-size:.9rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${tl.name}</div>
-                <div style="font-size:.72rem;color:var(--muted);margin-top:2px;">${(tl.wordIds||[]).length} từ</div>
+                <div style="font-size:.72rem;color:var(--muted);margin-top:2px;">${getValidWordIds(tl).length} từ</div>
             </div>
             <svg xmlns="http://www.w3.org/2000/svg" style="width:16px;height:16px;color:var(--muted);flex-shrink:0;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
         </div>`).join('');
@@ -3109,19 +3127,33 @@ async function _deleteWordsFromTopicAndLibrary(wordKeys) {
     });
     await batch.commit();
 
-    // 2. Xoá khỏi wordIds của topic list
+    // 2. Xoá khỏi wordIds của topic list hiện tại
     tl.wordIds = (tl.wordIds || []).filter(id => !wordKeys.includes(id));
     await db.collection('users').doc(currentUser.uid).collection('topicLists').doc(currentTopicListId)
         .update({ wordIds: tl.wordIds });
+
+    // 2b. Xoá khỏi tất cả các topic list khác (nếu từ nằm trong nhiều list)
+    for (const otherTl of topicLists) {
+        if (otherTl.id === currentTopicListId) continue;
+        const newIds = (otherTl.wordIds || []).filter(id => !wordKeys.includes(id));
+        if (newIds.length !== (otherTl.wordIds || []).length) {
+            otherTl.wordIds = newIds;
+            await db.collection('users').doc(currentUser.uid).collection('topicLists').doc(otherTl.id)
+                .update({ wordIds: newIds });
+        }
+    }
 
     // 3. Cập nhật fullLibrary local
     fullLibrary = fullLibrary.filter(w => !wordKeys.includes(w.word?.toLowerCase()));
 
     // 4. Refresh UI
-    renderTopicLists();
-    populateReviewVocabSelect();
-    renderTopicDetailTable(tl.wordIds);
-    renderLibrary();
+    renderTopicLists();            // cập nhật số lượng từ ở danh sách chủ đề
+    populateReviewVocabSelect();   // cập nhật dropdown ôn tập
+    if (currentTopicListId) {
+        // Nếu đang mở modal chi tiết, refresh nội dung bảng
+        renderTopicDetailTable(tl.wordIds);
+    }
+    renderLibrary();               // cập nhật bảng thư viện
     showToast(`🗑️ Đã xoá ${wordKeys.length} từ khỏi danh sách và thư viện.`);
 }
 
@@ -4888,6 +4920,30 @@ function escapeRegExp(s) {
 }
 
 function shuffle(arr){ return [...arr].sort(()=>Math.random()-.5); }
+// Trả về danh sách wordIds thực sự tồn tại trong fullLibrary
+function getValidWordIds(tl) {
+    if (!tl.wordIds) return [];
+    const validIds = tl.wordIds.filter(id => 
+        fullLibrary.some(w => (w.word || '').toLowerCase() === id)
+    );
+    return validIds;
+}
+
+// Đồng bộ tất cả topic lists: cập nhật wordIds chỉ giữ các từ còn trong fullLibrary
+async function syncAllTopicListWordIds() {
+    if (!currentUser) return;
+    for (const tl of topicLists) {
+        const validIds = getValidWordIds(tl);
+        if (validIds.length !== (tl.wordIds || []).length) {
+            tl.wordIds = validIds;
+            await db.collection('users').doc(currentUser.uid)
+                .collection('topicLists').doc(tl.id)
+                .update({ wordIds: validIds });
+        }
+    }
+    renderTopicLists();      // cập nhật giao diện
+    populateReviewVocabSelect();
+}
 </script>
 <!-- ══ MODAL: EDIT WORD ══ -->
 <div id="editWordModal" class="tl-modal" onclick="if(event.target===this)closeEditWord()">
