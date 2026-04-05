@@ -126,8 +126,9 @@
         .fb-wordbank{position:sticky;top:var(--nav-h);z-index:50;background:var(--card);border-bottom:2px solid var(--border);padding:12px 16px;margin:-20px -20px 20px;box-shadow:0 4px 16px rgba(3,19,131,.08);}
         .fb-wordbank-label{font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;}
         .fb-words{display:flex;flex-wrap:wrap;gap:8px;min-height:36px;}
-        .fb-chip{cursor:pointer;padding:8px 16px;background:var(--primary-light);border:2px solid var(--border);border-radius:10px;font-weight:700;font-size:.88rem;color:var(--primary);transition:.2s;user-select:none;-webkit-user-select:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
-        .fb-chip:hover{background:var(--primary);color:#fff;border-color:var(--primary);transform:translateY(-1px);box-shadow:0 4px 12px rgba(3,19,131,.2);}
+        .fb-chip{cursor:pointer;padding:8px 18px;background:var(--primary-light);border:2px solid var(--primary-mid);border-radius:10px;font-weight:700;font-size:.88rem;color:var(--primary);transition:.15s;user-select:none;-webkit-user-select:none;touch-action:manipulation;-webkit-tap-highlight-color:transparent;box-shadow:0 2px 6px rgba(3,19,131,.1);}
+        .fb-chip:hover{background:var(--primary);color:#fff;border-color:var(--primary);transform:translateY(-2px);box-shadow:0 6px 14px rgba(3,19,131,.25);}
+        .fb-chip:active{transform:translateY(0);box-shadow:none;}
         .fb-chip.selected{background:var(--primary);color:#fff;border-color:var(--primary);box-shadow:0 0 0 3px rgba(79,142,247,.35);}
         .fb-chip.used{opacity:0;pointer-events:none;visibility:hidden;}
         .fb-chip.dragging{opacity:.4;transform:scale(.95);}
@@ -179,7 +180,6 @@
 
         /* ── Mobile quiz: full-screen, no scroll ── */
         @media(max-width:767px){
-            /* Khi quiz đang hiển thị (body.quiz-active), chiếm đúng khoảng trống */
             body.quiz-active #reviewQuizArea {
                 flex-direction:column;
                 height:calc(100dvh - var(--nav-h) - 60px);
@@ -189,7 +189,7 @@
                 flex:1;
                 display:flex;
                 flex-direction:column;
-                padding:16px 16px 14px;
+                padding:14px 14px 12px;
                 border-radius:18px;
                 overflow:hidden;
                 min-height:0;
@@ -198,38 +198,40 @@
                 flex-shrink:0;
             }
             body.quiz-active #qChoices {
-                flex:1;
+                /* Không flex:1 — để chiều cao tự nhiên theo max-height */
                 display:flex !important;
                 flex-direction:column;
-                gap:7px !important;
+                gap:6px !important;
                 overflow:hidden;
                 min-height:0;
-                justify-content:stretch;
+                max-height:48vh; /* Giới hạn chiều cao tổng của 4 nút */
             }
             body.quiz-active #qChoices .choice-btn {
                 flex:1;
-                padding:0 14px !important;
-                font-size:.82rem !important;
+                max-height:56px; /* Trần chiều cao mỗi nút */
+                padding:0 12px !important;
+                font-size:.8rem !important;
                 min-height:0;
                 display:flex;
                 align-items:center;
-                border-radius:12px !important;
+                border-radius:11px !important;
             }
             body.quiz-active #qWord.quiz-word {
                 font-size:clamp(1.1rem, 5vw, 2rem) !important;
-                margin:4px 0 8px !important;
+                margin:4px 0 10px !important;
                 line-height:1.2;
             }
             body.quiz-active #qIpa { font-size:.75rem !important; }
+            /* Feedback và nút tiếp theo nằm sát dưới phần đáp án, không bị đẩy xuống đáy */
             body.quiz-active #feedbackOverlay {
                 padding:8px 12px !important;
                 font-size:.78rem !important;
-                margin-top:6px !important;
+                margin-top:8px !important;
                 flex-shrink:0;
             }
             body.quiz-active #nextReviewBtn {
-                padding:11px !important;
-                margin-top:6px !important;
+                padding:12px !important;
+                margin-top:8px !important;
                 font-size:.88rem !important;
                 flex-shrink:0;
             }
@@ -941,7 +943,7 @@
             <div class="quiz-card" style="padding:0;overflow:visible;">
                 <!-- Sticky word bank -->
                 <div class="fb-wordbank" id="fbWordbank">
-                    <div class="fb-wordbank-label">📦 Kéo hoặc nhấn chọn từ</div>
+                    <div class="fb-wordbank-label">👆 Nhấn vào từ để điền vào chỗ trống</div>
                     <div class="fb-words" id="fbChips"></div>
                 </div>
 
@@ -1992,8 +1994,48 @@ function openEditWord(word) {
     document.querySelectorAll('#editLevelBtns .level-btn').forEach(b => {
         b.classList.toggle('active', b.dataset.el === item.level);
     });
+    // Render topic list picker
+    _renderEditWordListPicker(item.word.toLowerCase());
     document.getElementById('editWordModal').classList.add('open');
     setTimeout(() => document.getElementById('editWordWord').focus(), 100);
+}
+
+function _renderEditWordListPicker(wordKey) {
+    const picker = document.getElementById('editWordListPicker');
+    if (!topicLists.length) {
+        picker.innerHTML = '<div style="font-size:.8rem;color:var(--muted);font-style:italic;">Chưa có danh sách nào.</div>';
+        return;
+    }
+    picker.innerHTML = topicLists.map(tl => {
+        const inList = (tl.wordIds || []).includes(wordKey);
+        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:10px;border:1.5px solid ${inList ? 'var(--success)' : 'var(--border)'};background:${inList ? 'var(--success-bg)' : 'var(--card)'};">
+            <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:1.1rem;">${tl.icon || '📋'}</span>
+                <span style="font-size:.83rem;font-weight:700;color:var(--text);">${tl.name}</span>
+                <span style="font-size:.65rem;color:var(--muted);">${(tl.wordIds||[]).length} từ</span>
+            </div>
+            ${inList
+                ? `<span style="font-size:.7rem;font-weight:800;color:var(--success);">✅ Đã có</span>`
+                : `<button onclick="addEditWordToList('${tl.id}')" style="font-size:.72rem;font-weight:800;color:var(--primary);background:var(--primary-light);border:none;border-radius:7px;padding:4px 10px;cursor:pointer;transition:.2s;" onmouseover="this.style.background='#d4dbff'" onmouseout="this.style.background='var(--primary-light)'">+ Thêm</button>`
+            }
+        </div>`;
+    }).join('');
+}
+
+async function addEditWordToList(listId) {
+    const wordKey = _editingWord.toLowerCase();
+    const tl = topicLists.find(t => t.id === listId);
+    if (!tl) return;
+    if ((tl.wordIds || []).includes(wordKey)) { showToast('💡 Từ đã có trong danh sách!'); return; }
+
+    tl.wordIds = [...(tl.wordIds || []), wordKey];
+    await db.collection('users').doc(currentUser.uid).collection('topicLists').doc(listId)
+        .update({ wordIds: tl.wordIds });
+
+    _renderEditWordListPicker(wordKey); // Re-render để cập nhật trạng thái
+    renderTopicLists();
+    populateReviewVocabSelect();
+    showToast(`✅ Đã thêm "${_editingWord}" vào "${tl.name}"!`);
 }
 
 function selectEditLevel(level) {
@@ -4604,24 +4646,26 @@ function clickChip(chip) {
     const blank = document.getElementById('fbBlank');
     if (!blank) return;
 
-    if (_fbSelectedChip && _fbSelectedChip !== chip) {
-        _fbSelectedChip.classList.remove('selected');
+    // Nếu từ này đang nằm trong blank → bấm lại để trả về bank
+    if (blank.dataset.filled === chip.dataset.word) {
+        returnWordToBank(blank.dataset.filled);
+        blank.textContent = '';
+        delete blank.dataset.filled;
+        blank.classList.add('empty');
+        return;
     }
 
-    // Nếu blank đang có từ → trả từ cũ về wordbank
-    const prevWord = blank.dataset.filled;
-    if (prevWord) returnWordToBank(prevWord);
+    // Nếu blank đang có từ khác → trả từ cũ về trước
+    if (blank.dataset.filled) returnWordToBank(blank.dataset.filled);
 
     // Điền từ mới vào blank
-    const word = chip.dataset.word;
-    blank.textContent   = chip.textContent;
-    blank.dataset.filled = word;
+    blank.textContent    = chip.textContent;
+    blank.dataset.filled = chip.dataset.word;
     blank.classList.remove('empty', 'highlight');
     blank.classList.add('pop');
     setTimeout(() => blank.classList.remove('pop'), 300);
 
     chip.classList.add('used');
-    chip.classList.remove('selected');
     _fbSelectedChip = null;
 }
 
@@ -4881,6 +4925,13 @@ function shuffle(arr){ return [...arr].sort(()=>Math.random()-.5); }
                     <button class="level-btn" data-el="B2" onclick="selectEditLevel('B2')">B2</button>
                     <button class="level-btn" data-el="C1" onclick="selectEditLevel('C1')">C1</button>
                     <button class="level-btn" data-el="C2" onclick="selectEditLevel('C2')">C2</button>
+                </div>
+            </div>
+            <!-- Thêm vào danh sách -->
+            <div>
+                <div class="section-label" style="margin-bottom:8px;">Thêm vào danh sách <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#94a3b8;">(tùy chọn)</span></div>
+                <div id="editWordListPicker" style="display:flex;flex-direction:column;gap:6px;">
+                    <div style="font-size:.8rem;color:var(--muted);font-style:italic;">Chưa có danh sách nào.</div>
                 </div>
             </div>
         </div>
