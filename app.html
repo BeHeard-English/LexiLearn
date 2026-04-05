@@ -1834,6 +1834,7 @@ auth.onAuthStateChanged(async user => {
         document.getElementById('mobileBottomNav').classList.remove('hidden');
         const xp = await getUserXP(); updateXPUI(xp);
         loadLibrary(); loadSRSDueCount();
+        switchTab('library');
     } else {
         ['loginBtn'].forEach(id=>document.getElementById(id).classList.remove('hidden'));
         ['userProfile','desktopTabs','xpNavWrap','xpProfileCard'].forEach(id=>document.getElementById(id).classList.add('hidden'));
