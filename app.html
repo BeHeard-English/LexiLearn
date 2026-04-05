@@ -2319,8 +2319,14 @@ document.querySelectorAll('.level-btn').forEach(btn=>btn.onclick=()=>btn.classLi
 
 async function loadSRSDueCount() {
     if(!currentUser) return;
-    const snap = await db.collection('users').doc(currentUser.uid).collection('vocabulary').where('correct_count','<',10).get();
-    const due = snap.docs.map(d=>d.data()).filter(i=>isDue(i));
+    const [snap, masteredSnap] = await Promise.all([
+        db.collection('users').doc(currentUser.uid).collection('vocabulary').where('correct_count','<',10).get(),
+        db.collection('users').doc(currentUser.uid).collection('vocabulary').where('correct_count','>=',10).get()
+    ]);
+    const due = [
+        ...snap.docs.map(d=>d.data()).filter(i=>isDue(i)),
+        ...masteredSnap.docs.map(d=>d.data()).filter(i=>isDue(i))
+    ];
     const box = document.getElementById('srsDueInfo');
     if(due.length>0){ document.getElementById('srsDueCount').innerText=due.length; box.style.display='block'; }
     else box.style.display='none';
@@ -2356,8 +2362,22 @@ async function startReviewQuiz() {
         } else {
             const tl = topicLists.find(t => t.id === vocabSource);
             const ids = tl ? (tl.wordIds || []) : [];
-            pool = pool.filter(i => ids.includes((i.word||'').toLowerCase()));
+            // Lấy cả từ đã thuộc đến hạn trong topic list
+            const masteredSnap = await db.collection('users').doc(currentUser.uid).collection('vocabulary')
+                .where('correct_count','>=',10).get();
+            const masteredDue = masteredSnap.docs.map(d=>d.data())
+                .filter(i=>levels.includes(i.level) && ids.includes((i.word||'').toLowerCase()) && isDue(i))
+                .map(i=>({...i, _isMastered:true}));
+            pool = [...pool.filter(i => ids.includes((i.word||'').toLowerCase())), ...masteredDue];
         }
+    } else {
+        // Nguồn "tất cả": bổ sung từ đã thuộc nhưng đến hạn SRS
+        const masteredSnap = await db.collection('users').doc(currentUser.uid).collection('vocabulary')
+            .where('correct_count','>=',10).get();
+        const masteredDue = masteredSnap.docs.map(d=>d.data())
+            .filter(i=>levels.includes(i.level) && isDue(i))
+            .map(i=>({...i, _isMastered:true}));
+        pool = [...pool, ...masteredDue];
     }
 
     if(pool.length<4){ showToast('⚠️ Cần tối thiểu 4 từ ở cấp đã chọn trong nguồn này!'); return; }
@@ -2507,8 +2527,9 @@ async function checkAnswer(btn, selected, correct, word) {
         trackAnswerStreak(false);
         trackSessionResult(false);
 
-        // Xử lý riêng cho nguồn "mastered": giảm correct_count
-        if (window._currentReviewSource === 'mastered') {
+        const _isMasteredWord = window._currentReviewSource === 'mastered' || !!reviewPool[currentReviewIdx]?._isMastered;
+        // Xử lý nguồn mastered: giảm correct_count
+        if (_isMasteredWord) {
             const currentCorrect = item.correct_count || 0;
             const newCorrect = Math.max(0, currentCorrect - 1);
             await ref.set({ correct_count: newCorrect, ...srs }, { merge: true });
@@ -2519,7 +2540,7 @@ async function checkAnswer(btn, selected, correct, word) {
         }
 
         // Nếu không phải mastered, đẩy từ về cuối để ôn lại (tối đa 1 lần)
-        if (window._currentReviewSource !== 'mastered') {
+        if (!_isMasteredWord) {
             const wordKey = word.toLowerCase();
             window._wordWrongCount[wordKey] = (window._wordWrongCount[wordKey] || 0) + 1;
             if (window._wordWrongCount[wordKey] < 2) {
@@ -3730,7 +3751,7 @@ async function rateFC(rating) {
         let skipWord = window._wordHardCount[word] >= 2;
 
         // Xử lý nguồn mastered: giảm correct_count
-        if (window._currentReviewSource === 'mastered') {
+        if (window._currentReviewSource === 'mastered' || target._isMastered) {
             const currentCorrect = item.correct_count || 0;
             const newCorrect = Math.max(0, currentCorrect - 1);
             await ref.set({ correct_count: newCorrect, ...srs }, { merge: true });
@@ -4572,8 +4593,7 @@ async function checkTypingAnswer() {
     checkBtn.disabled = true;
     checkBtn.style.display = 'none';
     nextBtn.style.display = 'flex';
-
-    let isCorrect = false;
+    nextBtn.disabled = true;
     const useAI = document.getElementById('useAIGrading')?.checked || false;
 
     // ── Bước 1: Kiểm tra nhanh bằng smartMatch (không cần gọi AI) ──────
@@ -4707,7 +4727,7 @@ Học sinh có hiểu đúng nghĩa không?`;
         trackSessionResult(false);
 
         let skipWord = false;
-        if (window._currentReviewSource === 'mastered') {
+        if (window._currentReviewSource === 'mastered' || target._isMastered) {
             const currentCorrect = item.correct_count || 0;
             const newCorrect = Math.max(0, currentCorrect - 1);
             await ref.set({ correct_count: newCorrect }, { merge: true });
@@ -4741,6 +4761,7 @@ Học sinh có hiểu đúng nghĩa không?`;
         window._typingProceed = null;
         proceed();
     };
+    nextBtn.disabled = false;
 }
 
 function typingEnterHandler(e) {
@@ -5069,7 +5090,9 @@ async function checkFillBlank() {
 
     _fbAnswered = true;
     document.getElementById('fbCheckBtn').style.display = 'none';
-    document.getElementById('fbNextBtn').style.display  = 'flex';
+    const fbNextBtn = document.getElementById('fbNextBtn');
+    fbNextBtn.style.display  = 'flex';
+    fbNextBtn.disabled = true;
     // Vô hiệu hoá chips
     document.querySelectorAll('.fb-chip').forEach(c => c.style.pointerEvents = 'none');
     blank.onclick = null;
@@ -5127,7 +5150,7 @@ async function checkFillBlank() {
         await recordWordReview(target.word, false);
         trackAnswerStreak(false); trackSessionResult(false);
 
-        if (window._currentReviewSource === 'mastered') {
+        if (window._currentReviewSource === 'mastered' || target._isMastered) {
             currentReviewIdx++;
         } else {
             const wordKey = target.word.toLowerCase();
@@ -5140,6 +5163,8 @@ async function checkFillBlank() {
             }
         }
     }
+    // Enable nút tiếp theo sau khi mọi xử lý hoàn tất
+    document.getElementById('fbNextBtn').disabled = false;
 }
 
 function nextFillBlank() {
