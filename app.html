@@ -16,13 +16,13 @@
             --accent:#4f8ef7;--accent-glow:rgba(79,142,247,.25);
             --success:#059669;--success-bg:#d1fae5;--danger:#dc2626;--danger-bg:#fee2e2;--warn:#d97706;
             --bg:#f4f6ff;--card:#fff;--border:#e2e7ff;--text:#0f172a;--muted:#64748b;
-            --nav-h:64px;--gold:#f59e0b;
+            --nav-h:64px;--gold:#f59e0b;--nav-bg:var(--primary);
         }
         *{box-sizing:border-box;}html{scroll-behavior:smooth;}
         body{font-family:'Be Vietnam Pro',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
 
         /* NAV */
-        .nav-bar{position:sticky;top:0;z-index:200;height:var(--nav-h);background:var(--primary);display:flex;align-items:center;justify-content:space-between;padding:0 20px;box-shadow:0 2px 20px rgba(3,19,131,.35);}
+        .nav-bar{position:sticky;top:0;z-index:200;height:var(--nav-h);background:var(--nav-bg);display:flex;align-items:center;justify-content:space-between;padding:0 20px;box-shadow:0 2px 20px rgba(3,19,131,.35);}
         .nav-logo{font-family:'Nunito',sans-serif;font-size:1.15rem;font-weight:800;color:#fff;display:flex;align-items:center;gap:10px;}
         .nav-logo-icon{width:34px;height:34px;background:rgba(255,255,255,.18);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:900;color:#fff;}
         .nav-logo span{color:#7eb8ff;}
@@ -51,6 +51,42 @@
         .xp-mini-bar-wrap{width:56px;height:5px;background:rgba(255,255,255,.2);border-radius:99px;overflow:hidden;}
         .xp-mini-bar-fill{height:100%;background:var(--gold);border-radius:99px;transition:width .5s ease;}
         @media(max-width:600px){.xp-nav-wrap{display:none;}}
+
+        /* COIN NAV */
+        .coin-nav-wrap{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:5px 10px;cursor:pointer;transition:.2s;}
+        .coin-nav-wrap:hover{background:rgba(255,255,255,.2);}
+        .coin-nav-val{font-family:'Nunito',sans-serif;font-size:.8rem;font-weight:900;color:#fde68a;white-space:nowrap;}
+        @media(max-width:520px){.coin-nav-wrap{display:none;}}
+
+        /* SHOP TAB */
+        .shop-header{background:linear-gradient(135deg,#1a1a2e,#16213e,#0f3460);border-radius:18px;padding:24px 28px;margin-bottom:24px;color:#fff;position:relative;overflow:hidden;}
+        .shop-header::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 70% 50%,rgba(139,92,246,.3) 0%,transparent 60%);pointer-events:none;}
+        .shop-coin-display{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:14px;padding:10px 18px;display:inline-flex;}
+        .shop-coin-big{font-family:'Nunito',sans-serif;font-size:2rem;font-weight:900;color:#fde68a;line-height:1;}
+        .theme-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
+        @media(max-width:600px){.theme-grid{grid-template-columns:1fr 1fr;gap:12px;}}
+        .theme-card{background:var(--card);border:2px solid var(--border);border-radius:18px;overflow:hidden;transition:.2s;position:relative;}
+        .theme-card:hover{transform:translateY(-3px);box-shadow:0 8px 28px rgba(0,0,0,.12);}
+        .theme-card.active-theme{border-color:#f59e0b;box-shadow:0 0 0 1px #f59e0b,0 8px 28px rgba(245,158,11,.2);}
+        .theme-preview{height:80px;position:relative;display:flex;overflow:hidden;}
+        .theme-preview-nav{height:22px;position:absolute;top:0;left:0;right:0;display:flex;align-items:center;padding:0 10px;gap:5px;}
+        .theme-preview-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.5);}
+        .theme-preview-body{position:absolute;bottom:0;left:0;right:0;height:60px;display:flex;gap:5px;padding:6px;}
+        .theme-preview-card{flex:1;border-radius:6px;opacity:.9;}
+        .theme-preview-card2{flex:2;border-radius:6px;opacity:.9;}
+        .theme-card-body{padding:14px 16px;}
+        .theme-name{font-family:'Nunito',sans-serif;font-weight:900;font-size:1rem;color:var(--text);margin-bottom:3px;}
+        .theme-desc{font-size:.72rem;color:var(--muted);margin-bottom:10px;line-height:1.4;}
+        .theme-price{display:inline-flex;align-items:center;gap:4px;font-size:.78rem;font-weight:800;color:#92400e;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:3px 9px;}
+        .theme-active-badge{position:absolute;top:8px;right:8px;background:#f59e0b;color:#fff;font-size:.6rem;font-weight:800;padding:3px 8px;border-radius:99px;text-transform:uppercase;letter-spacing:.06em;}
+        .theme-buy-btn{width:100%;margin-top:10px;padding:9px;border-radius:10px;border:none;font-family:inherit;font-weight:800;font-size:.82rem;cursor:pointer;transition:.2s;}
+        .theme-buy-btn.free,.theme-buy-btn.activate{background:var(--primary);color:#fff;}
+        .theme-buy-btn.activate{background:linear-gradient(135deg,#f59e0b,#d97706);}
+        .theme-buy-btn.current{background:var(--success-bg);color:var(--success);cursor:default;}
+        .theme-buy-btn.buy{background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;}
+        .theme-buy-btn.buy:hover{filter:brightness(1.1);transform:translateY(-1px);}
+        .theme-buy-btn.no-coin{background:#f1f5f9;color:#94a3b8;cursor:not-allowed;}
+        @keyframes coinPop{0%{transform:translateX(-50%) scale(.6);opacity:0;}60%{transform:translateX(-50%) scale(1.1);}100%{transform:translateX(-50%) scale(1);opacity:1;}}
 
         /* SETTINGS PANEL */
         .settings-panel{display:none;position:absolute;top:calc(var(--nav-h)+8px);right:16px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow:0 8px 32px rgba(3,19,131,.15);width:260px;z-index:300;}
@@ -529,9 +565,14 @@
             <button onclick="switchTab('review')" class="dtab" data-tab="review">Ôn Tập</button>
             <button onclick="switchTab('creator')" class="dtab" data-tab="creator">Soạn Bài</button>
             <button onclick="switchTab('games')" class="dtab" data-tab="games">🎮 Games</button>
+            <button onclick="switchTab('shop')" class="dtab" data-tab="shop">🛍 Shop</button>
         </div>
     </div>
     <div class="nav-right">
+        <div class="coin-nav-wrap hidden" id="coinNavWrap" onclick="switchTab('shop')" title="Xem cửa hàng">
+            <span style="font-size:1rem;line-height:1;">🪙</span>
+            <span class="coin-nav-val" id="coinNavVal">0</span>
+        </div>
         <div class="xp-nav-wrap hidden" id="xpNavWrap">
             <span id="xpNavLevel" class="xp-level-badge">Lv.1</span>
             <div class="xp-mini-bar-wrap"><div class="xp-mini-bar-fill" id="xpMiniBar" style="width:0%"></div></div>
@@ -1162,6 +1203,29 @@
         </div>
     </div>
 
+    <!-- ══ TAB SHOP ══ -->
+    <div id="tab-shop" class="hidden fade-in">
+        <!-- Header -->
+        <div class="shop-header">
+            <div style="position:relative;z-index:1;">
+                <div style="font-family:'Nunito',sans-serif;font-size:1.6rem;font-weight:900;margin-bottom:4px;">🛍 Cửa hàng</div>
+                <div style="font-size:.85rem;opacity:.8;margin-bottom:16px;">Dùng coin để mở khóa giao diện đặc biệt · 1 XP = 1 🪙</div>
+                <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+                    <div class="shop-coin-display">
+                        <span style="font-size:1.4rem;line-height:1;">🪙</span>
+                        <div>
+                            <div class="shop-coin-big" id="shopCoinBig">0</div>
+                            <div style="font-size:.65rem;opacity:.7;font-weight:700;text-transform:uppercase;letter-spacing:.06em;">Coins</div>
+                        </div>
+                    </div>
+                    <div style="font-size:.78rem;opacity:.65;line-height:1.5;">Coin kiếm được khi ôn tập.<br>Mua theme để trang trí giao diện!</div>
+                </div>
+            </div>
+        </div>
+        <!-- Theme grid -->
+        <div class="theme-grid" id="shopThemeGrid"></div>
+    </div>
+
 </main>
 
 <!-- MOBILE BOTTOM NAV -->
@@ -1181,6 +1245,10 @@
     <button onclick="switchTab('games')" class="mbtab" data-tab="games">
         <span class="mbtab-icon">🎮</span>
         <span class="mbtab-label">Games</span>
+    </button>
+    <button onclick="switchTab('shop')" class="mbtab" data-tab="shop">
+        <span class="mbtab-icon">🛍</span>
+        <span class="mbtab-label">Shop</span>
     </button>
 </div>
 
@@ -1599,13 +1667,14 @@ async function getUserXP() {
 }
 async function addXP(amount) {
     if (!currentUser) return;
-    _sessionXpEarned += amount; // track session XP
+    _sessionXpEarned += amount;
     await db.collection('users').doc(currentUser.uid).set({ xp: firebase.firestore.FieldValue.increment(amount) }, { merge:true });
     const xp = await getUserXP();
     updateXPUI(xp);
     showXPPop(amount);
-    // Kiểm tra badge XP ngay sau mỗi lần earn XP
     await checkAndAwardBadges(xp);
+    // Coin = XP, cộng đồng thời
+    await addCoins(amount);
 }
 function updateXPUI(xp) {
     const lv = lvFromXP(xp);
@@ -1624,6 +1693,157 @@ function showXPPop(amount) {
     el.innerText = `+${amount} XP ⚡`;
     document.body.appendChild(el);
     setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity .4s'; setTimeout(()=>el.remove(),400); }, 2000);
+}
+
+// ══════════════════════════════════════════
+// SHOP & THEMES
+// ══════════════════════════════════════════
+const THEMES = [
+  { id:'default',   name:'Mặc định',        emoji:'🔵', price:0,    desc:'Màu xanh navy cổ điển của LexiPro',
+    preview:['#031383','#f4f6ff','#ffffff'],
+    vars:{'--primary':'#031383','--primary-hover':'#0520b8','--primary-light':'#e8ecff','--primary-mid':'#3b52d4','--bg':'#f4f6ff','--card':'#ffffff','--border':'#e2e7ff','--text':'#0f172a','--muted':'#64748b','--success':'#059669','--success-bg':'#d1fae5','--danger':'#dc2626','--danger-bg':'#fee2e2','--nav-bg':'#031383','--gold':'#f59e0b'}},
+  { id:'dark',      name:'Dark Mode',        emoji:'🌙', price:200,  desc:'Giao diện tối huyền bí, bảo vệ mắt ban đêm',
+    preview:['#818cf8','#0f172a','#1e293b'],
+    vars:{'--primary':'#818cf8','--primary-hover':'#a5b4fc','--primary-light':'#1e1b4b','--primary-mid':'#6366f1','--bg':'#0f172a','--card':'#1e293b','--border':'#334155','--text':'#f1f5f9','--muted':'#94a3b8','--success':'#10b981','--success-bg':'#064e3b','--danger':'#f87171','--danger-bg':'#450a0a','--nav-bg':'#080d1a','--gold':'#fbbf24'}},
+  { id:'bluesky',   name:'Blue Sky',         emoji:'☀️', price:500,  desc:'Bầu trời trong xanh, mang lại cảm giác tươi mới',
+    preview:['#0284c7','#f0f9ff','#ffffff'],
+    vars:{'--primary':'#0284c7','--primary-hover':'#0369a1','--primary-light':'#e0f2fe','--primary-mid':'#0ea5e9','--bg':'#f0f9ff','--card':'#ffffff','--border':'#bae6fd','--text':'#0c4a6e','--muted':'#0369a1','--success':'#059669','--success-bg':'#d1fae5','--danger':'#dc2626','--danger-bg':'#fee2e2','--nav-bg':'#0369a1','--gold':'#f59e0b'}},
+  { id:'cherry',    name:'Cherry Blossom',   emoji:'🌸', price:1000,  desc:'Hoa anh đào, nhẹ nhàng và lãng mạn',
+    preview:['#db2777','#fff1f2','#ffffff'],
+    vars:{'--primary':'#be185d','--primary-hover':'#9d174d','--primary-light':'#fce7f3','--primary-mid':'#db2777','--bg':'#fff1f2','--card':'#ffffff','--border':'#fecdd3','--text':'#4c0519','--muted':'#be185d','--success':'#059669','--success-bg':'#d1fae5','--danger':'#dc2626','--danger-bg':'#fee2e2','--nav-bg':'#881337','--gold':'#f59e0b'}},
+  { id:'forest',    name:'Forest',           emoji:'🌿', price:1500,  desc:'Rừng xanh mát mẻ, tươi tắn và bình yên',
+    preview:['#16a34a','#f0fdf4','#ffffff'],
+    vars:{'--primary':'#166534','--primary-hover':'#14532d','--primary-light':'#dcfce7','--primary-mid':'#16a34a','--bg':'#f0fdf4','--card':'#ffffff','--border':'#bbf7d0','--text':'#052e16','--muted':'#166534','--success':'#15803d','--success-bg':'#dcfce7','--danger':'#dc2626','--danger-bg':'#fee2e2','--nav-bg':'#14532d','--gold':'#eab308'}},
+  { id:'sunset',    name:'Sunset',           emoji:'🌅', price:2000,  desc:'Hoàng hôn ấm áp, rực rỡ sắc cam và đỏ',
+    preview:['#ea580c','#fff7ed','#ffffff'],
+    vars:{'--primary':'#c2410c','--primary-hover':'#9a3412','--primary-light':'#ffedd5','--primary-mid':'#ea580c','--bg':'#fff7ed','--card':'#ffffff','--border':'#fed7aa','--text':'#431407','--muted':'#9a3412','--success':'#059669','--success-bg':'#d1fae5','--danger':'#dc2626','--danger-bg':'#fee2e2','--nav-bg':'#7c2d12','--gold':'#f59e0b'}},
+  { id:'ocean',     name:'Ocean Deep',       emoji:'🌊', price:2500,  desc:'Đại dương sâu thẳm, thanh khiết và cuốn hút',
+    preview:['#0891b2','#ecfeff','#ffffff'],
+    vars:{'--primary':'#0e7490','--primary-hover':'#0c5f73','--primary-light':'#cffafe','--primary-mid':'#06b6d4','--bg':'#ecfeff','--card':'#ffffff','--border':'#a5f3fc','--text':'#083344','--muted':'#0e7490','--success':'#059669','--success-bg':'#d1fae5','--danger':'#dc2626','--danger-bg':'#fee2e2','--nav-bg':'#0c4a5c','--gold':'#f59e0b'}},
+  { id:'galaxy',    name:'Galaxy',           emoji:'🌌', price:3000,  desc:'Dải ngân hà huyền bí — tối tăm và lộng lẫy',
+    preview:['#8b5cf6','#0d0d1a','#13122a'],
+    vars:{'--primary':'#8b5cf6','--primary-hover':'#7c3aed','--primary-light':'#2e1065','--primary-mid':'#a78bfa','--bg':'#0d0d1a','--card':'#13122a','--border':'#2d2b5c','--text':'#e9d5ff','--muted':'#a78bfa','--success':'#10b981','--success-bg':'#022c22','--danger':'#f87171','--danger-bg':'#2d0b0b','--nav-bg':'#070714','--gold':'#fbbf24'}},
+  { id:'rosegold',  name:'Rose Gold',        emoji:'✨', price:3500, desc:'Sang trọng, quyến rũ — phong cách đẳng cấp',
+    preview:['#db2777','#fdf2f8','#ffffff'],
+    vars:{'--primary':'#be185d','--primary-hover':'#9d174d','--primary-light':'#fce7f3','--primary-mid':'#db2777','--bg':'#fdf2f8','--card':'#ffffff','--border':'#fbcfe8','--text':'#500724','--muted':'#9d174d','--success':'#059669','--success-bg':'#d1fae5','--danger':'#dc2626','--danger-bg':'#fee2e2','--nav-bg':'#500724','--gold':'#d946ef'}},
+  { id:'midnight',  name:'Midnight Gold',    emoji:'👑', price:4000, desc:'Tối thượng — Đêm vàng xa hoa dành cho tinh hoa',
+    preview:['#f59e0b','#0c0a09','#1c1917'],
+    vars:{'--primary':'#d97706','--primary-hover':'#b45309','--primary-light':'#292524','--primary-mid':'#f59e0b','--bg':'#0c0a09','--card':'#1c1917','--border':'#44403c','--text':'#fef3c7','--muted':'#a8a29e','--success':'#10b981','--success-bg':'#022c22','--danger':'#f87171','--danger-bg':'#2d0b0b','--nav-bg':'#09090b','--gold':'#fbbf24'}},
+];
+
+let _userCoins      = 0;
+let _purchasedThemes = new Set(['default']);
+let _activeTheme    = 'default';
+
+async function loadUserShopData() {
+    if (!currentUser) return;
+    const doc = await db.collection('users').doc(currentUser.uid).get();
+    const data = doc.exists ? doc.data() : {};
+    _userCoins = data.coins || 0;
+    _purchasedThemes = new Set(['default', ...(data.purchasedThemes || [])]);
+    _activeTheme = data.activeTheme || 'default';
+    updateCoinUI();
+    applyTheme(_activeTheme);
+}
+
+function updateCoinUI() {
+    document.getElementById('coinNavVal').textContent = _userCoins.toLocaleString('vi-VN');
+    const big = document.getElementById('shopCoinBig');
+    if (big) big.textContent = _userCoins.toLocaleString('vi-VN');
+}
+
+async function addCoins(amount) {
+    if (!currentUser) return;
+    _userCoins += amount;
+    await db.collection('users').doc(currentUser.uid).set({ coins: firebase.firestore.FieldValue.increment(amount) }, { merge:true });
+    updateCoinUI();
+    // Floating coin pop
+    const el = document.createElement('div');
+    el.style.cssText = 'position:fixed;top:80px;right:100px;background:#1c1917;color:#fde68a;padding:8px 14px;border-radius:12px;font-weight:800;font-size:.85rem;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.3);animation:xpPop .6s ease both;pointer-events:none;';
+    el.innerText = `+${amount} 🪙`;
+    document.body.appendChild(el);
+    setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity .4s'; setTimeout(()=>el.remove(),400); }, 1800);
+}
+
+function applyTheme(themeId) {
+    const theme = THEMES.find(t => t.id === themeId) || THEMES[0];
+    const root = document.documentElement;
+    Object.entries(theme.vars).forEach(([k,v]) => root.style.setProperty(k, v));
+    _activeTheme = themeId;
+}
+
+function renderShop() {
+    const grid = document.getElementById('shopThemeGrid');
+    if (!grid) return;
+    updateCoinUI();
+    grid.innerHTML = THEMES.map(theme => {
+        const owned    = _purchasedThemes.has(theme.id);
+        const isCurrent = _activeTheme === theme.id;
+        const canAfford = _userCoins >= theme.price;
+        const [c1,c2,c3] = theme.preview;
+
+        let btnClass, btnText;
+        if (isCurrent)      { btnClass='current'; btnText='✅ Đang dùng'; }
+        else if (owned)     { btnClass='activate'; btnText='⚡ Kích hoạt'; }
+        else if (theme.price===0) { btnClass='free'; btnText='Dùng miễn phí'; }
+        else if (canAfford) { btnClass='buy'; btnText=`🛒 Mua · 🪙 ${theme.price.toLocaleString('vi-VN')}`; }
+        else                { btnClass='no-coin'; btnText=`🔒 Cần 🪙 ${theme.price.toLocaleString('vi-VN')}`; }
+
+        return `<div class="theme-card${isCurrent?' active-theme':''}">
+            ${isCurrent ? '<div class="theme-active-badge">Đang dùng</div>' : ''}
+            <div class="theme-preview" style="background:${c2};">
+                <div class="theme-preview-nav" style="background:${c1};">
+                    <div class="theme-preview-dot"></div><div class="theme-preview-dot"></div><div class="theme-preview-dot"></div>
+                </div>
+                <div class="theme-preview-body">
+                    <div class="theme-preview-card" style="background:${c3};"></div>
+                    <div class="theme-preview-card2" style="background:${c3};opacity:.7;"></div>
+                </div>
+            </div>
+            <div class="theme-card-body">
+                <div class="theme-name">${theme.emoji} ${theme.name}</div>
+                <div class="theme-desc">${theme.desc}</div>
+                ${theme.price > 0 ? `<div class="theme-price">🪙 ${theme.price.toLocaleString('vi-VN')} coins</div>` : '<div class="theme-price" style="background:#d1fae5;border-color:#6ee7b7;color:#065f46;">✨ Miễn phí</div>'}
+                <button class="theme-buy-btn ${btnClass}" onclick="handleThemeAction('${theme.id}')" ${btnClass==='no-coin'||btnClass==='current'?'disabled':''}>
+                    ${btnText}
+                </button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+async function handleThemeAction(themeId) {
+    const theme = THEMES.find(t => t.id === themeId);
+    if (!theme) return;
+    if (_activeTheme === themeId) return;
+
+    if (_purchasedThemes.has(themeId) || theme.price === 0) {
+        // Kích hoạt
+        _purchasedThemes.add(themeId);
+        _activeTheme = themeId;
+        applyTheme(themeId);
+        await db.collection('users').doc(currentUser.uid).set({ activeTheme: themeId, purchasedThemes: [..._purchasedThemes].filter(id=>id!=='default') }, { merge:true });
+        renderShop();
+        showToast(`🎨 Đã kích hoạt theme "${theme.name}"!`);
+    } else {
+        // Mua
+        if (_userCoins < theme.price) { showToast('🪙 Không đủ coin!'); return; }
+        const ok = confirm(`Mua theme "${theme.emoji} ${theme.name}" với giá 🪙 ${theme.price.toLocaleString('vi-VN')} coins?`);
+        if (!ok) return;
+        _userCoins -= theme.price;
+        _purchasedThemes.add(themeId);
+        _activeTheme = themeId;
+        applyTheme(themeId);
+        await db.collection('users').doc(currentUser.uid).set({
+            coins: firebase.firestore.FieldValue.increment(-theme.price),
+            activeTheme: themeId,
+            purchasedThemes: [..._purchasedThemes].filter(id=>id!=='default')
+        }, { merge:true });
+        updateCoinUI();
+        renderShop();
+        launchConfetti(2200);
+        showToast(`🎉 Mua thành công! Theme "${theme.name}" đã được kích hoạt!`);
+    }
 }
 
 // ══════════════════════════════════════════
@@ -1833,17 +2053,20 @@ auth.onAuthStateChanged(async user => {
         document.getElementById('userAvatar').src = user.photoURL;
         document.getElementById('desktopTabs').classList.remove('hidden');
         document.getElementById('xpNavWrap').classList.remove('hidden');
+        document.getElementById('coinNavWrap').classList.remove('hidden');
         document.getElementById('xpProfileCard').classList.remove('hidden');
         document.getElementById('mobileBottomNav').classList.remove('hidden');
         const xp = await getUserXP(); updateXPUI(xp);
         loadLibrary(); loadSRSDueCount();
+        await loadUserShopData();
         switchTab('library');
     } else {
         ['loginBtn'].forEach(id=>document.getElementById(id).classList.remove('hidden'));
-        ['userProfile','desktopTabs','xpNavWrap','xpProfileCard'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+        ['userProfile','desktopTabs','xpNavWrap','xpProfileCard','coinNavWrap'].forEach(id=>document.getElementById(id).classList.add('hidden'));
         document.getElementById('mobileBottomNav').classList.add('hidden');
         document.getElementById('progressChartCard').classList.add('hidden');
         document.getElementById('badgesCard').classList.add('hidden');
+        applyTheme('default');
         switchTab('library');
     }
 });
@@ -1856,13 +2079,12 @@ function switchTab(name) {
     const tab = document.getElementById('tab-'+name);
     tab.classList.remove('hidden');
     setTimeout(() => tab.classList.add('fade-in'), 10);
-    // Sync desktop tabs
     document.querySelectorAll('.dtab').forEach(b => { b.classList.remove('active'); if(b.dataset.tab===name) b.classList.add('active'); });
-    // Sync mobile bottom nav tabs
     document.querySelectorAll('.mbtab').forEach(b => { b.classList.remove('active'); if(b.dataset.tab===name) b.classList.add('active'); });
     if (name==='library') loadLibrary();
     if (name==='review')  { loadSRSDueCount(); if (!topicLists.length) loadTopicLists(); }
     if (name==='games')   { if (!topicLists.length) loadTopicLists(); updateGameWordCount(); }
+    if (name==='shop')    renderShop();
 }
 
 // ══════════════════════════════════════════
