@@ -2508,15 +2508,22 @@ function srsUpdate(item, correct) {
     next.setDate(next.getDate() + interval);
     return { srs_interval:interval, srs_ease:ease, srs_reps:reps, srs_next_review: firebase.firestore.Timestamp.fromDate(next) };
 }
+function _toDate(val) {
+    if (!val) return null;
+    if (typeof val.toDate === 'function') return val.toDate();           // Firestore Timestamp
+    if (val.seconds !== undefined) return new Date(val.seconds * 1000); // serialized từ localStorage
+    return new Date(val);                                                // string / number
+}
 function isDue(item) {
     if (!item.srs_next_review) return true;
-    const d = item.srs_next_review.toDate ? item.srs_next_review.toDate() : new Date(item.srs_next_review);
-    return d <= new Date();
+    const d = _toDate(item.srs_next_review);
+    return !d || isNaN(d) || d <= new Date();
 }
 function srsChip(item) {
     if (!item.srs_next_review) return `<span class="srs-due">⏰ Mới</span>`;
-    const d = item.srs_next_review.toDate ? item.srs_next_review.toDate() : new Date(item.srs_next_review);
-    const diff = Math.ceil((d - new Date())/(1000*60*60*24));
+    const d = _toDate(item.srs_next_review);
+    if (!d || isNaN(d)) return `<span class="srs-due">⏰ Mới</span>`;
+    const diff = Math.ceil((d - new Date()) / (1000*60*60*24));
     if (diff <= 0) return `<span class="srs-due">⏰ Hôm nay</span>`;
     return `<span class="srs-ok">✅ ${diff}d</span>`;
 }
