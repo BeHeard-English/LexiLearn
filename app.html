@@ -449,22 +449,29 @@
         @keyframes birdFlap{from{transform:scaleY(1)}to{transform:scaleY(.6)}}
 
         /* Ocean Deep — high contrast */
-        .ocean-bg{position:absolute;inset:0;background:linear-gradient(180deg,#00111f 0%,#01233a 28%,#043f5f 56%,#06698e 78%,#0a98b8 100%);}
+        .ocean-bg{position:absolute;inset:0;background:
+            radial-gradient(circle at 14% 14%,rgba(96,235,255,.17),transparent 35%),
+            radial-gradient(circle at 82% 10%,rgba(0,196,255,.14),transparent 34%),
+            linear-gradient(170deg,#000c1a 0%,#001a30 24%,#01385a 52%,#045f86 72%,#0597b6 100%);}
         .ocean-glow{position:absolute;inset:0;background:
-            radial-gradient(circle at 16% 18%,rgba(120,248,255,.18),transparent 42%),
-            radial-gradient(circle at 78% 8%,rgba(0,214,255,.14),transparent 36%),
-            linear-gradient(180deg,rgba(255,255,255,.08),transparent 46%);
-            mix-blend-mode:screen;opacity:.9;}
+            radial-gradient(ellipse at 50% 108%,rgba(0,229,255,.24),transparent 62%),
+            linear-gradient(180deg,rgba(140,250,255,.12) 0%,rgba(120,240,255,.04) 32%,transparent 58%);
+            mix-blend-mode:screen;opacity:.95;filter:blur(.2px);}
         .ocean-wave{position:absolute;left:-12%;width:124%;height:22%;border-radius:100% 100% 0 0/100% 100% 0 0;
-            background:linear-gradient(to top,rgba(14,165,233,.35),rgba(255,255,255,.08) 45%,rgba(255,255,255,0));
+            background:linear-gradient(to top,rgba(0,206,255,.42),rgba(180,247,255,.16) 44%,rgba(255,255,255,0) 74%);
+            box-shadow:0 0 34px rgba(0,226,255,.24),inset 0 12px 26px rgba(255,255,255,.08);
             filter:blur(1px);animation:oceanWaveDrift linear infinite, oceanWaveBreathe ease-in-out infinite;}
         .ocean-wave::after{content:'';position:absolute;left:0;right:0;bottom:-12%;height:55%;
-            background:radial-gradient(ellipse at 50% 100%,rgba(170,245,255,.35),transparent 65%);}
+            background:radial-gradient(ellipse at 50% 100%,rgba(170,245,255,.46),transparent 65%);}
+        .ocean-ribbon{position:absolute;left:-20%;width:140%;height:14%;border-radius:50%;
+            background:linear-gradient(90deg,rgba(0,255,255,.04),rgba(126,244,255,.32) 34%,rgba(0,228,255,.14) 56%,rgba(0,255,255,.04));
+            filter:blur(10px);mix-blend-mode:screen;animation:oceanRibbonFlow linear infinite;}
         @keyframes oceanWaveDrift{from{transform:translateX(-3.5%)}to{transform:translateX(3.5%)}}
-        @keyframes oceanWaveBreathe{0%,100%{opacity:.55}50%{opacity:.95}}
+        @keyframes oceanWaveBreathe{0%,100%{opacity:.5}50%{opacity:1}}
+        @keyframes oceanRibbonFlow{from{transform:translateX(-5%) scaleY(.96)}50%{transform:translateX(5%) scaleY(1.06)}to{transform:translateX(-5%) scaleY(.96)}}
         .ocean-bubble{position:absolute;bottom:-40px;border-radius:50%;
-            background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.95),rgba(140,242,255,.45) 52%,rgba(130,235,255,.1) 70%,transparent 100%);
-            box-shadow:0 0 10px rgba(120,240,255,.25);
+            background:radial-gradient(circle at 35% 28%,rgba(255,255,255,.98),rgba(156,246,255,.6) 48%,rgba(122,230,255,.14) 72%,transparent 100%);
+            box-shadow:0 0 16px rgba(120,240,255,.34),inset 0 0 12px rgba(255,255,255,.28);
             animation:oceanBubbleRise linear infinite, oceanBubbleDrift ease-in-out infinite;}
         @keyframes oceanBubbleRise{from{transform:translateY(0) scale(.85);opacity:0}12%{opacity:.75}to{transform:translateY(-110vh) scale(1.08);opacity:0}}
         @keyframes oceanBubbleDrift{0%,100%{margin-left:-4px}50%{margin-left:7px}}
@@ -1861,12 +1868,18 @@ function applyOceanEffect() {
     if (!layer) return;
 
     const waves = [
-        { bottom:'43%', h:'20%', durA:14, durB:4.8, op:.42, delay:-1.4 },
-        { bottom:'31%', h:'24%', durA:20, durB:6.4, op:.6,  delay:-2.3 },
-        { bottom:'17%', h:'27%', durA:26, durB:7.2, op:.82, delay:-3.1 },
+        { bottom:'48%', h:'17%', durA:13, durB:4.6, op:.34, delay:-1.2 },
+        { bottom:'39%', h:'20%', durA:17, durB:5.2, op:.46, delay:-1.9 },
+        { bottom:'29%', h:'24%', durA:22, durB:6.1, op:.62, delay:-2.6 },
+        { bottom:'15%', h:'30%', durA:28, durB:7.5, op:.84, delay:-3.5 },
+    ];
+    const ribbons = [
+        { top:'20%', dur:19, op:.38, delay:-4 },
+        { top:'32%', dur:27, op:.33, delay:-9 },
+        { top:'46%', dur:35, op:.27, delay:-14 },
     ];
     const bubbles = Array.from({ length: window.innerWidth < 640 ? 16 : 26 }, () => {
-        const size = 5 + Math.random() * 16;
+        const size = 10 + Math.random() * 24;
         const left = Math.random() * 100;
         const riseDur = 7 + Math.random() * 11;
         const swayDur = 2.2 + Math.random() * 3.6;
@@ -1878,6 +1891,9 @@ function applyOceanEffect() {
     layer.innerHTML =
         `<div class="ocean-bg"></div>` +
         `<div class="ocean-glow"></div>` +
+        ribbons.map(r =>
+            `<div class="ocean-ribbon" style="top:${r.top};opacity:${r.op};animation-duration:${r.dur}s;animation-delay:${r.delay}s;"></div>`
+        ).join('') +
         waves.map(w =>
             `<div class="ocean-wave" style="bottom:${w.bottom};height:${w.h};opacity:${w.op};animation-duration:${w.durA}s,${w.durB}s;animation-delay:${w.delay}s,-${(w.durB/2).toFixed(2)}s;"></div>`
         ).join('') +
