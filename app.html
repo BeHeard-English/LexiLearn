@@ -561,13 +561,56 @@
             animation:galaxyCometFly linear infinite;
         }
         @keyframes galaxyCometFly{
-            0%,84%{opacity:0;transform:translate3d(-20vw,-20vh,0) rotate(-25deg)}
-            88%{opacity:.98}
-            100%{opacity:0;transform:translate3d(120vw,95vh,0) rotate(-25deg)}
+            0%,84%{opacity:0;transform:translate3d(120vw,-20vh,0) rotate(-25deg)}
+            88%{opacity:.98;transform:translate3d(20vw,-5vh,0) rotate(-25deg)}
+            100%{opacity:0;transform:translate3d(-120vw,95vh,0) rotate(-25deg)}
         }
         @media (prefers-reduced-motion: reduce){
             .galaxy-nebula,.galaxy-star,.galaxy-comet{animation:none !important;}
             .galaxy-comet{display:none;}
+        }
+
+        /* Rose Gold — lux bokeh shimmer (lightweight) */
+        .rosegold-bg{
+            position:absolute;
+            inset:0;
+            background:
+                radial-gradient(ellipse at 18% 15%,rgba(190,24,93,.24),transparent 42%),
+                radial-gradient(ellipse at 78% 25%,rgba(217,70,239,.16),transparent 40%),
+                radial-gradient(ellipse at 55% 75%,rgba(255,255,255,.18),transparent 48%),
+                linear-gradient(180deg,rgba(190,24,93,.06) 0%,rgba(217,70,239,.04) 40%,rgba(255,255,255,.02) 100%);
+            opacity:1;
+        }
+        .rosegold-shimmer{
+            position:absolute;
+            inset:-25%;
+            background:linear-gradient(115deg,transparent 35%,rgba(255,255,255,.35) 45%,rgba(255,220,200,.22) 50%,rgba(255,255,255,0) 60%,transparent 68%);
+            opacity:.55;
+            mix-blend-mode:screen;
+            transform:translateX(-35%) rotate(0.001deg);
+            animation:rosegoldShimmerSweep 8s ease-in-out infinite;
+            will-change:transform,opacity;
+        }
+        @keyframes rosegoldShimmerSweep{
+            0%{transform:translateX(-35%) rotate(0.001deg);opacity:0;}
+            15%{opacity:.55;}
+            50%{transform:translateX(20%) rotate(0.001deg);opacity:.65;}
+            85%{opacity:.25;}
+            100%{transform:translateX(35%) rotate(0.001deg);opacity:0;}
+        }
+        .rosegold-bokeh{
+            position:absolute;
+            border-radius:50%;
+            animation:rosegoldBokehPulse 6s ease-in-out infinite;
+            will-change:opacity,transform;
+            pointer-events:none;
+        }
+        @keyframes rosegoldBokehPulse{
+            0%,100%{opacity:.12;transform:translate3d(0,0,0) scale(.9);}
+            50%{opacity:.75;transform:translate3d(0,-8px,0) scale(1);}
+        }
+        @media (prefers-reduced-motion: reduce){
+            .rosegold-shimmer,.rosegold-bokeh{animation:none !important;}
         }
         .streak-modal{display:none;position:fixed;inset:0;z-index:9100;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);pointer-events:none;align-items:center;justify-content:center;}
         .streak-modal.open{display:flex;pointer-events:auto;}
@@ -1942,6 +1985,7 @@ function applyThemeEffect(themeId) {
     else if (themeId === 'sunset') applySunsetEffect();
     else if (themeId === 'ocean') applyOceanEffect();
     else if (themeId === 'galaxy') applyGalaxyEffect();
+    else if (themeId === 'rosegold') applyRoseGoldEffect();
 }
 
 // ── Ocean Deep ───────────────────────────────────────────────────────
@@ -2281,7 +2325,7 @@ function applyGalaxyEffect() {
         const top = (8 + Math.random() * 20).toFixed(2);
         const dur = (10 + Math.random() * 8).toFixed(2);
         const delay = (i * 4 + Math.random() * 3).toFixed(2);
-        return `<div class="galaxy-comet" style="top:${top}%;left:-30%;animation-duration:${dur}s;animation-delay:-${delay}s;"></div>`;
+        return `<div class="galaxy-comet" style="top:${top}%;left:0%;animation-duration:${dur}s;animation-delay:-${delay}s;"></div>`;
     }).join('');
 
     layer.innerHTML =
@@ -2289,6 +2333,36 @@ function applyGalaxyEffect() {
         `<div class="galaxy-nebula"></div>` +
         stars +
         comets;
+}
+
+// ── Rose Gold — lux (bokeh + shimmer) ─────────────────────────────
+function applyRoseGoldEffect() {
+    const layer = document.getElementById('themeEffectLayer');
+    if (!layer) return;
+
+    const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const isMobile = window.innerWidth < 640;
+
+    const bokehCount = reduceMotion ? 0 : (isMobile ? 22 : 40);
+    const bokehDots = Array.from({ length: bokehCount }, () => {
+        const size = 4 + Math.random() * 14;
+        const left = Math.random() * 100;
+        const top = Math.random() * 100;
+        const op = 0.12 + Math.random() * 0.38;
+        const dur = 4.5 + Math.random() * 6.5;
+        const delay = -(Math.random() * dur);
+
+        // Keep palette within rose-gold family for consistency
+        const bg = Math.random() < 0.55 ? 'rgba(255,255,255,.95)' : 'rgba(255,205,220,.9)';
+        const glow = Math.random() < 0.5 ? 'rgba(190,24,93,.55)' : 'rgba(217,70,239,.45)';
+
+        return `<div class="rosegold-bokeh" style="left:${left}%;top:${top}%;width:${size}px;height:${size}px;background:${bg};opacity:${op};box-shadow:0 0 ${size * 2.2}px ${glow};animation-duration:${dur}s;animation-delay:${delay}s;"></div>`;
+    }).join('');
+
+    layer.innerHTML =
+        `<div class="rosegold-bg"></div>` +
+        `<div class="rosegold-shimmer"></div>` +
+        bokehDots;
 }
 // Also need sunsetCloudDrift keyframe (inline via CSS):
 if (!document.getElementById('sunsetCloudDriftStyle')) {
