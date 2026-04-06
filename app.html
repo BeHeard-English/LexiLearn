@@ -1023,6 +1023,14 @@
                     </table>
                 </div>
                 <div id="libEmpty" class="empty-state hidden"><div class="icon">🔍</div><p>Không tìm thấy từ nào</p></div>
+                <!-- Load more -->
+                <div id="libLoadMoreWrap" class="hidden" style="text-align:center;margin-top:14px;">
+                    <button id="libLoadMoreBtn" onclick="_libPage++;renderLibrary();" style="background:var(--primary-light);color:var(--primary);border:none;border-radius:12px;padding:10px 28px;font-family:inherit;font-weight:800;font-size:.85rem;cursor:pointer;transition:.2s;" onmouseover="this.style.background='var(--primary)';this.style.color='#fff'" onmouseout="this.style.background='var(--primary-light)';this.style.color='var(--primary)'">Xem thêm từ</button>
+                </div>
+                <!-- Cache refresh -->
+                <div style="text-align:right;margin-top:10px;">
+                    <button onclick="_clearCache();loadLibrary();showToast('🔄 Đã đồng bộ từ Firestore')" style="font-size:.68rem;color:var(--muted);background:none;border:none;cursor:pointer;padding:4px 8px;border-radius:6px;transition:.15s;" onmouseover="this.style.background='var(--primary-light)'" onmouseout="this.style.background='none'" title="Tải lại từ Firestore nếu dữ liệu không đồng bộ">🔄 Đồng bộ lại</button>
+                </div>
             </div>
         </div>
     </div>
@@ -1824,6 +1832,28 @@ let _reviewTransitioning = false; // Lock khi đang chuyển câu
 let reviewMode       = 'normal';
 let currentWord      = null;
 let fullLibrary      = [];
+const LIB_PAGE_SIZE  = 20;
+let   _libPage       = 1;
+// ── Vocab cache helpers (localStorage) ──────────────────────────────
+const CACHE_TTL_MS   = 2 * 60 * 60 * 1000; // 2 giờ
+function _cacheKey()  { return currentUser ? `lp_vocab_${currentUser.uid}` : null; }
+function _saveCache(data) {
+    const k = _cacheKey(); if (!k) return;
+    try { localStorage.setItem(k, JSON.stringify({ ts: Date.now(), data })); } catch(e) {}
+}
+function _loadCache() {
+    const k = _cacheKey(); if (!k) return null;
+    try {
+        const raw = localStorage.getItem(k); if (!raw) return null;
+        const obj = JSON.parse(raw);
+        if (Date.now() - obj.ts > CACHE_TTL_MS) { localStorage.removeItem(k); return null; }
+        return obj.data;
+    } catch(e) { return null; }
+}
+function _clearCache() { const k = _cacheKey(); if (k) localStorage.removeItem(k); }
+
+// ── In-memory user state (tránh đọc user doc nhiều lần) ─────────────
+let _cachedXP = 0;
 let activeLibLevel   = 'ALL';
 let libQuery         = '';
 let _waitingForNext = false;
@@ -1846,18 +1876,17 @@ function xpProgress(xp) {
     return { pct: Math.round(((xp-base)/(next-base))*100), remaining: next-xp, nextLv: lv+1 };
 }
 async function getUserXP() {
-    if (!currentUser) return 0;
-    const doc = await db.collection('users').doc(currentUser.uid).get();
-    return (doc.exists && doc.data().xp) || 0;
+    // Trả về giá trị in-memory, KHÔNG đọc Firestore nữa
+    return _cachedXP;
 }
 async function addXP(amount) {
     if (!currentUser) return;
     _sessionXpEarned += amount;
+    _cachedXP += amount; // cập nhật local ngay, không cần re-fetch
     await db.collection('users').doc(currentUser.uid).set({ xp: firebase.firestore.FieldValue.increment(amount) }, { merge:true });
-    const xp = await getUserXP();
-    updateXPUI(xp);
+    updateXPUI(_cachedXP);
     showXPPop(amount);
-    await checkAndAwardBadges(xp);
+    await checkAndAwardBadges(_cachedXP);
     // Coin = XP, cộng đồng thời
     await addCoins(amount);
 }
@@ -1922,13 +1951,28 @@ let _activeTheme    = 'default';
 
 async function loadUserShopData() {
     if (!currentUser) return;
-    const doc = await db.collection('users').doc(currentUser.uid).get();
+    // ── Đọc user doc DUY NHẤT 1 lần — populate XP, coins, theme, badges ──
+    const doc  = await db.collection('users').doc(currentUser.uid).get();
     const data = doc.exists ? doc.data() : {};
-    _userCoins = data.coins || 0;
+
+    // XP
+    _cachedXP = data.xp || 0;
+    updateXPUI(_cachedXP);
+
+    // Coins + Theme
+    _userCoins       = data.coins || 0;
     _purchasedThemes = new Set(['default', ...(data.purchasedThemes || [])]);
-    _activeTheme = data.activeTheme || 'default';
+    _activeTheme     = data.activeTheme || 'default';
     updateCoinUI();
     applyTheme(_activeTheme);
+
+    // Badges (dùng data vừa đọc, không gọi Firestore thêm)
+    const saved = data.badges || [];
+    const extra = data.badgeExtra || {};
+    _unlockedBadges = new Set(saved);
+    _extraBadgeData = { perfectStreak:0, perfectSession:false, importedDocx:false, speedReview:false, ...extra };
+    await checkAndAwardBadges(_cachedXP);
+    renderBadges();
 }
 
 function updateCoinUI() {
@@ -2702,9 +2746,8 @@ auth.onAuthStateChanged(async user => {
         document.getElementById('coinNavWrap').classList.remove('hidden');
         document.getElementById('xpProfileCard').classList.remove('hidden');
         document.getElementById('mobileBottomNav').classList.remove('hidden');
-        const xp = await getUserXP(); updateXPUI(xp);
+        await loadUserShopData(); // đọc user doc 1 lần duy nhất (XP + coins + theme + badges)
         loadLibrary(); loadSRSDueCount();
-        await loadUserShopData();
         switchTab('library');
     } else {
         ['loginBtn'].forEach(id=>document.getElementById(id).classList.remove('hidden'));
@@ -2818,6 +2861,7 @@ async function saveVocabToDb(data) {
         batch.set(ref, { ...item, correct_count:firebase.firestore.FieldValue.increment(0), incorrect_count:firebase.firestore.FieldValue.increment(0), srs_interval:1, srs_ease:2.5, srs_reps:0, srs_next_review:firebase.firestore.Timestamp.fromDate(new Date()), last_updated:firebase.firestore.FieldValue.serverTimestamp() }, {merge:true});
     });
     await batch.commit();
+    _clearCache(); // cache cũ không còn đúng sau khi thêm từ mới
 }
 
 // ══════════════════════════════════════════
@@ -2825,15 +2869,22 @@ async function saveVocabToDb(data) {
 // ══════════════════════════════════════════
 async function loadLibrary() {
     if(!currentUser) return;
-    const snap = await db.collection('users').doc(currentUser.uid).collection('vocabulary').get();
-    fullLibrary = snap.docs.map(d=>d.data());
+    const cached = _loadCache();
+    if (cached) {
+        fullLibrary = cached;
+    } else {
+        const snap = await db.collection('users').doc(currentUser.uid).collection('vocabulary').get();
+        fullLibrary = snap.docs.map(d => d.data());
+        _saveCache(fullLibrary);
+    }
+    _libPage = 1;
     await syncAllTopicListWordIds();
     renderLibrary();
-    const xp = await getUserXP(); updateXPUI(xp);
+    updateXPUI(_cachedXP);
     renderProgressChart();
-    loadBadges(xp);
+    loadBadges(_cachedXP);
     loadTopicLists();
-    updateGameWordCount(); // Đảm bảo số từ trong Games tab luôn được cập nhật
+    updateGameWordCount();
     await fetchAllStreakData();
     updateStreakDisplay();
 }
@@ -2860,9 +2911,19 @@ function renderLibrary() {
 
     const tbody = document.getElementById('libraryTableBody');
     const empty = document.getElementById('libEmpty');
-    if(!list.length) { tbody.innerHTML=''; empty.classList.remove('hidden'); return; }
+    const loadMoreWrap = document.getElementById('libLoadMoreWrap');
+
+    if(!list.length) {
+        tbody.innerHTML=''; empty.classList.remove('hidden');
+        if(loadMoreWrap) loadMoreWrap.classList.add('hidden');
+        return;
+    }
     empty.classList.add('hidden');
-    tbody.innerHTML = list.map(item => `
+
+    const visible = list.slice(0, _libPage * LIB_PAGE_SIZE);
+    const hasMore  = visible.length < list.length;
+
+    tbody.innerHTML = visible.map(item => `
         <tr>
             <td>
                 <div style="display:flex;align-items:center;gap:6px;">
@@ -2891,13 +2952,23 @@ function renderLibrary() {
                 </div>
             </td>
         </tr>`).join('');
+
+    if (loadMoreWrap) {
+        if (hasMore) {
+            loadMoreWrap.classList.remove('hidden');
+            document.getElementById('libLoadMoreBtn').textContent =
+                `Xem thêm ${Math.min(LIB_PAGE_SIZE, list.length - visible.length)} từ (còn ${list.length - visible.length})`;
+        } else {
+            loadMoreWrap.classList.add('hidden');
+        }
+    }
 }
 
-document.getElementById('libSearch').oninput = e => { libQuery=e.target.value; renderLibrary(); };
+document.getElementById('libSearch').oninput = e => { libQuery=e.target.value; _libPage=1; renderLibrary(); };
 document.getElementById('libLevelFilters').onclick = e => {
     const btn = e.target.closest('.lib-filter-btn'); if(!btn) return;
     document.querySelectorAll('.lib-filter-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active'); activeLibLevel=btn.dataset.lf; renderLibrary();
+    btn.classList.add('active'); activeLibLevel=btn.dataset.lf; _libPage=1; renderLibrary();
 };
 
 async function deleteWord(word) {
@@ -2917,6 +2988,7 @@ async function deleteWord(word) {
     }
     // Cập nhật fullLibrary và giao diện
     fullLibrary = fullLibrary.filter(i => i.word.toLowerCase() !== wordKey);
+    _saveCache(fullLibrary);
     renderLibrary();
     renderTopicLists();
     populateReviewVocabSelect();
@@ -3031,6 +3103,7 @@ async function saveEditWord() {
 
         showToast(`✅ Đã cập nhật "${newWord}"`);
         closeEditWord();
+        _clearCache();
         loadLibrary();
     } catch(e) {
         console.error(e);
@@ -3203,14 +3276,14 @@ document.querySelectorAll('.level-btn').forEach(btn=>btn.onclick=()=>btn.classLi
 
 async function loadSRSDueCount() {
     if(!currentUser) return;
-    const [snap, masteredSnap] = await Promise.all([
-        db.collection('users').doc(currentUser.uid).collection('vocabulary').where('correct_count','<',10).get(),
-        db.collection('users').doc(currentUser.uid).collection('vocabulary').where('correct_count','>=',10).get()
-    ]);
-    const due = [
-        ...snap.docs.map(d=>d.data()).filter(i=>isDue(i)),
-        ...masteredSnap.docs.map(d=>d.data()).filter(i=>isDue(i))
-    ];
+    // Dùng fullLibrary đã có trong RAM — không đọc Firestore
+    if (!fullLibrary.length) {
+        // fullLibrary chưa load (hiếm gặp): load cache hoặc skip
+        const cached = _loadCache();
+        if (cached) fullLibrary = cached;
+        else return; // chưa có dữ liệu, bỏ qua
+    }
+    const due = fullLibrary.filter(i => isDue(i));
     const box = document.getElementById('srsDueInfo');
     if(due.length>0){ document.getElementById('srsDueCount').innerText=due.length; box.style.display='block'; }
     else box.style.display='none';
@@ -3234,32 +3307,25 @@ async function startReviewQuiz() {
     window._typingProceed = null;
     window._sessionReviewedWords = new Set(); // Chỉ đếm mỗi từ 1 lần/session
 
-    const snap = await db.collection('users').doc(currentUser.uid).collection('vocabulary').where('correct_count','<',10).get();
+    const snap = { docs: fullLibrary.filter(i => (i.correct_count||0) < 10).map(d => ({ data: () => d })) };
     let pool = snap.docs.map(d=>d.data()).filter(i=>levels.includes(i.level));
 
     // Xử lý nguồn từ vựng
     if (vocabSource !== 'all') {
         if (vocabSource === 'mastered') {
-            const masteredSnap = await db.collection('users').doc(currentUser.uid).collection('vocabulary')
-                .where('correct_count','>=',10).get();
-            pool = masteredSnap.docs.map(d=>d.data()).filter(i=>levels.includes(i.level));
+            pool = fullLibrary.filter(i => (i.correct_count||0) >= 10 && levels.includes(i.level));
         } else {
             const tl = topicLists.find(t => t.id === vocabSource);
             const ids = tl ? (tl.wordIds || []) : [];
-            // Lấy cả từ đã thuộc đến hạn trong topic list
-            const masteredSnap = await db.collection('users').doc(currentUser.uid).collection('vocabulary')
-                .where('correct_count','>=',10).get();
-            const masteredDue = masteredSnap.docs.map(d=>d.data())
-                .filter(i=>levels.includes(i.level) && ids.includes((i.word||'').toLowerCase()) && isDue(i))
+            const masteredDue = fullLibrary
+                .filter(i => (i.correct_count||0) >= 10 && levels.includes(i.level) && ids.includes((i.word||'').toLowerCase()) && isDue(i))
                 .map(i=>({...i, _isMastered:true}));
             pool = [...pool.filter(i => ids.includes((i.word||'').toLowerCase())), ...masteredDue];
         }
     } else {
         // Nguồn "tất cả": bổ sung từ đã thuộc nhưng đến hạn SRS
-        const masteredSnap = await db.collection('users').doc(currentUser.uid).collection('vocabulary')
-            .where('correct_count','>=',10).get();
-        const masteredDue = masteredSnap.docs.map(d=>d.data())
-            .filter(i=>levels.includes(i.level) && isDue(i))
+        const masteredDue = fullLibrary
+            .filter(i => (i.correct_count||0) >= 10 && levels.includes(i.level) && isDue(i))
             .map(i=>({...i, _isMastered:true}));
         pool = [...pool, ...masteredDue];
     }
@@ -3379,8 +3445,7 @@ async function checkAnswer(btn, selected, correct, word) {
     const allBtns = document.querySelectorAll('.choice-btn');
     const overlay = document.getElementById('feedbackOverlay');
     const ref     = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(word.toLowerCase());
-    const snap    = await ref.get();
-    const item    = snap.exists ? snap.data() : {};
+    const item    = fullLibrary.find(i => i.word.toLowerCase() === word.toLowerCase()) || {};
 
     allBtns.forEach(b=>b.disabled=true);
 
@@ -3418,6 +3483,7 @@ async function checkAnswer(btn, selected, correct, word) {
             const newCorrect = Math.max(0, currentCorrect - 1);
             await ref.set({ correct_count: newCorrect, ...srs }, { merge: true });
             fullLibrary = fullLibrary.map(i => i.word === word ? {...i, correct_count: newCorrect} : i);
+            _saveCache(fullLibrary);
         } else {
             // Nguồn bình thường: tăng incorrect_count, áp dụng SRS
             await ref.set({ incorrect_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
@@ -3982,24 +4048,14 @@ async function openTopicListDetail(listId) {
     document.getElementById('topicDetailModal').classList.add('open');
     closeIconPicker(); // đảm bảo picker đóng khi mở modal mới
 
-    // Luôn fetch fresh từ Firestore để tránh dùng cache cũ
-    const [tlSnap, vocabSnap] = await Promise.all([
-        db.collection('users').doc(currentUser.uid).collection('topicLists').doc(listId).get(),
-        db.collection('users').doc(currentUser.uid).collection('vocabulary').get()
-    ]);
+    // Chỉ fetch topicList doc (1 read) — vocab dùng fullLibrary đã có trong RAM
+    const tlSnap = await db.collection('users').doc(currentUser.uid).collection('topicLists').doc(listId).get();
 
     // Cập nhật wordIds local từ Firestore
     const freshWordIds = (tlSnap.exists && tlSnap.data().wordIds) || [];
     tl.wordIds = freshWordIds;
 
-    // Cập nhật fullLibrary để chắc chắn có đủ từ
-    const freshVocab = vocabSnap.docs.map(d => d.data());
-    // Merge vào fullLibrary: giữ từ cũ, bổ sung từ mới
-    const existingKeys = new Set(fullLibrary.map(w => w.word?.toLowerCase()));
-    freshVocab.forEach(w => {
-        if (!existingKeys.has(w.word?.toLowerCase())) fullLibrary.push(w);
-    });
-
+    // fullLibrary đã đủ, không cần fetch thêm
     document.getElementById('tdCount').textContent = `${freshWordIds.length} từ vựng`;
     renderTopicDetailTable(freshWordIds);
 
@@ -4645,8 +4701,7 @@ async function rateFC(rating) {
     const target = reviewPool[currentReviewIdx];
     const word   = target.word.toLowerCase();
     const ref    = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(word);
-    const snap   = await ref.get();
-    const item   = snap.exists ? snap.data() : {};
+    const item   = fullLibrary.find(i => i.word.toLowerCase() === word) || {};
 
     const isCorrect = (rating !== 'hard');
     const srs = srsUpdate(item, isCorrect);
@@ -4683,6 +4738,7 @@ async function rateFC(rating) {
             const newCorrect = Math.max(0, currentCorrect - 1);
             await ref.set({ correct_count: newCorrect, ...srs }, { merge: true });
             fullLibrary = fullLibrary.map(i => i.word === word ? {...i, correct_count: newCorrect} : i);
+            _saveCache(fullLibrary);
             skipWord = true; // Bỏ qua từ này, không đưa về cuối
         } else {
             await ref.set({ incorrect_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
@@ -5094,12 +5150,8 @@ let _sessionXpEarned = 0;
 let _sessionWrongWords = [];
 
 async function loadBadges(xp) {
-    if (!currentUser) return;
-    const doc = await db.collection('users').doc(currentUser.uid).get();
-    const saved = (doc.exists && doc.data().badges) || [];
-    const extra = (doc.exists && doc.data().badgeExtra) || {};
-    _unlockedBadges = new Set(saved);
-    _extraBadgeData = { perfectStreak:0, perfectSession:false, importedDocx:false, speedReview:false, ...extra };
+    // Data (_unlockedBadges, _extraBadgeData) đã được load bởi loadUserShopData()
+    // Không cần đọc Firestore thêm, chỉ re-check và render
     await checkAndAwardBadges(xp);
     renderBadges();
 }
@@ -5633,8 +5685,7 @@ Học sinh có hiểu đúng nghĩa không?`;
     }
 
     const ref = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(target.word.toLowerCase());
-    const snap = await ref.get();
-    const item = snap.exists ? snap.data() : {};
+    const item = fullLibrary.find(i => i.word.toLowerCase() === target.word.toLowerCase()) || {};
     const srs = srsUpdate(item, isCorrect);
 
     if (isCorrect) {
@@ -5674,6 +5725,7 @@ Học sinh có hiểu đúng nghĩa không?`;
             const newCorrect = Math.max(0, currentCorrect - 1);
             await ref.set({ correct_count: newCorrect }, { merge: true });
             fullLibrary = fullLibrary.map(i => i.word === target.word ? {...i, correct_count: newCorrect} : i);
+            _saveCache(fullLibrary);
             skipWord = true;
         } else if (wrongCount >= 2) {
             skipWord = true;
@@ -6063,8 +6115,7 @@ async function checkFillBlank() {
         playFeedback(true);
 
         const ref  = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(target.word.toLowerCase());
-        const snap = await ref.get();
-        const item = snap.exists ? snap.data() : {};
+        const item = fullLibrary.find(i => i.word.toLowerCase() === target.word.toLowerCase()) || {};
         const srs  = srsUpdate(item, true);
         await ref.set({ correct_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
         await addXP(10); await recordWordReview(target.word, true);
@@ -6085,8 +6136,7 @@ async function checkFillBlank() {
         }
 
         const ref  = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(target.word.toLowerCase());
-        const snap = await ref.get();
-        const item = snap.exists ? snap.data() : {};
+        const item = fullLibrary.find(i => i.word.toLowerCase() === target.word.toLowerCase()) || {};
         const srs  = srsUpdate(item, false);
         await ref.set({ incorrect_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
         await recordWordReview(target.word, false);
