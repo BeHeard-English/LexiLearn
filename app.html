@@ -16,6 +16,7 @@
             --accent:#4f8ef7;--accent-glow:rgba(79,142,247,.25);
             --success:#059669;--success-bg:#d1fae5;--danger:#dc2626;--danger-bg:#fee2e2;--warn:#d97706;
             --bg:#f4f6ff;--card:#fff;--border:#e2e7ff;--text:#0f172a;--muted:#64748b;
+            --input-bg:#ffffff;--input-bg-focus:#ffffff;--input-text:#0f172a;--placeholder:#64748b;
             --nav-h:64px;--gold:#f59e0b;--nav-bg:var(--primary);
         }
         *{box-sizing:border-box;}html{scroll-behavior:smooth;}
@@ -35,6 +36,16 @@
         .key-wrap{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:4px 4px 4px 10px;}
         .key-wrap input{background:transparent;border:none;outline:none;color:#fff;font-size:.75rem;width:130px;}
         .key-wrap input::placeholder{color:rgba(255,255,255,.4);}
+        input,textarea,select{color:var(--input-text);}
+        input::placeholder,textarea::placeholder{color:var(--placeholder);opacity:.96;}
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus,
+        textarea:-webkit-autofill{
+            -webkit-text-fill-color:var(--input-text);
+            box-shadow:0 0 0 1000px var(--input-bg-focus) inset;
+            transition:background-color 5000s ease-in-out 0s;
+        }
         .key-save-btn{background:rgba(255,255,255,.2);border:none;border-radius:7px;padding:5px 8px;cursor:pointer;color:#fff;transition:.2s;}
         .key-save-btn:hover{background:rgba(255,255,255,.35);}
         @media(max-width:480px){.key-wrap{display:none;}}
@@ -280,8 +291,8 @@
         }
 
         /* LIBRARY */
-        .lib-search{width:100%;padding:10px 14px 10px 38px;border:2px solid var(--border);border-radius:12px;font-family:inherit;font-size:.88rem;outline:none;transition:.2s;background:#fafbff;}
-        .lib-search:focus{border-color:var(--primary-mid);background:#fff;box-shadow:0 0 0 3px var(--accent-glow);}
+        .lib-search{width:100%;padding:10px 14px 10px 38px;border:2px solid var(--border);border-radius:12px;font-family:inherit;font-size:.88rem;outline:none;transition:.2s;background:var(--input-bg);color:var(--input-text);}
+        .lib-search:focus{border-color:var(--primary-mid);background:var(--input-bg-focus);box-shadow:0 0 0 3px var(--accent-glow);}
         .lib-filter-btn{padding:7px 14px;border-radius:10px;font-size:.78rem;font-weight:700;border:2px solid var(--border);background:var(--card);color:var(--muted);cursor:pointer;transition:.2s;}
         .lib-filter-btn.active{background:var(--primary);border-color:var(--primary);color:#fff;}
         .lib-filter-btn:hover:not(.active){border-color:var(--primary-mid);color:var(--primary);background:var(--primary-light);}
@@ -301,8 +312,8 @@
         .stat-num{font-family:'Nunito',sans-serif;font-size:2.2rem;font-weight:800;color:var(--primary);}
 
         /* INPUT */
-        .txt-input{width:100%;padding:14px 16px;background:#f8faff;border:2px solid var(--border);border-radius:12px;font-family:inherit;font-size:.9rem;color:var(--text);outline:none;resize:none;transition:.2s;}
-        .txt-input:focus{border-color:var(--primary-mid);background:#fff;box-shadow:0 0 0 4px var(--accent-glow);}
+        .txt-input{width:100%;padding:14px 16px;background:var(--input-bg);border:2px solid var(--border);border-radius:12px;font-family:inherit;font-size:.9rem;color:var(--input-text);outline:none;resize:none;transition:.2s;}
+        .txt-input:focus{border-color:var(--primary-mid);background:var(--input-bg-focus);box-shadow:0 0 0 4px var(--accent-glow);}
 
         /* GRID */
         .creator-grid{display:grid;grid-template-columns:1fr;gap:20px;}
@@ -359,8 +370,9 @@
         .tl-close-btn:hover{background:#d4dbff;}
 
         /* ── VOCAB SOURCE SELECT ── */
-        .vocab-source-select{width:100%;padding:11px 14px;border:2px solid var(--border);border-radius:12px;font-family:inherit;font-size:.88rem;color:var(--text);background:var(--card);outline:none;cursor:pointer;transition:.2s;}
+        .vocab-source-select{width:100%;padding:11px 14px;border:2px solid var(--border);border-radius:12px;font-family:inherit;font-size:.88rem;color:var(--input-text);background:var(--input-bg);outline:none;cursor:pointer;transition:.2s;}
         .vocab-source-select:focus{border-color:var(--primary-mid);box-shadow:0 0 0 3px var(--accent-glow);}
+        .vocab-source-select option{background:var(--input-bg-focus);color:var(--input-text);}
 
         /* ── TOPIC DETAIL TABLE ── */
         .td-table{width:100%;border-collapse:collapse;}
@@ -802,7 +814,7 @@
 <div class="settings-panel" id="settingsPanel">
     <p class="section-label">Nhập Key</p>
     <div style="display:flex;gap:8px;">
-        <input type="password" id="apiKeyMobile" placeholder="Nhập Key tại đây" style="flex:1;padding:9px 12px;border:2px solid var(--border);border-radius:10px;font-family:inherit;font-size:.82rem;outline:none;">
+        <input type="password" id="apiKeyMobile" placeholder="Nhập Key tại đây" style="flex:1;padding:9px 12px;border:2px solid var(--border);border-radius:10px;font-family:inherit;font-size:.82rem;outline:none;background:var(--input-bg);color:var(--input-text);">
         <button id="saveKeyMobileBtn" class="btn-primary" style="padding:9px 14px;border-radius:10px;">Lưu</button>
     </div>
     <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
@@ -1961,6 +1973,10 @@ function applyTheme(themeId) {
     const theme = THEMES.find(t => t.id === themeId) || THEMES[0];
     const root = document.documentElement;
     Object.entries(theme.vars).forEach(([k,v]) => root.style.setProperty(k, v));
+    root.style.setProperty('--input-bg', theme.vars['--card'] || '#ffffff');
+    root.style.setProperty('--input-bg-focus', theme.vars['--card'] || '#ffffff');
+    root.style.setProperty('--input-text', theme.vars['--text'] || '#0f172a');
+    root.style.setProperty('--placeholder', theme.vars['--muted'] || '#64748b');
     _activeTheme = themeId;
     applyThemeEffect(themeId);
 }
@@ -6216,7 +6232,7 @@ async function syncAllTopicListWordIds() {
             <!-- Từ gốc -->
             <div>
                 <div class="section-label" style="margin-bottom:6px;">Từ vựng</div>
-                <input id="editWordWord" class="txt-input" placeholder="Nhập từ tiếng Anh..." style="padding:11px 14px;font-family:'Nunito',sans-serif;font-size:1.1rem;font-weight:800;color:var(--primary);">
+                <input id="editWordWord" class="txt-input" placeholder="Nhập từ tiếng Anh..." style="padding:11px 14px;font-family:'Nunito',sans-serif;font-size:1.1rem;font-weight:800;color:var(--input-text);">
                 <div style="font-size:.72rem;color:var(--muted);margin-top:5px;">⚠️ Thay đổi từ gốc sẽ tạo bản ghi mới và xoá bản cũ.</div>
             </div>
             <!-- Phiên âm -->
