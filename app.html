@@ -448,6 +448,27 @@
         .sky-bird svg{animation:birdFlap .5s ease-in-out infinite alternate;}
         @keyframes birdFlap{from{transform:scaleY(1)}to{transform:scaleY(.6)}}
 
+        /* Ocean Deep — high contrast */
+        .ocean-bg{position:absolute;inset:0;background:linear-gradient(180deg,#00111f 0%,#01233a 28%,#043f5f 56%,#06698e 78%,#0a98b8 100%);}
+        .ocean-glow{position:absolute;inset:0;background:
+            radial-gradient(circle at 16% 18%,rgba(120,248,255,.18),transparent 42%),
+            radial-gradient(circle at 78% 8%,rgba(0,214,255,.14),transparent 36%),
+            linear-gradient(180deg,rgba(255,255,255,.08),transparent 46%);
+            mix-blend-mode:screen;opacity:.9;}
+        .ocean-wave{position:absolute;left:-12%;width:124%;height:22%;border-radius:100% 100% 0 0/100% 100% 0 0;
+            background:linear-gradient(to top,rgba(14,165,233,.35),rgba(255,255,255,.08) 45%,rgba(255,255,255,0));
+            filter:blur(1px);animation:oceanWaveDrift linear infinite, oceanWaveBreathe ease-in-out infinite;}
+        .ocean-wave::after{content:'';position:absolute;left:0;right:0;bottom:-12%;height:55%;
+            background:radial-gradient(ellipse at 50% 100%,rgba(170,245,255,.35),transparent 65%);}
+        @keyframes oceanWaveDrift{from{transform:translateX(-3.5%)}to{transform:translateX(3.5%)}}
+        @keyframes oceanWaveBreathe{0%,100%{opacity:.55}50%{opacity:.95}}
+        .ocean-bubble{position:absolute;bottom:-40px;border-radius:50%;
+            background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.95),rgba(140,242,255,.45) 52%,rgba(130,235,255,.1) 70%,transparent 100%);
+            box-shadow:0 0 10px rgba(120,240,255,.25);
+            animation:oceanBubbleRise linear infinite, oceanBubbleDrift ease-in-out infinite;}
+        @keyframes oceanBubbleRise{from{transform:translateY(0) scale(.85);opacity:0}12%{opacity:.75}to{transform:translateY(-110vh) scale(1.08);opacity:0}}
+        @keyframes oceanBubbleDrift{0%,100%{margin-left:-4px}50%{margin-left:7px}}
+
         /* Cherry Blossom — pastel */
         @keyframes petalSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 
@@ -1745,9 +1766,9 @@ const THEMES = [
   { id:'dark',      name:'Dark Mode',        emoji:'🌙', price:200,  desc:'Giao diện tối huyền bí, bảo vệ mắt ban đêm',
     preview:['#818cf8','#0f172a','#1e293b'],
     vars:{'--primary':'#818cf8','--primary-hover':'#a5b4fc','--primary-light':'#1e1b4b','--primary-mid':'#6366f1','--bg':'#0f172a','--card':'#1e293b','--border':'#334155','--text':'#f1f5f9','--muted':'#94a3b8','--success':'#10b981','--success-bg':'#064e3b','--danger':'#f87171','--danger-bg':'#450a0a','--nav-bg':'#080d1a','--gold':'#fbbf24'}},
-  { id:'ocean',     name:'Ocean Deep',       emoji:'🌊', price:500, desc:'Đại dương sâu thẳm, thanh khiết và cuốn hút',
-    preview:['#0891b2','#ecfeff','#ffffff'],
-    vars:{'--primary':'#0e7490','--primary-hover':'#0c5f73','--primary-light':'#cffafe','--primary-mid':'#06b6d4','--bg':'#ecfeff','--card':'#ffffff','--border':'#a5f3fc','--text':'#083344','--muted':'#0e7490','--success':'#059669','--success-bg':'#d1fae5','--danger':'#dc2626','--danger-bg':'#fee2e2','--nav-bg':'#0c4a5c','--gold':'#f59e0b'}},
+  { id:'ocean',     name:'Ocean Deep',       emoji:'🌊', price:500, desc:'Đại dương đêm sâu thẳm, tương phản mạnh với ánh cyan phát quang',
+    preview:['#00b4d8','#021a2f','#0b314c'],
+    vars:{'--primary':'#00b4d8','--primary-hover':'#0096c7','--primary-light':'#06324b','--primary-mid':'#48cae4','--bg':'#021a2f','--card':'#0b314c','--border':'#14567a','--text':'#e6f8ff','--muted':'#96cfe1','--success':'#10b981','--success-bg':'#0c3d2f','--danger':'#fb7185','--danger-bg':'#4b1220','--nav-bg':'#011627','--gold':'#ffd166'}},
   { id:'sunset',    name:'Sunset',           emoji:'🌅', price:1000, desc:'Hoàng hôn ấm áp, rực rỡ sắc cam và đỏ',
     preview:['#e87c50','#fdf0e8','#fff8f4'],
     vars:{'--primary':'#d4714a','--primary-hover':'#bb5c38','--primary-light':'#fce8da','--primary-mid':'#e87c50','--bg':'#fdf0e8','--card':'#fff8f4','--border':'#f5ccb0','--text':'#3a1a08','--muted':'#a07050','--success':'#2a9d6c','--success-bg':'#d4f4e8','--danger':'#c94a4a','--danger-bg':'#fde8e8','--nav-bg':'#b85a35','--gold':'#f0a830'}},
@@ -1831,6 +1852,36 @@ function applyThemeEffect(themeId) {
     else if (themeId === 'cherry') applyCherryEffect();
     else if (themeId === 'forest') applyForestEffect();
     else if (themeId === 'sunset') applySunsetEffect();
+    else if (themeId === 'ocean') applyOceanEffect();
+}
+
+// ── Ocean Deep ───────────────────────────────────────────────────────
+function applyOceanEffect() {
+    const layer = document.getElementById('themeEffectLayer');
+    if (!layer) return;
+
+    const waves = [
+        { bottom:'43%', h:'20%', durA:14, durB:4.8, op:.42, delay:-1.4 },
+        { bottom:'31%', h:'24%', durA:20, durB:6.4, op:.6,  delay:-2.3 },
+        { bottom:'17%', h:'27%', durA:26, durB:7.2, op:.82, delay:-3.1 },
+    ];
+    const bubbles = Array.from({ length: window.innerWidth < 640 ? 16 : 26 }, () => {
+        const size = 5 + Math.random() * 16;
+        const left = Math.random() * 100;
+        const riseDur = 7 + Math.random() * 11;
+        const swayDur = 2.2 + Math.random() * 3.6;
+        const delay = -(Math.random() * riseDur);
+        const op = 0.28 + Math.random() * 0.42;
+        return `<div class="ocean-bubble" style="left:${left}%;width:${size}px;height:${size}px;opacity:${op};animation-duration:${riseDur}s,${swayDur}s;animation-delay:${delay}s,-${(Math.random()*swayDur).toFixed(2)}s;"></div>`;
+    }).join('');
+
+    layer.innerHTML =
+        `<div class="ocean-bg"></div>` +
+        `<div class="ocean-glow"></div>` +
+        waves.map(w =>
+            `<div class="ocean-wave" style="bottom:${w.bottom};height:${w.h};opacity:${w.op};animation-duration:${w.durA}s,${w.durB}s;animation-delay:${w.delay}s,-${(w.durB/2).toFixed(2)}s;"></div>`
+        ).join('') +
+        bubbles;
 }
 
 // ── Blue Sky ────────────────────────────────────────────────────────
