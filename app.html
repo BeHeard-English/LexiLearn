@@ -450,31 +450,33 @@
 
         /* Ocean Deep — high contrast */
         .ocean-bg{position:absolute;inset:0;background:
-            radial-gradient(circle at 14% 14%,rgba(96,235,255,.17),transparent 35%),
-            radial-gradient(circle at 82% 10%,rgba(0,196,255,.14),transparent 34%),
-            linear-gradient(170deg,#000c1a 0%,#001a30 24%,#01385a 52%,#045f86 72%,#0597b6 100%);}
+            radial-gradient(circle at 14% 14%,rgba(0,255,255,.25),transparent 40%),
+            radial-gradient(circle at 82% 10%,rgba(30,200,255,.28),transparent 38%),
+            linear-gradient(170deg,#000a1a 0%,#001428 18%,#002a50 35%,#003d7a 52%,#0052a3 68%,#0066cc 100%);}
         .ocean-glow{position:absolute;inset:0;background:
-            radial-gradient(ellipse at 50% 108%,rgba(0,229,255,.24),transparent 62%),
-            linear-gradient(180deg,rgba(140,250,255,.12) 0%,rgba(120,240,255,.04) 32%,transparent 58%);
-            mix-blend-mode:screen;opacity:.95;filter:blur(.2px);}
-        .ocean-wave{position:absolute;left:-12%;width:124%;height:22%;border-radius:100% 100% 0 0/100% 100% 0 0;
-            background:linear-gradient(to top,rgba(0,206,255,.42),rgba(180,247,255,.16) 44%,rgba(255,255,255,0) 74%);
-            box-shadow:0 0 34px rgba(0,226,255,.24),inset 0 12px 26px rgba(255,255,255,.08);
-            filter:blur(1px);animation:oceanWaveDrift linear infinite, oceanWaveBreathe ease-in-out infinite;}
-        .ocean-wave::after{content:'';position:absolute;left:0;right:0;bottom:-12%;height:55%;
-            background:radial-gradient(ellipse at 50% 100%,rgba(170,245,255,.46),transparent 65%);}
-        .ocean-ribbon{position:absolute;left:-20%;width:140%;height:14%;border-radius:50%;
-            background:linear-gradient(90deg,rgba(0,255,255,.04),rgba(126,244,255,.32) 34%,rgba(0,228,255,.14) 56%,rgba(0,255,255,.04));
-            filter:blur(10px);mix-blend-mode:screen;animation:oceanRibbonFlow linear infinite;}
+            radial-gradient(ellipse at 50% 110%,rgba(0,255,255,.35),transparent 55%),
+            radial-gradient(ellipse at 20% 30%,rgba(0,200,255,.18),transparent 45%),
+            radial-gradient(ellipse at 80% 60%,rgba(100,200,255,.15),transparent 50%),
+            linear-gradient(180deg,rgba(0,255,255,.08) 0%,rgba(50,180,255,.06) 28%,transparent 65%);
+            mix-blend-mode:screen;opacity:1;filter:blur(.5px);}
+        .ocean-wave{position:absolute;left:-12%;width:124%;height:24%;border-radius:100% 100% 0 0/100% 100% 0 0;
+            background:linear-gradient(to top,rgba(0,150,200,.55),rgba(100,220,255,.28) 48%,rgba(150,230,255,.08) 78%);
+            box-shadow:0 0 50px rgba(0,200,255,.4),inset 0 14px 32px rgba(255,255,255,.12),inset 0 -8px 20px rgba(0,50,100,.3);
+            filter:blur(2px);animation:oceanWaveDrift linear infinite, oceanWaveBreathe ease-in-out infinite;}
+        .ocean-wave::after{content:'';position:absolute;left:0;right:0;bottom:-15%;height:60%;
+            background:radial-gradient(ellipse at 50% 100%,rgba(0,200,255,.55),transparent 70%);}
+        .ocean-ribbon{position:absolute;left:-25%;width:150%;height:16%;border-radius:50%;
+            background:linear-gradient(90deg,rgba(0,255,255,.06),rgba(50,220,255,.48) 35%,rgba(0,200,255,.22) 58%,rgba(0,255,255,.05));
+            filter:blur(12px);mix-blend-mode:screen;animation:oceanRibbonFlow linear infinite;}
         @keyframes oceanWaveDrift{from{transform:translateX(-3.5%)}to{transform:translateX(3.5%)}}
-        @keyframes oceanWaveBreathe{0%,100%{opacity:.5}50%{opacity:1}}
-        @keyframes oceanRibbonFlow{from{transform:translateX(-5%) scaleY(.96)}50%{transform:translateX(5%) scaleY(1.06)}to{transform:translateX(-5%) scaleY(.96)}}
-        .ocean-bubble{position:absolute;bottom:-40px;border-radius:50%;
-            background:radial-gradient(circle at 35% 28%,rgba(255,255,255,.98),rgba(156,246,255,.6) 48%,rgba(122,230,255,.14) 72%,transparent 100%);
-            box-shadow:0 0 16px rgba(120,240,255,.34),inset 0 0 12px rgba(255,255,255,.28);
+        @keyframes oceanWaveBreathe{0%,100%{opacity:.6}50%{opacity:1}}
+        @keyframes oceanRibbonFlow{from{transform:translateX(-8%) scaleY(.94)}50%{transform:translateX(6%) scaleY(1.08)}to{transform:translateX(-8%) scaleY(.94)}}
+        .ocean-bubble{position:absolute;bottom:-50px;border-radius:50%;
+            background:radial-gradient(circle at 32% 25%,rgba(255,255,255,.96),rgba(100,240,255,.75) 42%,rgba(50,200,255,.28) 68%,transparent 100%);
+            box-shadow:0 0 24px rgba(0,200,255,.55),0 0 40px rgba(0,150,200,.35),inset 0 0 16px rgba(255,255,255,.35),inset 0 -4px 12px rgba(0,100,150,.25);
             animation:oceanBubbleRise linear infinite, oceanBubbleDrift ease-in-out infinite;}
-        @keyframes oceanBubbleRise{from{transform:translateY(0) scale(.85);opacity:0}12%{opacity:.75}to{transform:translateY(-110vh) scale(1.08);opacity:0}}
-        @keyframes oceanBubbleDrift{0%,100%{margin-left:-4px}50%{margin-left:7px}}
+        @keyframes oceanBubbleRise{from{transform:translateY(0) scale(.75);opacity:0}8%{opacity:.85}92%{opacity:.4}to{transform:translateY(-115vh) scale(1.15);opacity:0}}
+        @keyframes oceanBubbleDrift{0%,100%{margin-left:-6px}25%{margin-left:4px}75%{margin-left:-4px}to{margin-left:-6px}}
 
         /* Cherry Blossom — pastel */
         @keyframes petalSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
