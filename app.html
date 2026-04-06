@@ -431,21 +431,42 @@
         /* ── THEME EFFECTS LAYER ── */
         #themeEffectLayer{position:fixed;inset:0;pointer-events:none;z-index:1;overflow:hidden;}
 
-        /* Blue Sky */
-        .sky-sun{position:absolute;top:7%;right:9%;width:90px;height:90px;border-radius:50%;background:radial-gradient(circle,#fef9c3 0%,#fde047 45%,rgba(253,224,71,0) 100%);box-shadow:0 0 70px 25px rgba(253,224,71,.45);animation:skyPulse 4s ease-in-out infinite;}
-        @keyframes skyPulse{0%,100%{box-shadow:0 0 70px 25px rgba(253,224,71,.45);}50%{box-shadow:0 0 100px 40px rgba(253,224,71,.7);transform:scale(1.06);}}
-        .sky-cloud{position:absolute;background:#fff;border-radius:50px;animation:cloudDrift linear infinite;box-shadow:0 4px 18px rgba(0,0,0,.07);}
-        .sky-cloud::before,.sky-cloud::after{content:'';position:absolute;background:#fff;border-radius:50%;}
-        .sky-cloud::before{width:55%;height:190%;top:-45%;left:15%;}
-        .sky-cloud::after{width:40%;height:160%;top:-30%;left:47%;}
-        @keyframes cloudDrift{from{left:-300px}to{left:110vw}}
+        /* Blue Sky — pastel */
+        .sky-bg{position:absolute;inset:0;background:linear-gradient(180deg,#a8d8f0 0%,#c8e8f8 28%,#dff1fb 55%,#eef8ff 80%,#f7fbff 100%);}
+        .sky-sun{position:absolute;top:8%;right:10%;width:80px;height:80px;border-radius:50%;background:radial-gradient(circle,#fff8dc 0%,#ffe98a 40%,rgba(255,233,138,0) 100%);box-shadow:0 0 0 12px rgba(255,233,138,.18),0 0 60px 20px rgba(255,220,80,.35);animation:skyPulse 5s ease-in-out infinite;}
+        @keyframes skyPulse{0%,100%{box-shadow:0 0 0 12px rgba(255,233,138,.18),0 0 60px 20px rgba(255,220,80,.35);}50%{box-shadow:0 0 0 22px rgba(255,233,138,.28),0 0 90px 35px rgba(255,220,80,.55);transform:scale(1.05);}}
+        .sky-sunray{position:absolute;top:8%;right:10%;width:2px;transform-origin:40px 40px;background:linear-gradient(to top,rgba(255,230,100,.45),transparent);border-radius:2px;animation:sunRayAnim 5s ease-in-out infinite;}
+        @keyframes sunRayAnim{0%,100%{opacity:.3;}50%{opacity:.7;}}
+        .sky-cloud{position:absolute;border-radius:60px;animation:cloudFloat linear infinite;filter:drop-shadow(0 6px 12px rgba(100,170,220,.15));}
+        .sky-cloud-inner{position:relative;width:100%;height:100%;background:rgba(255,255,255,.88);border-radius:60px;}
+        .sky-cloud-inner::before,.sky-cloud-inner::after{content:'';position:absolute;background:rgba(255,255,255,.88);border-radius:50%;}
+        .sky-cloud-inner::before{width:52%;height:200%;top:-50%;left:14%;}
+        .sky-cloud-inner::after{width:36%;height:170%;top:-35%;left:52%;}
+        @keyframes cloudFloat{0%{left:-320px;transform:translateY(0);}50%{transform:translateY(-8px);}100%{left:110vw;transform:translateY(0);}}
+        .sky-bird{position:absolute;animation:birdFly linear infinite;}
+        @keyframes birdFly{from{left:-60px}to{left:110vw}}
+        .sky-bird svg{animation:birdFlap .5s ease-in-out infinite alternate;}
+        @keyframes birdFlap{from{transform:scaleY(1)}to{transform:scaleY(.6)}}
 
-        /* Sunset */
-        .sunset-sun{position:absolute;bottom:28%;left:50%;transform:translateX(-50%);width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,#fef08a 0%,#fb923c 50%,rgba(251,146,60,0) 100%);box-shadow:0 0 80px 30px rgba(251,146,60,.5);animation:sunsetGlow 3s ease-in-out infinite;}
-        @keyframes sunsetGlow{0%,100%{box-shadow:0 0 80px 30px rgba(251,146,60,.5);}50%{box-shadow:0 0 120px 50px rgba(251,146,60,.75);transform:translateX(-50%) scale(1.07);}}
-        .sunset-ray{position:absolute;bottom:28%;left:50%;width:3px;transform-origin:bottom center;background:linear-gradient(to top,rgba(251,191,36,.5),transparent);animation:rayShimmer 3s ease-in-out infinite;}
-        @keyframes rayShimmer{0%,100%{opacity:.35;}50%{opacity:.8;}}
-        .sunset-horizon{position:absolute;bottom:0;left:0;right:0;height:32%;background:linear-gradient(to top,rgba(124,45,18,.35),transparent);}
+        /* Cherry Blossom — pastel */
+        @keyframes petalSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
+        /* Forest — pastel */
+        .forest-bg{position:absolute;inset:0;background:linear-gradient(180deg,#b8dfc8 0%,#ceebd8 22%,#dff4e8 50%,#eaf6ef 75%,#f4fbf6 100%);}
+        .forest-firefly{position:absolute;border-radius:50%;animation:fireflyAnim ease-in-out infinite;}
+        @keyframes fireflyAnim{0%,100%{opacity:0;transform:translate(0,0) scale(1);}25%{opacity:1;transform:translate(var(--fx),var(--fy)) scale(1.4);}50%{opacity:.6;transform:translate(calc(var(--fx)*1.5),calc(var(--fy)*.5)) scale(0.8);}75%{opacity:1;transform:translate(calc(var(--fx)*.8),calc(var(--fy)*1.3)) scale(1.2);}}
+        .forest-mist{position:absolute;bottom:0;left:0;right:0;height:28%;background:linear-gradient(to top,rgba(180,230,200,.35),transparent);animation:mistRise 8s ease-in-out infinite alternate;}
+        @keyframes mistRise{from{opacity:.4;transform:translateY(5px)}to{opacity:.8;transform:translateY(-5px)}}
+
+        /* Sunset — pastel */
+        .sunset-bg{position:absolute;inset:0;background:linear-gradient(180deg,#e8b4a0 0%,#f0c4a8 18%,#f5d4b8 35%,#fae0c8 52%,#fcecd8 68%,#fdf4e8 83%,#fff8f4 100%);}
+        .sunset-sun{position:absolute;bottom:32%;left:50%;transform:translateX(-50%);width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,#fff5cc 0%,#ffd580 40%,rgba(255,190,80,0) 100%);box-shadow:0 0 0 15px rgba(255,210,100,.15),0 0 80px 30px rgba(255,180,80,.4);animation:sunsetGlow 4s ease-in-out infinite;}
+        @keyframes sunsetGlow{0%,100%{box-shadow:0 0 0 15px rgba(255,210,100,.15),0 0 80px 30px rgba(255,180,80,.4);}50%{box-shadow:0 0 0 28px rgba(255,210,100,.25),0 0 120px 50px rgba(255,180,80,.6);transform:translateX(-50%) scale(1.06);}}
+        .sunset-ray{position:absolute;width:2px;transform-origin:bottom center;border-radius:2px;background:linear-gradient(to top,rgba(255,200,100,.5),transparent);animation:rayShimmer ease-in-out infinite;}
+        @keyframes rayShimmer{0%,100%{opacity:.25;}50%{opacity:.65;}}
+        .sunset-cloud{position:absolute;border-radius:40px;background:linear-gradient(135deg,rgba(255,200,170,.6),rgba(255,180,150,.4));animation:sunsetCloudDrift linear infinite;filter:blur(2px);}
+        .sunset-reflection{position:absolute;bottom:0;left:0;right:0;height:25%;background:linear-gradient(to top,rgba(255,160,100,.2),transparent);animation:reflectShimmer 6s ease-in-out infinite alternate;}
+        @keyframes reflectShimmer{from{opacity:.4}to{opacity:.75}}
         .streak-modal{display:none;position:fixed;inset:0;z-index:9100;background:rgba(0,0,0,.55);backdrop-filter:blur(4px);pointer-events:none;align-items:center;justify-content:center;}
         .streak-modal.open{display:flex;pointer-events:auto;}
         .streak-box{background:var(--card);border-radius:24px;width:92%;max-width:380px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,.28);animation:badgeModalPop .4s cubic-bezier(.4,0,.2,1) both;}
@@ -1725,17 +1746,17 @@ const THEMES = [
     preview:['#818cf8','#0f172a','#1e293b'],
     vars:{'--primary':'#818cf8','--primary-hover':'#a5b4fc','--primary-light':'#1e1b4b','--primary-mid':'#6366f1','--bg':'#0f172a','--card':'#1e293b','--border':'#334155','--text':'#f1f5f9','--muted':'#94a3b8','--success':'#10b981','--success-bg':'#064e3b','--danger':'#f87171','--danger-bg':'#450a0a','--nav-bg':'#080d1a','--gold':'#fbbf24'}},
   { id:'bluesky',   name:'Blue Sky',         emoji:'☀️', price:500,  desc:'Bầu trời trong xanh, mang lại cảm giác tươi mới',
-    preview:['#0284c7','#f0f9ff','#ffffff'],
-    vars:{'--primary':'#0284c7','--primary-hover':'#0369a1','--primary-light':'#e0f2fe','--primary-mid':'#0ea5e9','--bg':'#f0f9ff','--card':'#ffffff','--border':'#bae6fd','--text':'#0c4a6e','--muted':'#0369a1','--success':'#059669','--success-bg':'#d1fae5','--danger':'#dc2626','--danger-bg':'#fee2e2','--nav-bg':'#0369a1','--gold':'#f59e0b'}},
+    preview:['#7bbfea','#e8f4fd','#ffffff'],
+    vars:{'--primary':'#3b9edd','--primary-hover':'#2980c4','--primary-light':'#dbeeff','--primary-mid':'#5fb3f0','--bg':'#e8f4fd','--card':'#f7fbff','--border':'#c2e0f7','--text':'#1a3a52','--muted':'#5a8aaa','--success':'#2a9d6c','--success-bg':'#d4f4e8','--danger':'#e05c5c','--danger-bg':'#fde8e8','--nav-bg':'#3b9edd','--gold':'#f7c948'}},
   { id:'cherry',    name:'Cherry Blossom',   emoji:'🌸', price:1000, desc:'Hoa anh đào, nhẹ nhàng và lãng mạn',
-    preview:['#db2777','#fff1f2','#ffffff'],
-    vars:{'--primary':'#be185d','--primary-hover':'#9d174d','--primary-light':'#fce7f3','--primary-mid':'#db2777','--bg':'#fff1f2','--card':'#ffffff','--border':'#fecdd3','--text':'#4c0519','--muted':'#be185d','--success':'#059669','--success-bg':'#d1fae5','--danger':'#dc2626','--danger-bg':'#fee2e2','--nav-bg':'#881337','--gold':'#f59e0b'}},
+    preview:['#e8829a','#fef0f5','#fff8fb'],
+    vars:{'--primary':'#d4698a','--primary-hover':'#bb5577','--primary-light':'#fde8f0','--primary-mid':'#e8829a','--bg':'#fef0f5','--card':'#fff8fb','--border':'#f7cedd','--text':'#4a1a28','--muted':'#b07a8a','--success':'#2a9d6c','--success-bg':'#d4f4e8','--danger':'#c94a4a','--danger-bg':'#fde8e8','--nav-bg':'#c75a7a','--gold':'#f0a830'}},
   { id:'forest',    name:'Forest',           emoji:'🌿', price:1500, desc:'Rừng xanh mát mẻ, tươi tắn và bình yên',
-    preview:['#16a34a','#f0fdf4','#ffffff'],
-    vars:{'--primary':'#166534','--primary-hover':'#14532d','--primary-light':'#dcfce7','--primary-mid':'#16a34a','--bg':'#f0fdf4','--card':'#ffffff','--border':'#bbf7d0','--text':'#052e16','--muted':'#166634','--success':'#15803d','--success-bg':'#dcfce7','--danger':'#dc2626','--danger-bg':'#fee2e2','--nav-bg':'#14532d','--gold':'#eab308'}},
+    preview:['#5aaa7a','#eaf6ef','#f4fbf6'],
+    vars:{'--primary':'#3d9960','--primary-hover':'#2e7d4d','--primary-light':'#d8f0e2','--primary-mid':'#5aaa7a','--bg':'#eaf6ef','--card':'#f4fbf6','--border':'#b8e4ca','--text':'#1a3a28','--muted':'#5a8a6a','--success':'#2a9d6c','--success-bg':'#d4f4e8','--danger':'#c94a4a','--danger-bg':'#fde8e8','--nav-bg':'#2e7d4d','--gold':'#e8b830'}},
   { id:'sunset',    name:'Sunset',           emoji:'🌅', price:2000, desc:'Hoàng hôn ấm áp, rực rỡ sắc cam và đỏ',
-    preview:['#ea580c','#fff7ed','#ffffff'],
-    vars:{'--primary':'#c2410c','--primary-hover':'#9a3412','--primary-light':'#ffedd5','--primary-mid':'#ea580c','--bg':'#fff7ed','--card':'#ffffff','--border':'#fed7aa','--text':'#431407','--muted':'#9a3412','--success':'#059669','--success-bg':'#d1fae5','--danger':'#dc2626','--danger-bg':'#fee2e2','--nav-bg':'#7c2d12','--gold':'#f59e0b'}},
+    preview:['#e87c50','#fdf0e8','#fff8f4'],
+    vars:{'--primary':'#d4714a','--primary-hover':'#bb5c38','--primary-light':'#fce8da','--primary-mid':'#e87c50','--bg':'#fdf0e8','--card':'#fff8f4','--border':'#f5ccb0','--text':'#3a1a08','--muted':'#a07050','--success':'#2a9d6c','--success-bg':'#d4f4e8','--danger':'#c94a4a','--danger-bg':'#fde8e8','--nav-bg':'#b85a35','--gold':'#f0a830'}},
   { id:'ocean',     name:'Ocean Deep',       emoji:'🌊', price:2500, desc:'Đại dương sâu thẳm, thanh khiết và cuốn hút',
     preview:['#0891b2','#ecfeff','#ffffff'],
     vars:{'--primary':'#0e7490','--primary-hover':'#0c5f73','--primary-light':'#cffafe','--primary-mid':'#06b6d4','--bg':'#ecfeff','--card':'#ffffff','--border':'#a5f3fc','--text':'#083344','--muted':'#0e7490','--success':'#059669','--success-bg':'#d1fae5','--danger':'#dc2626','--danger-bg':'#fee2e2','--nav-bg':'#0c4a5c','--gold':'#f59e0b'}},
@@ -1814,26 +1835,54 @@ function applyThemeEffect(themeId) {
 
 // ── Blue Sky ────────────────────────────────────────────────────────
 function applyBlueSkyEffect() {
-    document.body.style.backgroundImage = 'linear-gradient(180deg,#38bdf8 0%,#7dd3fc 22%,#bae6fd 52%,#e0f2fe 78%,#f0f9ff 100%)';
     const layer = document.getElementById('themeEffectLayer');
     const clouds = [
-        {top:'8%',  w:140, h:40, dur:28, delay:0,   op:.92},
-        {top:'20%', w:90,  h:28, dur:38, delay:-10,  op:.75},
-        {top:'32%', w:180, h:52, dur:22, delay:-18,  op:.88},
-        {top:'6%',  w:110, h:32, dur:45, delay:-25,  op:.7},
-        {top:'44%', w:75,  h:22, dur:33, delay:-6,   op:.6},
-        {top:'15%', w:60,  h:18, dur:50, delay:-35,  op:.5},
+        {top:'9%',  w:160, h:44, dur:32, delay:0,    op:.9},
+        {top:'22%', w:100, h:30, dur:44, delay:-12,  op:.75},
+        {top:'36%', w:200, h:56, dur:25, delay:-20,  op:.85},
+        {top:'6%',  w:120, h:34, dur:50, delay:-28,  op:.65},
+        {top:'48%', w:80,  h:24, dur:38, delay:-8,   op:.55},
+        {top:'16%', w:70,  h:20, dur:58, delay:-40,  op:.45},
+        {top:'30%', w:140, h:40, dur:30, delay:-15,  op:.7},
     ];
-    layer.innerHTML = `<div class="sky-sun"></div>` +
+    const sunRays = Array.from({length:8}, (_,i) => {
+        const angle = i * 45;
+        const len = 55 + Math.random() * 30;
+        const delay = (i * 0.6).toFixed(1);
+        return `<div class="sky-sunray" style="height:${len}px;transform:rotate(${angle}deg);animation-delay:${delay}s;animation-duration:${(4+Math.random()*2).toFixed(1)}s;"></div>`;
+    }).join('');
+    // Birds (simple SVG seagulls)
+    const birds = Array.from({length:5}, (_,i) => {
+        const top = 6 + i * 5 + Math.random() * 4;
+        const dur = 18 + Math.random() * 14;
+        const delay = -(Math.random() * dur);
+        const scale = 0.6 + Math.random() * 0.6;
+        const flapDur = (0.35 + Math.random() * 0.25).toFixed(2);
+        return `<div class="sky-bird" style="top:${top}%;animation-duration:${dur}s;animation-delay:${delay}s;transform:scale(${scale});">
+            <svg width="28" height="14" viewBox="0 0 28 14" fill="none" style="animation:birdFlap ${flapDur}s ease-in-out infinite alternate;">
+                <path d="M14 7 Q7 2 0 4" stroke="#7bbfea" stroke-width="2" stroke-linecap="round" fill="none"/>
+                <path d="M14 7 Q21 2 28 4" stroke="#7bbfea" stroke-width="2" stroke-linecap="round" fill="none"/>
+            </svg>
+        </div>`;
+    }).join('');
+    layer.innerHTML =
+        `<div class="sky-bg"></div>` +
+        `<div style="position:absolute;top:8%;right:10%;width:80px;height:80px;">${sunRays}<div class="sky-sun"></div></div>` +
         clouds.map(c =>
-            `<div class="sky-cloud" style="top:${c.top};width:${c.w}px;height:${c.h}px;animation-duration:${c.dur}s;animation-delay:${c.delay}s;opacity:${c.op};"></div>`
-        ).join('');
+            `<div class="sky-cloud" style="top:${c.top};width:${c.w}px;height:${c.h}px;animation-duration:${c.dur}s;animation-delay:${c.delay}s;opacity:${c.op};">
+                <div class="sky-cloud-inner"></div>
+            </div>`
+        ).join('') + birds;
 }
 
 // ── Cherry Blossom ──────────────────────────────────────────────────
 function applyCherryEffect() {
-    document.body.style.backgroundImage = 'linear-gradient(160deg,#fce7f3 0%,#fdf2f8 35%,#fff1f2 65%,#fff5f7 100%)';
     const layer = document.getElementById('themeEffectLayer');
+    // Gradient background via CSS class
+    const bgDiv = document.createElement('div');
+    bgDiv.style.cssText = 'position:absolute;inset:0;background:linear-gradient(160deg,#f9d8e8 0%,#fce8f2 30%,#fef0f7 58%,#fff5fb 80%,#fff9fd 100%);';
+    layer.appendChild(bgDiv);
+
     const canvas = document.createElement('canvas');
     canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;';
     layer.appendChild(canvas);
@@ -1843,54 +1892,80 @@ function applyCherryEffect() {
     _themeResizeHandler = resize;
     window.addEventListener('resize', resize);
 
-    const count = window.innerWidth < 600 ? 22 : 40;
-    const petals = Array.from({length: count}, () => mkPetal(canvas, true));
+    const COLORS = [
+        {fill:'#f9c0d0',shadow:'rgba(240,100,140,.3)'},
+        {fill:'#fad0df',shadow:'rgba(220,100,130,.25)'},
+        {fill:'#fce0ea',shadow:'rgba(230,110,145,.2)'},
+        {fill:'#f5b0c8',shadow:'rgba(210,90,125,.35)'},
+        {fill:'#fff0f5',shadow:'rgba(240,150,170,.2)'},
+        {fill:'#fbb8cc',shadow:'rgba(220,100,130,.3)'},
+    ];
 
     function mkPetal(cv, random) {
+        const c = COLORS[Math.floor(Math.random() * COLORS.length)];
+        const size = Math.random() * 11 + 6;
         return {
             x: Math.random() * cv.width,
-            y: random ? Math.random() * cv.height : -20,
-            size: Math.random() * 9 + 5,
-            vy: Math.random() * 1.2 + 0.6,
-            vx: (Math.random() - 0.5) * 0.6,
+            y: random ? Math.random() * cv.height : -30,
+            size,
+            vy: Math.random() * 1.0 + 0.45,
+            vx: (Math.random() - 0.5) * 0.7,
             rot: Math.random() * Math.PI * 2,
-            rotV: (Math.random() - 0.5) * 0.05,
-            sway: Math.random() * 1.5 + 0.5,
-            swayF: Math.random() * 0.018 + 0.008,
-            t: Math.random() * 100,
-            color: ['#fda4af','#fecdd3','#fbcfe8','#f9a8d4','#ffffff'][Math.floor(Math.random()*5)],
-            alpha: Math.random() * 0.45 + 0.4,
-            rx: Math.random() * 0.4 + 0.45, // ellipse x ratio
+            rotV: (Math.random() - 0.5) * 0.045,
+            // 3D flip: scale x oscillates for spinning look
+            flipPhase: Math.random() * Math.PI * 2,
+            flipSpeed: Math.random() * 0.035 + 0.015,
+            sway: Math.random() * 2.2 + 0.8,
+            swayF: Math.random() * 0.016 + 0.006,
+            t: Math.random() * 200,
+            fill: c.fill,
+            shadow: c.shadow,
+            alpha: Math.random() * 0.35 + 0.5,
+            rx: Math.random() * 0.35 + 0.42,
         };
     }
 
+    const count = window.innerWidth < 600 ? 28 : 52;
+    const petals = Array.from({length: count}, () => mkPetal(canvas, true));
     const ctx = canvas.getContext('2d');
+
+    function drawPetal(p) {
+        const scaleX = Math.cos(p.flipPhase); // -1 to 1 — simulates 3D flip
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.scale(scaleX, 1);          // flip on X axis for 3D spin
+        ctx.globalAlpha = p.alpha * (0.6 + Math.abs(scaleX) * 0.4);
+        ctx.fillStyle = p.fill;
+        ctx.shadowColor = p.shadow;
+        ctx.shadowBlur = 6;
+        // Heart-like petal: 5-point with bezier
+        ctx.beginPath();
+        ctx.moveTo(0, -p.size);
+        ctx.bezierCurveTo( p.size * p.rx,  -p.size * 0.4,  p.size * p.rx * 1.1,  p.size * 0.5, 0, p.size * 0.9);
+        ctx.bezierCurveTo(-p.size * p.rx * 1.1, p.size * 0.5, -p.size * p.rx, -p.size * 0.4, 0, -p.size);
+        ctx.fill();
+        // Delicate vein
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = 'rgba(200,80,110,.18)';
+        ctx.lineWidth = 0.65;
+        ctx.beginPath();
+        ctx.moveTo(0, -p.size * 0.75);
+        ctx.quadraticCurveTo(p.size * 0.15, 0, 0, p.size * 0.75);
+        ctx.stroke();
+        ctx.restore();
+    }
+
     function loop() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         for (const p of petals) {
-            p.t += 1;
-            p.x += p.vx + Math.sin(p.t * p.swayF) * p.sway * 0.07;
+            p.t++;
+            p.flipPhase += p.flipSpeed;
+            p.x += p.vx + Math.sin(p.t * p.swayF) * p.sway * 0.09;
             p.y += p.vy;
             p.rot += p.rotV;
-            if (p.y > canvas.height + 20) { Object.assign(p, mkPetal(canvas, false)); }
-            ctx.save();
-            ctx.translate(p.x, p.y);
-            ctx.rotate(p.rot);
-            ctx.globalAlpha = p.alpha;
-            ctx.fillStyle = p.color;
-            ctx.shadowColor = 'rgba(251,113,133,.3)';
-            ctx.shadowBlur = 4;
-            ctx.beginPath();
-            ctx.ellipse(0, 0, p.size * p.rx, p.size * 0.55, 0, 0, Math.PI * 2);
-            ctx.fill();
-            // Petal vein
-            ctx.strokeStyle = 'rgba(251,113,133,.25)';
-            ctx.lineWidth = 0.7;
-            ctx.beginPath();
-            ctx.moveTo(-p.size * p.rx * 0.8, 0);
-            ctx.lineTo(p.size * p.rx * 0.8, 0);
-            ctx.stroke();
-            ctx.restore();
+            if (p.y > canvas.height + 30) Object.assign(p, mkPetal(canvas, false));
+            drawPetal(p);
         }
         _themeAnimFrame = requestAnimationFrame(loop);
     }
@@ -1899,8 +1974,34 @@ function applyCherryEffect() {
 
 // ── Forest ──────────────────────────────────────────────────────────
 function applyForestEffect() {
-    document.body.style.backgroundImage = 'linear-gradient(180deg,#14532d 0%,#166534 12%,#15803d 28%,#4ade80 55%,#bbf7d0 78%,#dcfce7 100%)';
     const layer = document.getElementById('themeEffectLayer');
+    const bgDiv = document.createElement('div');
+    bgDiv.className = 'forest-bg';
+    layer.appendChild(bgDiv);
+
+    // Mist layer
+    const mist = document.createElement('div');
+    mist.className = 'forest-mist';
+    layer.appendChild(mist);
+
+    // Fireflies (CSS)
+    const ffCount = window.innerWidth < 600 ? 12 : 22;
+    for (let i = 0; i < ffCount; i++) {
+        const ff = document.createElement('div');
+        ff.className = 'forest-firefly';
+        const size = Math.random() * 5 + 3;
+        const x = Math.random() * 95;
+        const y = 30 + Math.random() * 60;
+        const dur = 3 + Math.random() * 5;
+        const delay = Math.random() * dur;
+        const fx = ((Math.random() - 0.5) * 60).toFixed(0);
+        const fy = ((Math.random() - 0.5) * 40).toFixed(0);
+        const hue = 100 + Math.random() * 50; // green-yellow range
+        ff.style.cssText = `left:${x}%;top:${y}%;width:${size}px;height:${size}px;background:hsl(${hue},80%,72%);box-shadow:0 0 ${size*2}px ${size}px hsl(${hue},80%,72%);--fx:${fx}px;--fy:${fy}px;animation-duration:${dur}s;animation-delay:-${delay}s;`;
+        layer.appendChild(ff);
+    }
+
+    // Canvas for leaves
     const canvas = document.createElement('canvas');
     canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;';
     layer.appendChild(canvas);
@@ -1910,56 +2011,73 @@ function applyForestEffect() {
     _themeResizeHandler = resize;
     window.addEventListener('resize', resize);
 
-    const leafColors = ['#16a34a','#15803d','#4ade80','#86efac','#a3e635','#ca8a04','#eab308','#d97706','#b45309','#f59e0b'];
-    const count = window.innerWidth < 600 ? 20 : 36;
-    const leaves = Array.from({length: count}, () => mkLeaf(canvas, true));
+    const LEAF_COLORS = [
+        {fill:'#8dd5a8',shadow:'rgba(50,140,80,.25)'},
+        {fill:'#a8dfc0',shadow:'rgba(60,150,90,.2)'},
+        {fill:'#c8ecd8',shadow:'rgba(70,160,100,.18)'},
+        {fill:'#b8e8c8',shadow:'rgba(55,145,85,.22)'},
+        {fill:'#d8c870',shadow:'rgba(160,140,50,.2)'},  // autumn yellow
+        {fill:'#e8b860',shadow:'rgba(180,130,40,.22)'}, // autumn gold
+        {fill:'#d8a860',shadow:'rgba(170,120,40,.2)'},  // autumn orange-gold
+    ];
 
     function mkLeaf(cv, random) {
+        const c = LEAF_COLORS[Math.floor(Math.random() * LEAF_COLORS.length)];
         return {
             x: Math.random() * cv.width,
-            y: random ? Math.random() * cv.height : -20,
-            size: Math.random() * 10 + 6,
-            vy: Math.random() * 1.4 + 0.7,
-            vx: (Math.random() - 0.5) * 1.2,
+            y: random ? Math.random() * cv.height : -30,
+            size: Math.random() * 12 + 7,
+            vy: Math.random() * 1.3 + 0.55,
+            vx: (Math.random() - 0.5) * 1.0,
             rot: Math.random() * Math.PI * 2,
-            rotV: (Math.random() - 0.5) * 0.07,
-            sway: Math.random() * 2 + 1,
-            swayF: Math.random() * 0.02 + 0.01,
-            t: Math.random() * 100,
-            color: leafColors[Math.floor(Math.random() * leafColors.length)],
-            alpha: Math.random() * 0.5 + 0.4,
-            shape: Math.floor(Math.random() * 2), // 0=oval 1=pointed
+            rotV: (Math.random() - 0.5) * 0.055,
+            flipPhase: Math.random() * Math.PI * 2,
+            flipSpeed: Math.random() * 0.03 + 0.01,
+            sway: Math.random() * 2.5 + 1,
+            swayF: Math.random() * 0.018 + 0.008,
+            t: Math.random() * 200,
+            fill: c.fill, shadow: c.shadow,
+            alpha: Math.random() * 0.4 + 0.45,
+            shape: Math.floor(Math.random() * 3),
         };
     }
 
+    const count = window.innerWidth < 600 ? 24 : 42;
+    const leaves = Array.from({length: count}, () => mkLeaf(canvas, true));
     const ctx = canvas.getContext('2d');
+
     function drawLeaf(p) {
+        const flipX = Math.cos(p.flipPhase);
         ctx.save();
         ctx.translate(p.x, p.y);
         ctx.rotate(p.rot);
-        ctx.globalAlpha = p.alpha;
-        ctx.fillStyle = p.color;
-        ctx.shadowColor = 'rgba(0,80,0,.25)';
-        ctx.shadowBlur = 5;
+        ctx.scale(flipX, 1);
+        ctx.globalAlpha = p.alpha * (0.55 + Math.abs(flipX) * 0.45);
+        ctx.fillStyle = p.fill;
+        ctx.shadowColor = p.shadow;
+        ctx.shadowBlur = 7;
+        ctx.beginPath();
         if (p.shape === 0) {
-            // Oval leaf
-            ctx.beginPath();
-            ctx.ellipse(0, 0, p.size * 0.5, p.size, 0, 0, Math.PI * 2);
-            ctx.fill();
-        } else {
-            // Pointed leaf
-            ctx.beginPath();
+            // Oval
+            ctx.ellipse(0, 0, p.size * 0.48, p.size, 0, 0, Math.PI * 2);
+        } else if (p.shape === 1) {
+            // Heart-pointed
             ctx.moveTo(0, -p.size);
-            ctx.bezierCurveTo(p.size * 0.6, -p.size * 0.3, p.size * 0.6, p.size * 0.3, 0, p.size);
-            ctx.bezierCurveTo(-p.size * 0.6, p.size * 0.3, -p.size * 0.6, -p.size * 0.3, 0, -p.size);
-            ctx.fill();
+            ctx.bezierCurveTo( p.size * 0.55, -p.size * 0.25,  p.size * 0.58,  p.size * 0.4, 0, p.size);
+            ctx.bezierCurveTo(-p.size * 0.58,  p.size * 0.4, -p.size * 0.55, -p.size * 0.25, 0, -p.size);
+        } else {
+            // Maple-like rounded
+            ctx.moveTo(0, -p.size * 0.9);
+            ctx.bezierCurveTo( p.size * 0.7, -p.size * 0.5,  p.size * 0.7,  p.size * 0.5, 0, p.size * 0.9);
+            ctx.bezierCurveTo(-p.size * 0.7,  p.size * 0.5, -p.size * 0.7, -p.size * 0.5, 0, -p.size * 0.9);
         }
-        // Midrib
-        ctx.strokeStyle = 'rgba(0,0,0,.18)';
-        ctx.lineWidth = 0.8;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = 'rgba(30,100,50,.2)';
+        ctx.lineWidth = 0.7;
         ctx.beginPath();
         ctx.moveTo(0, -p.size * 0.8);
-        ctx.lineTo(0, p.size * 0.8);
+        ctx.quadraticCurveTo(p.size * 0.12, 0, 0, p.size * 0.8);
         ctx.stroke();
         ctx.restore();
     }
@@ -1967,11 +2085,12 @@ function applyForestEffect() {
     function loop() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         for (const p of leaves) {
-            p.t += 1;
-            p.x += p.vx + Math.sin(p.t * p.swayF) * p.sway * 0.08;
+            p.t++;
+            p.flipPhase += p.flipSpeed;
+            p.x += p.vx + Math.sin(p.t * p.swayF) * p.sway * 0.09;
             p.y += p.vy;
             p.rot += p.rotV;
-            if (p.y > canvas.height + 30 || p.x < -60 || p.x > canvas.width + 60) {
+            if (p.y > canvas.height + 40 || p.x < -80 || p.x > canvas.width + 80) {
                 Object.assign(p, mkLeaf(canvas, false));
             }
             drawLeaf(p);
@@ -1983,21 +2102,48 @@ function applyForestEffect() {
 
 // ── Sunset ──────────────────────────────────────────────────────────
 function applySunsetEffect() {
-    document.body.style.backgroundImage =
-        'linear-gradient(180deg,#431407 0%,#7c2d12 10%,#9a3412 22%,#c2410c 36%,#ea580c 50%,#fb923c 63%,#fdba74 76%,#fef3c7 90%,#fff7ed 100%)';
     const layer = document.getElementById('themeEffectLayer');
-    const rayCount = 12;
-    const rays = Array.from({length: rayCount}, (_, i) => {
+    const bgDiv = document.createElement('div');
+    bgDiv.className = 'sunset-bg';
+    layer.appendChild(bgDiv);
+
+    // Reflection shimmer
+    const refl = document.createElement('div');
+    refl.className = 'sunset-reflection';
+    layer.appendChild(refl);
+
+    // Pastel clouds drifting across
+    const cloudData = [
+        {top:'18%', w:180, h:38, dur:55, delay:0,   op:.55, blur:3},
+        {top:'32%', w:120, h:28, dur:70, delay:-20,  op:.45, blur:4},
+        {top:'12%', w:240, h:50, dur:45, delay:-35,  op:.5,  blur:2},
+        {top:'44%', w:100, h:22, dur:80, delay:-10,  op:.35, blur:5},
+    ];
+    const cloudHTML = cloudData.map(c =>
+        `<div class="sunset-cloud" style="top:${c.top};width:${c.w}px;height:${c.h}px;opacity:${c.op};filter:blur(${c.blur}px);animation-duration:${c.dur}s;animation-delay:-${c.delay}s;"></div>`
+    ).join('');
+    layer.insertAdjacentHTML('beforeend', cloudHTML);
+
+    // Sun with rays
+    const rayCount = 14;
+    const raysHTML = Array.from({length: rayCount}, (_, i) => {
         const angle = (i / rayCount) * 360;
-        const len = 250 + Math.random() * 200;
-        const delay = (i * 0.25).toFixed(2);
-        return `<div class="sunset-ray" style="height:${len}px;transform:rotate(${angle}deg);animation-delay:${delay}s;animation-duration:${(2.5 + Math.random()).toFixed(1)}s;"></div>`;
+        const len = 60 + Math.random() * 55;
+        const delay = (i * 0.35).toFixed(2);
+        const dur = (3 + Math.random() * 2.5).toFixed(1);
+        return `<div class="sunset-ray" style="height:${len}px;transform:rotate(${angle}deg);animation-delay:${delay}s;animation-duration:${dur}s;"></div>`;
     }).join('');
-    layer.innerHTML = `
-        <div class="sunset-horizon"></div>
+    layer.insertAdjacentHTML('beforeend', `
         <div class="sunset-sun"></div>
-        <div style="position:absolute;bottom:28%;left:50%;transform:translateX(-50%) translateY(50%);width:500px;height:500px;">${rays}</div>
-    `;
+        <div style="position:absolute;bottom:32%;left:50%;transform:translateX(-50%) translateY(50%);width:600px;height:600px;">${raysHTML}</div>
+    `);
+}
+// Also need sunsetCloudDrift keyframe (inline via CSS):
+if (!document.getElementById('sunsetCloudDriftStyle')) {
+    const s = document.createElement('style');
+    s.id = 'sunsetCloudDriftStyle';
+    s.textContent = '@keyframes sunsetCloudDrift{from{left:-300px;transform:translateY(0)}50%{transform:translateY(-6px)}to{left:110vw;transform:translateY(0)}}';
+    document.head.appendChild(s);
 }
 
 function renderShop() {
