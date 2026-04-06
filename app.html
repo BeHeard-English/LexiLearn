@@ -495,11 +495,11 @@
         /* Cherry Blossom — pastel */
         @keyframes petalSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 
-        /* Forest — pastel */
-        .forest-bg{position:absolute;inset:0;background:linear-gradient(180deg,#b8dfc8 0%,#ceebd8 22%,#dff4e8 50%,#eaf6ef 75%,#f4fbf6 100%);}
+        /* Forest — deep green palette */
+        .forest-bg{position:absolute;inset:0;background:linear-gradient(165deg,#191A19 0%,#1E5128 45%,#4E9F3D 78%,#D8E9A8 100%);}
         .forest-firefly{position:absolute;border-radius:50%;animation:fireflyAnim ease-in-out infinite;}
         @keyframes fireflyAnim{0%,100%{opacity:0;transform:translate(0,0) scale(1);}25%{opacity:1;transform:translate(var(--fx),var(--fy)) scale(1.4);}50%{opacity:.6;transform:translate(calc(var(--fx)*1.5),calc(var(--fy)*.5)) scale(0.8);}75%{opacity:1;transform:translate(calc(var(--fx)*.8),calc(var(--fy)*1.3)) scale(1.2);}}
-        .forest-mist{position:absolute;bottom:0;left:0;right:0;height:28%;background:linear-gradient(to top,rgba(180,230,200,.35),transparent);animation:mistRise 8s ease-in-out infinite alternate;}
+        .forest-mist{position:absolute;bottom:0;left:0;right:0;height:28%;background:linear-gradient(to top,rgba(216,233,168,.24),rgba(78,159,61,.2) 45%,transparent);animation:mistRise 8s ease-in-out infinite alternate;}
         @keyframes mistRise{from{opacity:.4;transform:translateY(5px)}to{opacity:.8;transform:translateY(-5px)}}
 
         /* Sunset — pastel */
@@ -1804,9 +1804,9 @@ const THEMES = [
   { id:'cherry',    name:'Cherry Blossom',   emoji:'🌸', price:2500, desc:'Hoa anh đào, nhẹ nhàng và lãng mạn',
     preview:['#e8829a','#fef0f5','#fff8fb'],
     vars:{'--primary':'#d4698a','--primary-hover':'#bb5577','--primary-light':'#fde8f0','--primary-mid':'#e8829a','--bg':'#fef0f5','--card':'#fff8fb','--border':'#f7cedd','--text':'#4a1a28','--muted':'#b07a8a','--success':'#2a9d6c','--success-bg':'#d4f4e8','--danger':'#c94a4a','--danger-bg':'#fde8e8','--nav-bg':'#c75a7a','--gold':'#f0a830'}},
-  { id:'forest',    name:'Forest',           emoji:'🌿', price:3000, desc:'Rừng xanh mát mẻ, tươi tắn và bình yên',
-    preview:['#5aaa7a','#eaf6ef','#f4fbf6'],
-    vars:{'--primary':'#3d9960','--primary-hover':'#2e7d4d','--primary-light':'#d8f0e2','--primary-mid':'#5aaa7a','--bg':'#eaf6ef','--card':'#f4fbf6','--border':'#b8e4ca','--text':'#1a3a28','--muted':'#5a8a6a','--success':'#2a9d6c','--success-bg':'#d4f4e8','--danger':'#c94a4a','--danger-bg':'#fde8e8','--nav-bg':'#2e7d4d','--gold':'#e8b830'}},
+  { id:'forest',    name:'Forest',           emoji:'🌿', price:3000, desc:'Rừng đậm sâu với tông xanh trầm ấm và ánh rêu dịu mắt',
+    preview:['#4E9F3D','#191A19','#1E5128'],
+    vars:{'--primary':'#4E9F3D','--primary-hover':'#3f862f','--primary-light':'#233527','--primary-mid':'#6fb85f','--bg':'#191A19','--card':'#1E5128','--border':'#3d6d45','--text':'#F4F8E3','--muted':'#C7D7A1','--success':'#4E9F3D','--success-bg':'#233527','--danger':'#ef9a9a','--danger-bg':'#3a2222','--nav-bg':'#191A19','--gold':'#D8E9A8','--accent':'#4E9F3D','--accent-glow':'rgba(78,159,61,.24)'}},
   { id:'galaxy',    name:'Galaxy',           emoji:'🌌', price:3500, desc:'Dải ngân hà huyền bí — tối tăm và lộng lẫy',
     preview:['#8b5cf6','#0d0d1a','#13122a'],
     vars:{'--primary':'#8b5cf6','--primary-hover':'#7c3aed','--primary-light':'#2e1065','--primary-mid':'#a78bfa','--bg':'#0d0d1a','--card':'#13122a','--border':'#2d2b5c','--text':'#e9d5ff','--muted':'#a78bfa','--success':'#10b981','--success-bg':'#022c22','--danger':'#f87171','--danger-bg':'#2d0b0b','--nav-bg':'#070714','--gold':'#fbbf24'}},
@@ -2045,6 +2045,7 @@ function applyForestEffect() {
     layer.appendChild(mist);
 
     // Fireflies (CSS)
+    const FIREFLY_COLORS = ['#4E9F3D', '#D8E9A8', '#9fcd74'];
     const ffCount = window.innerWidth < 600 ? 12 : 22;
     for (let i = 0; i < ffCount; i++) {
         const ff = document.createElement('div');
@@ -2056,8 +2057,8 @@ function applyForestEffect() {
         const delay = Math.random() * dur;
         const fx = ((Math.random() - 0.5) * 60).toFixed(0);
         const fy = ((Math.random() - 0.5) * 40).toFixed(0);
-        const hue = 100 + Math.random() * 50; // green-yellow range
-        ff.style.cssText = `left:${x}%;top:${y}%;width:${size}px;height:${size}px;background:hsl(${hue},80%,72%);box-shadow:0 0 ${size*2}px ${size}px hsl(${hue},80%,72%);--fx:${fx}px;--fy:${fy}px;animation-duration:${dur}s;animation-delay:-${delay}s;`;
+        const color = FIREFLY_COLORS[Math.floor(Math.random() * FIREFLY_COLORS.length)];
+        ff.style.cssText = `left:${x}%;top:${y}%;width:${size}px;height:${size}px;background:${color};box-shadow:0 0 ${size*2}px ${size}px ${color};--fx:${fx}px;--fy:${fy}px;animation-duration:${dur}s;animation-delay:-${delay}s;`;
         layer.appendChild(ff);
     }
 
@@ -2072,13 +2073,10 @@ function applyForestEffect() {
     window.addEventListener('resize', resize);
 
     const LEAF_COLORS = [
-        {fill:'#8dd5a8',shadow:'rgba(50,140,80,.25)'},
-        {fill:'#a8dfc0',shadow:'rgba(60,150,90,.2)'},
-        {fill:'#c8ecd8',shadow:'rgba(70,160,100,.18)'},
-        {fill:'#b8e8c8',shadow:'rgba(55,145,85,.22)'},
-        {fill:'#d8c870',shadow:'rgba(160,140,50,.2)'},  // autumn yellow
-        {fill:'#e8b860',shadow:'rgba(180,130,40,.22)'}, // autumn gold
-        {fill:'#d8a860',shadow:'rgba(170,120,40,.2)'},  // autumn orange-gold
+        {fill:'#4E9F3D',shadow:'rgba(30,81,40,.26)'},
+        {fill:'#6fb85f',shadow:'rgba(30,81,40,.24)'},
+        {fill:'#8dc27b',shadow:'rgba(25,26,25,.2)'},
+        {fill:'#D8E9A8',shadow:'rgba(30,81,40,.18)'},
     ];
 
     function mkLeaf(cv, random) {
