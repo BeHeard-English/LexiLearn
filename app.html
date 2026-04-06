@@ -86,6 +86,11 @@
         .theme-buy-btn.buy{background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;}
         .theme-buy-btn.buy:hover{filter:brightness(1.1);transform:translateY(-1px);}
         .theme-buy-btn.no-coin{background:#f1f5f9;color:#94a3b8;cursor:not-allowed;}
+        .theme-preview-btn{width:100%;margin-top:7px;padding:7px;border-radius:10px;border:1.5px dashed var(--border);background:transparent;font-family:inherit;font-weight:700;font-size:.78rem;cursor:pointer;color:var(--muted);transition:.2s;}
+        .theme-preview-btn:hover{background:var(--primary-light);color:var(--primary);border-color:var(--primary-mid);}
+        .theme-preview-btn.previewing{background:var(--primary-light);color:var(--primary);border-color:var(--primary);border-style:solid;}
+        .theme-previewing-badge{position:absolute;top:8px;left:8px;background:var(--primary);color:#fff;font-size:.6rem;font-weight:800;padding:3px 8px;border-radius:99px;text-transform:uppercase;letter-spacing:.06em;animation:previewPulse 1.5s ease-in-out infinite;}
+        @keyframes previewPulse{0%,100%{opacity:1;}50%{opacity:.6;}}
         @keyframes coinPop{0%{transform:translateX(-50%) scale(.6);opacity:0;}60%{transform:translateX(-50%) scale(1.1);}100%{transform:translateX(-50%) scale(1);opacity:1;}}
 
         /* SETTINGS PANEL */
@@ -2146,25 +2151,32 @@ if (!document.getElementById('sunsetCloudDriftStyle')) {
     document.head.appendChild(s);
 }
 
+let _previewingTheme = null; // theme đang xem thử (chưa mua)
+
 function renderShop() {
     const grid = document.getElementById('shopThemeGrid');
     if (!grid) return;
     updateCoinUI();
     grid.innerHTML = THEMES.map(theme => {
-        const owned    = _purchasedThemes.has(theme.id);
+        const owned     = _purchasedThemes.has(theme.id);
         const isCurrent = _activeTheme === theme.id;
+        const isPreviewing = _previewingTheme === theme.id;
         const canAfford = _userCoins >= theme.price;
         const [c1,c2,c3] = theme.preview;
 
         let btnClass, btnText;
-        if (isCurrent)      { btnClass='current'; btnText='✅ Đang dùng'; }
-        else if (owned)     { btnClass='activate'; btnText='⚡ Kích hoạt'; }
+        if (isCurrent)        { btnClass='current';  btnText='✅ Đang dùng'; }
+        else if (owned)       { btnClass='activate'; btnText='⚡ Kích hoạt'; }
         else if (theme.price===0) { btnClass='free'; btnText='Dùng miễn phí'; }
-        else if (canAfford) { btnClass='buy'; btnText=`🛒 Mua · 🪙 ${theme.price.toLocaleString('vi-VN')}`; }
-        else                { btnClass='no-coin'; btnText=`🔒 Cần 🪙 ${theme.price.toLocaleString('vi-VN')}`; }
+        else if (canAfford)   { btnClass='buy';      btnText=`🛒 Mua · 🪙 ${theme.price.toLocaleString('vi-VN')}`; }
+        else                  { btnClass='no-coin';  btnText=`🔒 Cần 🪙 ${theme.price.toLocaleString('vi-VN')}`; }
 
-        return `<div class="theme-card${isCurrent?' active-theme':''}">
-            ${isCurrent ? '<div class="theme-active-badge">Đang dùng</div>' : ''}
+        // Nút xem thử chỉ hiện cho theme chưa sở hữu và không phải đang dùng
+        const showPreviewBtn = !owned && !isCurrent && theme.price > 0;
+
+        return `<div class="theme-card${isCurrent?' active-theme':''}${isPreviewing?' active-theme':''}">
+            ${isCurrent  ? '<div class="theme-active-badge">Đang dùng</div>' : ''}
+            ${isPreviewing ? '<div class="theme-previewing-badge">👁 Xem thử</div>' : ''}
             <div class="theme-preview" style="background:${c2};">
                 <div class="theme-preview-nav" style="background:${c1};">
                     <div class="theme-preview-dot"></div><div class="theme-preview-dot"></div><div class="theme-preview-dot"></div>
@@ -2181,9 +2193,27 @@ function renderShop() {
                 <button class="theme-buy-btn ${btnClass}" onclick="handleThemeAction('${theme.id}')" ${btnClass==='no-coin'||btnClass==='current'?'disabled':''}>
                     ${btnText}
                 </button>
+                ${showPreviewBtn ? `<button class="theme-preview-btn${isPreviewing?' previewing':''}" onclick="previewTheme('${theme.id}')">
+                    ${isPreviewing ? '↩ Thoát xem thử' : '👁 Xem thử'}
+                </button>` : ''}
             </div>
         </div>`;
     }).join('');
+}
+
+function previewTheme(themeId) {
+    if (_previewingTheme === themeId) {
+        // Đang xem thử → thoát, revert về theme đang dùng
+        _previewingTheme = null;
+        applyTheme(_activeTheme);
+        showToast('↩ Đã thoát xem thử');
+    } else {
+        // Bật xem thử
+        _previewingTheme = themeId;
+        applyTheme(themeId);
+        showToast('👁 Đang xem thử — bấm lại để thoát');
+    }
+    renderShop();
 }
 
 async function handleThemeAction(themeId) {
@@ -2195,6 +2225,7 @@ async function handleThemeAction(themeId) {
         // Kích hoạt
         _purchasedThemes.add(themeId);
         _activeTheme = themeId;
+        _previewingTheme = null;
         applyTheme(themeId);
         await db.collection('users').doc(currentUser.uid).set({ activeTheme: themeId, purchasedThemes: [..._purchasedThemes].filter(id=>id!=='default') }, { merge:true });
         renderShop();
@@ -2207,6 +2238,7 @@ async function handleThemeAction(themeId) {
         _userCoins -= theme.price;
         _purchasedThemes.add(themeId);
         _activeTheme = themeId;
+        _previewingTheme = null;
         applyTheme(themeId);
         await db.collection('users').doc(currentUser.uid).set({
             coins: firebase.firestore.FieldValue.increment(-theme.price),
