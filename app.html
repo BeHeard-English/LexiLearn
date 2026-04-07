@@ -1060,6 +1060,7 @@
                         <button class="mode-btn" data-study="flash" style="gap:6px;">🃏 Flashcard</button>
                         <button class="mode-btn" data-study="typing" style="gap:6px;">⌨️ Gõ đáp án</button>
                         <button class="mode-btn" data-study="fillblank" style="gap:6px;">📝 Điền từ</button>
+                        <button class="mode-btn" data-study="listening" style="gap:6px;">🎧 Nghe hiểu</button>
                     </div>
                 </div>
 
@@ -1264,6 +1265,61 @@
         </div>
 
     </div><!-- /review-start -->
+
+    <!-- ── LISTENING AREA ── -->
+    <div id="listeningArea" style="display:none;">
+        <div style="margin-bottom:16px;padding:0 4px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span style="font-size:.8rem;font-weight:700;color:var(--muted);">Tiến độ</span>
+                <span id="lisProgressText" style="font-size:.8rem;font-weight:800;color:var(--primary);">0 / 0</span>
+            </div>
+            <div class="progress-bar-wrap"><div class="progress-bar-fill" id="lisProgressFill" style="width:0%"></div></div>
+        </div>
+
+        <div class="quiz-card" style="text-align:center;">
+            <!-- Generating indicator -->
+            <div id="lisGenerating" style="display:none;padding:28px 0;color:var(--muted);">
+                <div style="font-size:2rem;margin-bottom:10px;">🤖</div>
+                <div style="font-weight:700;font-size:.9rem;">AI đang tạo câu ví dụ...</div>
+            </div>
+
+            <!-- Main content -->
+            <div id="lisContent" style="display:none;">
+                <div style="margin-bottom:20px;">
+                    <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;">Nghe và điền từ còn thiếu</div>
+                    <!-- Play button -->
+                    <button id="lisPlayBtn" onclick="lisPlaySentence()" style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary-mid));border:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 6px 24px var(--accent-glow);transition:.2s;" title="Nghe câu">
+                        <svg xmlns="http://www.w3.org/2000/svg" style="width:32px;height:32px;color:#fff;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M12 6v12m-3.536-9.536a5 5 0 000 7.072"/></svg>
+                    </button>
+                    <div style="font-size:.7rem;color:var(--muted);margin-top:8px;">Nhấn để nghe lại</div>
+                </div>
+
+                <!-- Sentence with blank (revealed after answer) -->
+                <div id="lisSentenceReveal" style="display:none;font-size:1rem;line-height:1.8;color:var(--text);margin-bottom:16px;text-align:left;padding:12px 16px;background:var(--primary-light);border-radius:12px;border-left:3px solid var(--primary-mid);"></div>
+
+                <!-- Inputs -->
+                <div style="text-align:left;display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
+                    <div id="lisEnRow">
+                        <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Từ tiếng Anh bị che <span style="color:var(--primary);">+10đ</span></div>
+                        <input type="text" id="lisEnInput" class="txt-input" placeholder="Nhập từ tiếng Anh...">
+                        <div id="lisEnFeedback" style="display:none;font-size:.8rem;font-weight:700;margin-top:5px;padding:6px 12px;border-radius:8px;"></div>
+                    </div>
+                    <div id="lisVnRow">
+                        <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Nghĩa tiếng Việt <span style="color:var(--primary);">+10đ</span></div>
+                        <input type="text" id="lisVnInput" class="txt-input" placeholder="Nhập nghĩa tiếng Việt...">
+                        <div id="lisVnFeedback" style="display:none;font-size:.8rem;font-weight:700;margin-top:5px;padding:6px 12px;border-radius:8px;"></div>
+                    </div>
+                </div>
+
+                <!-- Buttons -->
+                <div style="display:flex;gap:10px;">
+                    <button id="lisCheckBtn" class="btn-primary wide" style="padding:14px;" onclick="checkListeningAnswer()">Kiểm tra</button>
+                    <button id="lisNextBtn" class="btn-primary wide" style="padding:14px;display:none;" onclick="nextListening()">Câu tiếp theo ➜</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     </div><!-- /tab-review -->
 
     <!-- ═══════════════ TAB: GAMES ═══════════════ -->
@@ -3267,7 +3323,7 @@ document.querySelectorAll('.mode-btn[data-study]').forEach(btn => btn.onclick = 
     const aiOption  = document.getElementById('aiGradingOption');
     const modeWrap  = document.getElementById('reviewModeWrap');
     // Điền từ không cần chiều học (câu ví dụ luôn tiếng Anh)
-    if (modeWrap) modeWrap.style.display = (studyType === 'fillblank') ? 'none' : '';
+    if (modeWrap) modeWrap.style.display = (studyType === 'fillblank' || studyType === 'listening') ? 'none' : '';
     // AI chỉ dùng cho typing normal
     if (aiOption) aiOption.style.display = (studyType === 'typing' && reviewMode === 'normal') ? 'block' : 'none';
 });
@@ -3357,18 +3413,20 @@ async function startReviewQuiz() {
         document.getElementById('reviewQuizArea').style.display = 'none';
         document.getElementById('typingArea').style.display = 'none';
         document.getElementById('fillBlankArea').style.display = 'none';
+        document.getElementById('listeningArea').style.display = 'none';
         showFlashcard();
     } else if (studyType === 'typing') {
         document.getElementById('typingArea').style.display = 'block';
         document.getElementById('reviewQuizArea').style.display = 'none';
         document.getElementById('flashcardArea').style.display = 'none';
         document.getElementById('fillBlankArea').style.display = 'none';
+        document.getElementById('listeningArea').style.display = 'none';
         showTypingQuestion();
     } else if (studyType === 'fillblank') {
         // Lọc chỉ giữ từ có câu ví dụ; nếu không đủ 4, báo lỗi
         const withEx = reviewPool.filter(i => i.example && i.example.trim().length > 3);
         if (withEx.length < 2) {
-            document.getElementById('reviewStart').classList.remove('hidden');
+            document.getElementById('listeningArea').style.display='none'; document.getElementById('reviewStart').classList.remove('hidden');
             showToast('⚠️ Cần ít nhất 2 từ có câu ví dụ để dùng chế độ Điền từ. Hãy thêm câu ví dụ cho từ vựng!');
             return;
         }
@@ -3378,7 +3436,17 @@ async function startReviewQuiz() {
         document.getElementById('reviewQuizArea').style.display = 'none';
         document.getElementById('flashcardArea').style.display = 'none';
         document.getElementById('typingArea').style.display = 'none';
+        document.getElementById('listeningArea').style.display = 'none';
         showFillBlank();
+    } else if (studyType === 'listening') {
+        const key = document.getElementById('apiKey').value.trim() || document.getElementById('apiKeyMobile').value.trim();
+        if (!key) { showToast('⚠️ Cần nhập Groq API Key để dùng chế độ Nghe hiểu!'); document.getElementById('listeningArea').style.display='none'; document.getElementById('reviewStart').classList.remove('hidden'); return; }
+        document.getElementById('listeningArea').style.display = 'block';
+        document.getElementById('reviewQuizArea').style.display = 'none';
+        document.getElementById('flashcardArea').style.display = 'none';
+        document.getElementById('typingArea').style.display = 'none';
+        document.getElementById('fillBlankArea').style.display = 'none';
+        showListeningQuestion();
     } else {
         document.getElementById('reviewQuizArea').style.display = window.innerWidth <= 767 ? 'flex' : 'block';
         document.body.classList.add('quiz-active');
@@ -3406,7 +3474,7 @@ async function showReviewQuestion() {
     if(currentReviewIdx>=reviewPool.length){
         document.getElementById('reviewQuizArea').style.display='none';
         document.getElementById('flashcardArea').style.display='none';
-        document.getElementById('reviewStart').classList.remove('hidden');
+        document.getElementById('listeningArea').style.display='none'; document.getElementById('reviewStart').classList.remove('hidden');
         updateProgress();
         showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} câu.`);
         await showSessionSummary();
@@ -4639,7 +4707,7 @@ function updateFCProgress() {
 function showFlashcard() {
     if (currentReviewIdx >= reviewPool.length) {
         document.getElementById('flashcardArea').style.display = 'none';
-        document.getElementById('reviewStart').classList.remove('hidden');
+        document.getElementById('listeningArea').style.display='none'; document.getElementById('reviewStart').classList.remove('hidden');
         showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} thẻ.`);
         showSessionSummary();
         return;
@@ -4770,7 +4838,7 @@ async function rateFC(rating) {
         showFlashcard();
     } else {
         document.getElementById('flashcardArea').style.display = 'none';
-        document.getElementById('reviewStart').classList.remove('hidden');
+        document.getElementById('listeningArea').style.display='none'; document.getElementById('reviewStart').classList.remove('hidden');
         showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} thẻ.`);
         await showSessionSummary();
     }
@@ -5473,7 +5541,7 @@ async function showSessionSummary() {
 
 function closeSessionSummary(goToLibrary) {
     document.getElementById('sessionSummaryModal').classList.remove('open');
-    document.getElementById('reviewStart').classList.remove('hidden');
+    document.getElementById('listeningArea').style.display='none'; document.getElementById('reviewStart').classList.remove('hidden');
     document.body.classList.remove('quiz-active');
     // Ẩn tất cả area ôn tập
     ['reviewQuizArea','flashcardArea','typingArea','fillBlankArea'].forEach(id => {
@@ -5543,7 +5611,7 @@ async function showTypingQuestion() {
     _reviewTransitioning = true;
     if (currentReviewIdx >= reviewPool.length) {
         document.getElementById('typingArea').style.display = 'none';
-        document.getElementById('reviewStart').classList.remove('hidden');
+        document.getElementById('listeningArea').style.display='none'; document.getElementById('reviewStart').classList.remove('hidden');
         updateTypingProgress();
         showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} câu.`);
         await showSessionSummary();
@@ -5751,7 +5819,7 @@ Học sinh có hiểu đúng nghĩa không?`;
             showTypingQuestion();
         } else {
             document.getElementById('typingArea').style.display = 'none';
-            document.getElementById('reviewStart').classList.remove('hidden');
+            document.getElementById('listeningArea').style.display='none'; document.getElementById('reviewStart').classList.remove('hidden');
             showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} câu.`);
             showSessionSummary();
         }
@@ -5823,7 +5891,7 @@ async function showFillBlank() {
     _reviewTransitioning = true;
     if (currentReviewIdx >= reviewPool.length) {
         document.getElementById('fillBlankArea').style.display = 'none';
-        document.getElementById('reviewStart').classList.remove('hidden');
+        document.getElementById('listeningArea').style.display='none'; document.getElementById('reviewStart').classList.remove('hidden');
         updateFBProgress();
         showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} câu.`);
         showSessionSummary();
@@ -6337,6 +6405,288 @@ async function syncAllTopicListWordIds() {
 <div id="themeEffectLayer"></div>
 <canvas id="confettiCanvas"></canvas>
 <script>
+// ══════════════════════════════════════════
+// LISTENING MODE
+// ══════════════════════════════════════════
+let _lisCurrentSentence = '';  // câu đã tạo bởi AI (có từ gốc)
+let _lisAttempt = 0;           // 0 = lần 1, 1 = lần 2
+let _lisEnCorrect = false;     // tiếng Anh đã đúng chưa
+let _lisVnCorrect = false;     // nghĩa tiếng Việt đã đúng chưa
+
+function updateListeningProgress() {
+    const pct = Math.round((currentReviewIdx / totalReviewCount) * 100);
+    document.getElementById('lisProgressFill').style.width = pct + '%';
+    document.getElementById('lisProgressText').innerText = `${currentReviewIdx} / ${totalReviewCount}`;
+}
+
+async function showListeningQuestion() {
+    if (_reviewTransitioning) return;
+    _reviewTransitioning = true;
+
+    if (currentReviewIdx >= reviewPool.length) {
+        document.getElementById('listeningArea').style.display = 'none';
+        document.getElementById('reviewStart').classList.remove('hidden');
+        updateListeningProgress();
+        showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} câu.`);
+        await showSessionSummary();
+        _reviewTransitioning = false;
+        return;
+    }
+
+    updateListeningProgress();
+    _lisCurrentSentence = '';
+
+    const target = reviewPool[currentReviewIdx];
+    currentWord = target;
+    // Lấy attempt từ chính object từ (0 = lần 1, 1 = lần 2)
+    _lisAttempt = target._lisAttempt || 0;
+    _lisEnCorrect = target._lisEnDone || false;
+    _lisVnCorrect = target._lisVnDone || false;
+
+    // Reset UI
+    document.getElementById('lisGenerating').style.display = 'block';
+    document.getElementById('lisContent').style.display = 'none';
+    document.getElementById('lisSentenceReveal').style.display = 'none';
+    document.getElementById('lisEnInput').value = '';
+    document.getElementById('lisVnInput').value = '';
+    document.getElementById('lisEnFeedback').style.display = 'none';
+    document.getElementById('lisVnFeedback').style.display = 'none';
+    document.getElementById('lisCheckBtn').style.display = 'flex';
+    document.getElementById('lisCheckBtn').disabled = false;
+    document.getElementById('lisCheckBtn').textContent = 'Kiểm tra';
+    document.getElementById('lisNextBtn').style.display = 'none';
+    document.getElementById('lisEnRow').style.opacity = '1';
+    document.getElementById('lisVnRow').style.opacity = '1';
+
+    // Ẩn và disable ô đã đúng từ lần trước
+    if (_lisEnCorrect) {
+        document.getElementById('lisEnInput').disabled = true;
+        document.getElementById('lisEnRow').style.opacity = '0.45';
+        const fb = document.getElementById('lisEnFeedback');
+        fb.style.cssText = 'display:block;font-size:.8rem;font-weight:700;margin-top:5px;padding:6px 12px;border-radius:8px;background:#d1fae5;color:#065f46;';
+        fb.textContent = `✅ Đã đúng lần trước`;
+    }
+    if (_lisVnCorrect) {
+        document.getElementById('lisVnInput').disabled = true;
+        document.getElementById('lisVnRow').style.opacity = '0.45';
+        const fb = document.getElementById('lisVnFeedback');
+        fb.style.cssText = 'display:block;font-size:.8rem;font-weight:700;margin-top:5px;padding:6px 12px;border-radius:8px;background:#d1fae5;color:#065f46;';
+        fb.textContent = `✅ Đã đúng lần trước`;
+    }
+
+    _lisUpdatePointLabels();
+
+    // Dùng câu đã tạo lần trước (nếu từ quay lại), hoặc tạo mới
+    const sentence = target._lisSentence || await _lisGenerateSentence(target);
+    target._lisSentence = sentence;
+    _lisCurrentSentence = sentence;
+
+    document.getElementById('lisGenerating').style.display = 'none';
+    document.getElementById('lisContent').style.display = 'block';
+
+    _reviewTransitioning = false;
+    lisPlaySentence();
+}
+
+function _lisUpdatePointLabels() {
+    const pts = _lisAttempt === 0 ? 10 : 5;
+    document.querySelectorAll('#lisEnRow span[style*="color:var(--primary)"]').forEach(el => el.textContent = `+${pts}đ`);
+    document.querySelectorAll('#lisVnRow span[style*="color:var(--primary)"]').forEach(el => el.textContent = `+${pts}đ`);
+}
+
+async function _lisGenerateSentence(target) {
+    // Nếu từ đã có câu ví dụ thì ưu tiên dùng, chỉ gọi AI nếu không có
+    if (target.example && target.example.trim().length > 5 && target.example.toLowerCase().includes(target.word.toLowerCase())) {
+        return target.example.trim();
+    }
+    const key = document.getElementById('apiKey').value.trim() || document.getElementById('apiKeyMobile').value.trim();
+    if (!key) return `This is a ${target.word} example.`;
+    try {
+        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+            body: JSON.stringify({
+                model: 'llama-3.3-70b-versatile',
+                messages: [{
+                    role: 'user',
+                    content: `Write ONE natural English sentence using the word "${target.word}" (level ${target.level || 'B1'}). The sentence must contain the EXACT word "${target.word}". Return ONLY the sentence, no quotes, no explanation.`
+                }],
+                temperature: 0.7,
+                max_tokens: 80
+            })
+        });
+        const data = await res.json();
+        return data.choices?.[0]?.message?.content?.trim() || `She ${target.word} every day.`;
+    } catch(e) {
+        return target.example?.trim() || `She ${target.word} every day.`;
+    }
+}
+
+function lisPlaySentence() {
+    const target = reviewPool[currentReviewIdx];
+    if (!_lisCurrentSentence) return;
+    // Đọc câu nhưng thay từ cần học bằng "blank" để che
+    const spoken = _lisCurrentSentence.replace(
+        new RegExp(target.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'),
+        'blank'
+    );
+    // Dùng TTS engine sẵn có trong app
+    if (window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+        const utt = new SpeechSynthesisUtterance(spoken);
+        utt.lang = 'en-US';
+        utt.rate = 0.88;
+        const voices = window.speechSynthesis.getVoices();
+        const enVoice = voices.find(v => v.lang.startsWith('en') && !v.name.toLowerCase().includes('google')) ||
+                        voices.find(v => v.lang.startsWith('en'));
+        if (enVoice) utt.voice = enVoice;
+        const btn = document.getElementById('lisPlayBtn');
+        btn.style.opacity = '0.6';
+        utt.onend = () => { btn.style.opacity = '1'; };
+        window.speechSynthesis.speak(utt);
+    }
+}
+
+async function checkListeningAnswer() {
+    const target = reviewPool[currentReviewIdx];
+    const enInput = document.getElementById('lisEnInput').value.trim();
+    const vnInput = document.getElementById('lisVnInput').value.trim();
+    const key = document.getElementById('apiKey').value.trim() || document.getElementById('apiKeyMobile').value.trim();
+
+    if (!enInput && !vnInput) { showToast('⚠️ Hãy nhập ít nhất một đáp án!'); return; }
+
+    document.getElementById('lisCheckBtn').disabled = true;
+    document.getElementById('lisCheckBtn').textContent = 'Đang kiểm tra...';
+
+    const attempt = target._lisAttempt || 0;
+    const pts = attempt === 0 ? 10 : 5;
+
+    // ── Kiểm tra tiếng Anh ──
+    let justGotEn = false;
+    if (!_lisEnCorrect && enInput) {
+        const enOk = smartMatch(enInput, target.word);
+        const enFb = document.getElementById('lisEnFeedback');
+        enFb.style.display = 'block';
+        if (enOk) {
+            enFb.style.cssText = 'display:block;font-size:.8rem;font-weight:700;margin-top:5px;padding:6px 12px;border-radius:8px;background:#d1fae5;color:#065f46;';
+            enFb.textContent = `✅ Chính xác! +${pts} điểm`;
+            document.getElementById('lisEnInput').disabled = true;
+            _lisEnCorrect = true;
+            target._lisEnDone = true;
+            justGotEn = true;
+            await addXP(pts);
+        } else {
+            enFb.style.cssText = 'display:block;font-size:.8rem;font-weight:700;margin-top:5px;padding:6px 12px;border-radius:8px;background:#fee2e2;color:#991b1b;';
+            enFb.textContent = `❌ Chưa đúng! Đáp án: ${target.word}`;
+        }
+    }
+
+    // ── Kiểm tra nghĩa tiếng Việt (dùng AI) ──
+    let justGotVn = false;
+    if (!_lisVnCorrect && vnInput) {
+        let vnOk = smartMatch(vnInput, target.vn);
+        if (!vnOk && key) {
+            try {
+                const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+                    body: JSON.stringify({
+                        model: 'llama-3.3-70b-versatile',
+                        messages: [
+                            { role: 'system', content: `Bạn là chuyên gia ngôn ngữ Anh–Việt. Chấm xem học sinh có hiểu đúng nghĩa tiếng Việt của từ tiếng Anh không. Chỉ trả về: true hoặc false.` },
+                            { role: 'user', content: `Từ: "${target.word}"\nĐáp án tham khảo: "${target.vn}"\nHọc sinh gõ: "${vnInput}"\nĐúng nghĩa không?` }
+                        ],
+                        temperature: 0, max_tokens: 5
+                    })
+                });
+                const data = await res.json();
+                vnOk = data.choices?.[0]?.message?.content?.trim().toLowerCase().startsWith('true') || false;
+            } catch(e) {}
+        }
+        const vnFb = document.getElementById('lisVnFeedback');
+        vnFb.style.display = 'block';
+        if (vnOk) {
+            vnFb.style.cssText = 'display:block;font-size:.8rem;font-weight:700;margin-top:5px;padding:6px 12px;border-radius:8px;background:#d1fae5;color:#065f46;';
+            vnFb.textContent = `✅ Chính xác! +${pts} điểm`;
+            document.getElementById('lisVnInput').disabled = true;
+            _lisVnCorrect = true;
+            target._lisVnDone = true;
+            justGotVn = true;
+            await addXP(pts);
+        } else {
+            vnFb.style.cssText = 'display:block;font-size:.8rem;font-weight:700;margin-top:5px;padding:6px 12px;border-radius:8px;background:#fee2e2;color:#991b1b;';
+            vnFb.textContent = `❌ Chưa đúng! Đáp án: ${target.vn}`;
+        }
+    }
+
+    if (justGotEn || justGotVn) playFeedback(true);
+    else playFeedback(false);
+
+    // ── Tiết lộ câu ví dụ ──
+    const revealed = document.getElementById('lisSentenceReveal');
+    revealed.style.display = 'block';
+    const highlighted = _lisCurrentSentence.replace(
+        new RegExp(`(${target.word.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'),
+        `<strong style="color:var(--primary);background:var(--primary-light);padding:0 3px;border-radius:4px;">$1</strong>`
+    );
+    revealed.innerHTML = `📖 ${highlighted}`;
+
+    document.getElementById('lisCheckBtn').disabled = false;
+    document.getElementById('lisCheckBtn').textContent = 'Kiểm tra';
+
+    const bothDone = _lisEnCorrect && _lisVnCorrect;
+
+    if (bothDone) {
+        // Đúng hết → SRS correct, kết thúc từ này
+        const ref = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(target.word.toLowerCase());
+        const item = fullLibrary.find(i => i.word.toLowerCase() === target.word.toLowerCase()) || {};
+        await ref.set({ correct_count: firebase.firestore.FieldValue.increment(1), ...srsUpdate(item, true) }, { merge: true });
+        await recordWordReview(target.word, true);
+        trackAnswerStreak(true); trackSessionResult(true);
+        _lisMoveNext();
+    } else if (attempt >= 1) {
+        // Lần 2 mà vẫn còn sai → SRS penalty, kết thúc
+        const ref = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(target.word.toLowerCase());
+        const item = fullLibrary.find(i => i.word.toLowerCase() === target.word.toLowerCase()) || {};
+        await ref.set({ incorrect_count: firebase.firestore.FieldValue.increment(1), ...srsUpdate(item, false) }, { merge: true });
+        await recordWordReview(target.word, false);
+        trackAnswerStreak(false); trackSessionResult(false);
+        // Hiển thị đáp án còn sai
+        if (!_lisEnCorrect) {
+            const fb = document.getElementById('lisEnFeedback');
+            fb.style.cssText = 'display:block;font-size:.8rem;font-weight:700;margin-top:5px;padding:6px 12px;border-radius:8px;background:#fee2e2;color:#991b1b;';
+            fb.textContent = `❌ Đáp án đúng: ${target.word}`;
+        }
+        if (!_lisVnCorrect) {
+            const fb = document.getElementById('lisVnFeedback');
+            fb.style.cssText = 'display:block;font-size:.8rem;font-weight:700;margin-top:5px;padding:6px 12px;border-radius:8px;background:#fee2e2;color:#991b1b;';
+            fb.textContent = `❌ Đáp án đúng: ${target.vn}`;
+        }
+        _lisMoveNext();
+    } else {
+        // Lần 1 còn sai 1 phần → đẩy về cuối, báo người dùng
+        target._lisAttempt = 1;
+        // Disable ô đã đúng
+        if (_lisEnCorrect) document.getElementById('lisEnRow').style.opacity = '0.45';
+        if (_lisVnCorrect) document.getElementById('lisVnRow').style.opacity = '0.45';
+        showToast('📌 Sẽ quay lại từ này — điểm thưởng còn 5đ/phần.');
+        reviewPool.push(reviewPool.splice(currentReviewIdx, 1)[0]);
+        currentReviewIdx++;
+        _lisMoveNext();
+    }
+}
+
+function _lisMoveNext() {
+    document.getElementById('lisCheckBtn').style.display = 'none';
+    document.getElementById('lisNextBtn').style.display = 'flex';
+}
+
+async function nextListening() {
+    document.getElementById('lisNextBtn').style.display = 'none';
+    document.getElementById('lisCheckBtn').style.display = 'flex';
+    await showListeningQuestion();
+}
+
 // ══════════════════════════════════════════
 // CONFETTI ENGINE
 // ══════════════════════════════════════════
