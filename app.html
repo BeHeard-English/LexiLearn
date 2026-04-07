@@ -6402,131 +6402,28 @@ async function syncAllTopicListWordIds() {
 <canvas id="confettiCanvas"></canvas>
 <script>
 // ══════════════════════════════════════════
-// LISTENING MODE
+// LISTENING MODE (phiên bản sửa lỗi)
 // ══════════════════════════════════════════
-let _lisCurrentSentence = '';  // câu đã tạo bởi AI (có từ gốc)
-let _lisAttempt = 0;           // 0 = lần 1, 1 = lần 2
-let _lisEnCorrect = false;     // tiếng Anh đã đúng chưa
-let _lisVnCorrect = false;     // nghĩa tiếng Việt đã đúng chưa
+let _lisCurrentSentence = '';
 
 function updateListeningProgress() {
     const pct = Math.round((currentReviewIdx / totalReviewCount) * 100);
-    document.getElementById('lisProgressFill').style.width = pct + '%';
-    document.getElementById('lisProgressText').innerText = `${currentReviewIdx} / ${totalReviewCount}`;
+    const fillEl = document.getElementById('lisProgressFill');
+    const textEl = document.getElementById('lisProgressText');
+    if (fillEl) fillEl.style.width = pct + '%';
+    if (textEl) textEl.innerText = `${currentReviewIdx} / ${totalReviewCount}`;
 }
 
-async function showListeningQuestion() {
-    if (_reviewTransitioning) return;
-    _reviewTransitioning = true;
-
-    if (currentReviewIdx >= reviewPool.length) {
-        document.getElementById('listeningArea').style.display = 'none';
-        document.getElementById('reviewStart').classList.remove('hidden');
-        updateListeningProgress();
-        showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} câu.`);
-        await showSessionSummary();
-        _reviewTransitioning = false;
-        return;
-    }
-
-    updateListeningProgress();
-    const target = reviewPool[currentReviewIdx];
-    currentWord = target;
-
-    // Reset UI
-    document.getElementById('lisGenerating').style.display = 'block';
-    document.getElementById('lisContent').style.display = 'none';
-    document.getElementById('lisAnswerInput').value = '';
-    document.getElementById('lisAnswerFeedback').style.display = 'none';
-    document.getElementById('lisCheckBtn').style.display = 'flex';
-    document.getElementById('lisCheckBtn').disabled = false;
-    document.getElementById('lisNextBtn').style.display = 'none';
-
-    // Tạo câu ví dụ (nếu chưa có)
-    let sentence = target._lisSentence;
-    if (!sentence) {
-        sentence = await _lisGenerateSentence(target);
-        target._lisSentence = sentence;
-    }
-
-    // Lưu câu gốc để đọc TTS
-    _lisCurrentSentence = sentence;
-
-    // Tạo câu hiển thị với blank thay cho target.word
-    const blankHtml = `<span class="fb-blank empty" style="display:inline-block; min-width:100px; border-bottom:2px solid var(--primary-mid); color:var(--primary); font-weight:800; text-align:center;">__________</span>`;
-    const displaySentence = sentence.replace(new RegExp(`\\b(${target.word.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})\\b`, 'gi'), blankHtml);
-    document.getElementById('lisSentenceDisplay').innerHTML = displaySentence;
-
-    document.getElementById('lisGenerating').style.display = 'none';
-    document.getElementById('lisContent').style.display = 'block';
-    _reviewTransitioning = false;
-
-    // Tự động đọc câu lần đầu
-    lisPlaySentence();
-}
-    // Lấy attempt từ chính object từ (0 = lần 1, 1 = lần 2)
-    _lisAttempt = target._lisAttempt || 0;
-    _lisEnCorrect = target._lisEnDone || false;
-    _lisVnCorrect = target._lisVnDone || false;
-
-    // Reset UI
-    document.getElementById('lisGenerating').style.display = 'block';
-    document.getElementById('lisContent').style.display = 'none';
-    document.getElementById('lisSentenceReveal').style.display = 'none';
-    document.getElementById('lisEnInput').value = '';
-    document.getElementById('lisVnInput').value = '';
-    document.getElementById('lisEnFeedback').style.display = 'none';
-    document.getElementById('lisVnFeedback').style.display = 'none';
-    document.getElementById('lisCheckBtn').style.display = 'flex';
-    document.getElementById('lisCheckBtn').disabled = false;
-    document.getElementById('lisCheckBtn').textContent = 'Kiểm tra';
-    document.getElementById('lisNextBtn').style.display = 'none';
-    document.getElementById('lisEnRow').style.opacity = '1';
-    document.getElementById('lisVnRow').style.opacity = '1';
-
-    // Ẩn và disable ô đã đúng từ lần trước
-    if (_lisEnCorrect) {
-        document.getElementById('lisEnInput').disabled = true;
-        document.getElementById('lisEnRow').style.opacity = '0.45';
-        const fb = document.getElementById('lisEnFeedback');
-        fb.style.cssText = 'display:block;font-size:.8rem;font-weight:700;margin-top:5px;padding:6px 12px;border-radius:8px;background:#d1fae5;color:#065f46;';
-        fb.textContent = `✅ Đã đúng lần trước`;
-    }
-    if (_lisVnCorrect) {
-        document.getElementById('lisVnInput').disabled = true;
-        document.getElementById('lisVnRow').style.opacity = '0.45';
-        const fb = document.getElementById('lisVnFeedback');
-        fb.style.cssText = 'display:block;font-size:.8rem;font-weight:700;margin-top:5px;padding:6px 12px;border-radius:8px;background:#d1fae5;color:#065f46;';
-        fb.textContent = `✅ Đã đúng lần trước`;
-    }
-
-    _lisUpdatePointLabels();
-
-    // Dùng câu đã tạo lần trước (nếu từ quay lại), hoặc tạo mới
-    const sentence = target._lisSentence || await _lisGenerateSentence(target);
-    target._lisSentence = sentence;
-    _lisCurrentSentence = sentence;
-
-    document.getElementById('lisGenerating').style.display = 'none';
-    document.getElementById('lisContent').style.display = 'block';
-
-    _reviewTransitioning = false;
-    lisPlaySentence();
-}
-
-function _lisUpdatePointLabels() {
-    const pts = _lisAttempt === 0 ? 10 : 5;
-    document.querySelectorAll('#lisEnRow span[style*="color:var(--primary)"]').forEach(el => el.textContent = `+${pts}đ`);
-    document.querySelectorAll('#lisVnRow span[style*="color:var(--primary)"]').forEach(el => el.textContent = `+${pts}đ`);
-}
-
+// Hàm tạo câu ví dụ bằng AI (hoặc dùng câu mặc định)
 async function _lisGenerateSentence(target) {
-    // Nếu từ đã có câu ví dụ thì ưu tiên dùng, chỉ gọi AI nếu không có
+    // Nếu từ đã có câu ví dụ hợp lệ thì dùng luôn
     if (target.example && target.example.trim().length > 5 && target.example.toLowerCase().includes(target.word.toLowerCase())) {
         return target.example.trim();
     }
-    const key = document.getElementById('apiKey').value.trim() || document.getElementById('apiKeyMobile').value.trim();
-    if (!key) return `This is a ${target.word} example.`;
+    const key = document.getElementById('apiKey')?.value.trim() || document.getElementById('apiKeyMobile')?.value.trim();
+    if (!key) {
+        return `This is a ${target.word} example.`;
+    }
     try {
         const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
@@ -6548,30 +6445,96 @@ async function _lisGenerateSentence(target) {
     }
 }
 
-function lisPlaySentence() {
-    if (!_lisCurrentSentence) return;
-    // Đọc nguyên câu gốc, không thay thế từ
-    const sentence = _lisCurrentSentence;
-    if (window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-        const utt = new SpeechSynthesisUtterance(sentence);
-        utt.lang = 'en-US';
-        utt.rate = 0.88;
-        // Ưu tiên giọng nam tiếng Anh (nếu có)
-        const voices = window.speechSynthesis.getVoices();
-        const enVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Google UK') || v.name.includes('Samantha'))) ||
-                        voices.find(v => v.lang.startsWith('en'));
-        if (enVoice) utt.voice = enVoice;
-        const btn = document.getElementById('lisPlayBtn');
-        btn.style.opacity = '0.6';
-        utt.onend = () => { btn.style.opacity = '1'; };
-        window.speechSynthesis.speak(utt);
+// Hiển thị câu hỏi listening
+async function showListeningQuestion() {
+    if (_reviewTransitioning) return;
+    _reviewTransitioning = true;
+
+    if (currentReviewIdx >= reviewPool.length) {
+        const listeningArea = document.getElementById('listeningArea');
+        const reviewStart = document.getElementById('reviewStart');
+        if (listeningArea) listeningArea.style.display = 'none';
+        if (reviewStart) reviewStart.classList.remove('hidden');
+        updateListeningProgress();
+        showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} câu.`);
+        await showSessionSummary();
+        _reviewTransitioning = false;
+        return;
     }
+
+    updateListeningProgress();
+    const target = reviewPool[currentReviewIdx];
+    currentWord = target;
+
+    // Reset UI
+    const genDiv = document.getElementById('lisGenerating');
+    const contentDiv = document.getElementById('lisContent');
+    if (genDiv) genDiv.style.display = 'block';
+    if (contentDiv) contentDiv.style.display = 'none';
+    const answerInput = document.getElementById('lisAnswerInput');
+    if (answerInput) {
+        answerInput.value = '';
+        answerInput.disabled = false;
+    }
+    const fbDiv = document.getElementById('lisAnswerFeedback');
+    if (fbDiv) fbDiv.style.display = 'none';
+    const checkBtn = document.getElementById('lisCheckBtn');
+    if (checkBtn) {
+        checkBtn.style.display = 'flex';
+        checkBtn.disabled = false;
+    }
+    const nextBtn = document.getElementById('lisNextBtn');
+    if (nextBtn) nextBtn.style.display = 'none';
+
+    // Tạo câu ví dụ (nếu chưa có)
+    let sentence = target._lisSentence;
+    if (!sentence) {
+        sentence = await _lisGenerateSentence(target);
+        target._lisSentence = sentence;
+    }
+    _lisCurrentSentence = sentence;
+
+    // Tạo câu hiển thị với blank
+    const blankHtml = `<span class="fb-blank empty" style="display:inline-block; min-width:100px; border-bottom:2px solid var(--primary-mid); color:var(--primary); font-weight:800; text-align:center;">__________</span>`;
+    const regex = new RegExp(`\\b(${target.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})\\b`, 'gi');
+    const displaySentence = sentence.replace(regex, blankHtml);
+    const sentenceDisplay = document.getElementById('lisSentenceDisplay');
+    if (sentenceDisplay) sentenceDisplay.innerHTML = displaySentence;
+
+    if (genDiv) genDiv.style.display = 'none';
+    if (contentDiv) contentDiv.style.display = 'block';
+    _reviewTransitioning = false;
+
+    // Tự động đọc câu lần đầu
+    lisPlaySentence();
 }
 
+// Phát âm thanh toàn bộ câu (không thay thế từ)
+function lisPlaySentence() {
+    if (!_lisCurrentSentence) return;
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const utt = new SpeechSynthesisUtterance(_lisCurrentSentence);
+    utt.lang = 'en-US';
+    utt.rate = 0.88;
+    // Chọn giọng nam tiếng Anh nếu có
+    const voices = window.speechSynthesis.getVoices();
+    const enVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Google UK') || v.name.includes('Samantha') || v.name.includes('Microsoft David'))) ||
+                    voices.find(v => v.lang.startsWith('en'));
+    if (enVoice) utt.voice = enVoice;
+    const btn = document.getElementById('lisPlayBtn');
+    if (btn) {
+        btn.style.opacity = '0.6';
+        utt.onend = () => { btn.style.opacity = '1'; };
+    }
+    window.speechSynthesis.speak(utt);
+}
+
+// Kiểm tra đáp án
 async function checkListeningAnswer() {
     const target = reviewPool[currentReviewIdx];
-    const userWord = document.getElementById('lisAnswerInput').value.trim().toLowerCase();
+    if (!target) return;
+    const userWord = document.getElementById('lisAnswerInput')?.value.trim().toLowerCase() || '';
     const correctWord = target.word.toLowerCase();
 
     if (!userWord) {
@@ -6579,14 +6542,16 @@ async function checkListeningAnswer() {
         return;
     }
 
-    const isCorrect = (userWord === correctWord) || smartMatch(userWord, correctWord);
+    const isCorrect = (userWord === correctWord) || (typeof smartMatch === 'function' && smartMatch(userWord, correctWord));
     const fbDiv = document.getElementById('lisAnswerFeedback');
+    if (!fbDiv) return;
     fbDiv.style.display = 'block';
 
     if (isCorrect) {
         fbDiv.style.cssText = 'display:block;font-size:.8rem;font-weight:700;margin-top:5px;padding:6px 12px;border-radius:8px;background:#d1fae5;color:#065f46;';
         fbDiv.innerHTML = `✅ Chính xác! Đáp án: <strong>${target.word}</strong>`;
         playFeedback(true);
+
         // Cập nhật SRS và XP
         const ref = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(target.word.toLowerCase());
         const item = fullLibrary.find(i => i.word.toLowerCase() === target.word.toLowerCase()) || {};
@@ -6601,7 +6566,7 @@ async function checkListeningAnswer() {
         fbDiv.style.cssText = 'display:block;font-size:.8rem;font-weight:700;margin-top:5px;padding:6px 12px;border-radius:8px;background:#fee2e2;color:#991b1b;';
         fbDiv.innerHTML = `❌ Chưa đúng! Đáp án đúng: <strong>${target.word}</strong>`;
         playFeedback(false);
-        // Cập nhật SRS sai
+
         const ref = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(target.word.toLowerCase());
         const item = fullLibrary.find(i => i.word.toLowerCase() === target.word.toLowerCase()) || {};
         const srs = srsUpdate(item, false);
@@ -6609,8 +6574,9 @@ async function checkListeningAnswer() {
         await recordWordReview(target.word, false);
         trackAnswerStreak(false);
         trackSessionResult(false);
-        // Nếu sai, đưa từ về cuối (tối đa 1 lần)
+
         const wordKey = target.word.toLowerCase();
+        window._wordWrongCount = window._wordWrongCount || {};
         window._wordWrongCount[wordKey] = (window._wordWrongCount[wordKey] || 0) + 1;
         if (window._wordWrongCount[wordKey] < 2) {
             reviewPool.push(reviewPool.splice(currentReviewIdx, 1)[0]);
@@ -6619,15 +6585,18 @@ async function checkListeningAnswer() {
         }
     }
 
-function _lisMoveNext() {
-    document.getElementById('lisCheckBtn').style.display = 'none';
-    document.getElementById('lisNextBtn').style.display = 'flex';
+    // Chuyển sang nút tiếp theo
+    const checkBtn = document.getElementById('lisCheckBtn');
+    const nextBtn = document.getElementById('lisNextBtn');
+    if (checkBtn) checkBtn.style.display = 'none';
+    if (nextBtn) nextBtn.style.display = 'flex';
 }
 
-async function nextListening() {
-    document.getElementById('lisNextBtn').style.display = 'none';
-    document.getElementById('lisCheckBtn').style.display = 'flex';
-    await showListeningQuestion();
+// Chuyển câu tiếp theo
+function nextListening() {
+    const nextBtn = document.getElementById('lisNextBtn');
+    if (nextBtn) nextBtn.style.display = 'none';
+    showListeningQuestion();
 }
 
 // ══════════════════════════════════════════
