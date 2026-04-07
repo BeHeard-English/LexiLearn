@@ -1060,6 +1060,7 @@
                         <button class="mode-btn" data-study="flash" style="gap:6px;">🃏 Flashcard</button>
                         <button class="mode-btn" data-study="typing" style="gap:6px;">⌨️ Gõ đáp án</button>
                         <button class="mode-btn" data-study="fillblank" style="gap:6px;">📝 Điền từ</button>
+                        <button class="mode-btn" data-study="listening" style="gap:6px;">🎧 Listening</button>
                     </div>
                 </div>
 
@@ -1262,7 +1263,58 @@
                 </div>
             </div>
         </div>
+        
+        <div id="listeningArea" style="display:none;">
+    <div style="margin-bottom:16px;padding:0 4px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <span style="font-size:.8rem;font-weight:700;color:var(--muted);">Tiến độ</span>
+            <span id="listeningProgressText" style="font-size:.8rem;font-weight:800;color:var(--primary);">0 / 0</span>
+        </div>
+        <div class="progress-bar-wrap">
+            <div class="progress-bar-fill" id="listeningProgressFill" style="width:0%"></div>
+        </div>
+    </div>
 
+    <div class="quiz-card" style="padding:20px;">
+        <!-- Nút nghe câu -->
+        <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+            <button class="tts-btn" id="listenSentenceBtn" onclick="speakListeningSentence()" title="Nghe câu">
+                <svg xmlns="http://www.w3.org/2000/svg" style="width:20px;height:20px" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M12 6v12m-3.536-9.536a5 5 0 000 7.072"/>
+                </svg>
+                Nghe câu
+            </button>
+        </div>
+
+        <!-- Câu có chỗ trống -->
+        <div style="margin-bottom:24px;">
+            <div class="quiz-prompt-label">Nghe và điền từ còn thiếu</div>
+            <div id="listeningSentence" class="fb-sentence" style="font-size:1.1rem;margin-top:8px;"></div>
+            <div id="listeningIpa" style="font-family:monospace;font-size:.8rem;color:var(--muted);margin-top:4px;"></div>
+        </div>
+
+        <!-- Hai ô input -->
+        <div style="display:flex;flex-direction:column;gap:16px;margin-bottom:16px;">
+            <div>
+                <label class="quiz-prompt-label">Từ tiếng Anh</label>
+                <input type="text" id="listeningEnInput" class="txt-input" placeholder="Nhập từ tiếng Anh..." autocomplete="off">
+            </div>
+            <div>
+                <label class="quiz-prompt-label">Nghĩa tiếng Việt</label>
+                <textarea id="listeningViInput" class="txt-input" rows="2" placeholder="Nhập nghĩa tiếng Việt..."></textarea>
+            </div>
+        </div>
+
+        <!-- Feedback -->
+        <div id="listeningFeedback" style="display:none;padding:12px 16px;font-weight:800;font-size:.88rem;text-align:center;border-radius:12px;margin-top:8px;"></div>
+
+        <!-- Buttons -->
+        <div style="display:flex;gap:10px;margin-top:8px;">
+            <button id="listeningCheckBtn" class="btn-primary wide" style="padding:14px;" onclick="checkListeningAnswer()">Kiểm tra</button>
+            <button id="listeningNextBtn" class="btn-primary wide" style="padding:14px;display:none;" onclick="nextListeningQuestion()">Câu tiếp theo ➜</button>
+        </div>
+    </div>
+</div>
     </div><!-- /review-start -->
     </div><!-- /tab-review -->
 
@@ -3269,14 +3321,14 @@ document.querySelectorAll('.mode-btn[data-study]').forEach(btn => btn.onclick = 
     // Điền từ không cần chiều học (câu ví dụ luôn tiếng Anh)
     if (modeWrap) modeWrap.style.display = (studyType === 'fillblank') ? 'none' : '';
     // AI chỉ dùng cho typing normal
-    if (aiOption) aiOption.style.display = (studyType === 'typing' && reviewMode === 'normal') ? 'block' : 'none';
+    if (aiOption) aiOption.style.display = (studyType === 'typing' || studyType === 'listening') ? 'block' : 'none';
 });
 document.querySelectorAll('.mode-btn[data-mode]').forEach(btn => btn.onclick = () => {
     document.querySelectorAll('.mode-btn[data-mode]').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     reviewMode = btn.dataset.mode;
     const aiOption = document.getElementById('aiGradingOption');
-    if (aiOption) aiOption.style.display = (studyType === 'typing' && reviewMode === 'normal') ? 'block' : 'none';
+    if (aiOption) aiOption.style.display = (studyType === 'typing' || studyType === 'listening') ? 'block' : 'none';
 });
 document.querySelectorAll('.count-btn').forEach(btn=>btn.onclick=()=>{document.querySelectorAll('.count-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');});
 document.querySelectorAll('.level-btn').forEach(btn=>btn.onclick=()=>btn.classList.toggle('active'));
@@ -3379,6 +3431,34 @@ async function startReviewQuiz() {
         document.getElementById('flashcardArea').style.display = 'none';
         document.getElementById('typingArea').style.display = 'none';
         showFillBlank();
+    } else if (studyType === 'listening') {
+    // Lọc từ có câu ví dụ (nếu không có, AI sẽ tạo sau)
+    const withEx = reviewPool.filter(i => i.example && i.example.trim().length > 3);
+    if (withEx.length < 2) {
+        document.getElementById('reviewStart').classList.remove('hidden');
+        showToast('⚠️ Cần ít nhất 2 từ có câu ví dụ để dùng chế độ Listening. Hãy thêm câu ví dụ cho từ vựng!');
+        return;
+    }
+    reviewPool = withEx;
+    totalReviewCount = reviewPool.length;
+    _listeningSentenceCache.clear(); // reset cache cho phiên mới
+    // Khởi tạo trạng thái listening
+    _listeningState = reviewPool.map((item, idx) => ({
+        wordKey: item.word.toLowerCase(),
+        enAnswered: false,
+        viAnswered: false,
+        enCorrect: false,
+        viCorrect: false,
+        attempt: 1,
+        enInputValue: '',
+        viInputValue: ''
+    }));
+    document.getElementById('listeningArea').style.display = 'block';
+    document.getElementById('reviewQuizArea').style.display = 'none';
+    document.getElementById('flashcardArea').style.display = 'none';
+    document.getElementById('typingArea').style.display = 'none';
+    document.getElementById('fillBlankArea').style.display = 'none';
+    showListeningQuestion();
     } else {
         document.getElementById('reviewQuizArea').style.display = window.innerWidth <= 767 ? 'flex' : 'block';
         document.body.classList.add('quiz-active');
@@ -5155,6 +5235,8 @@ let _sessionCorrect = 0;
 let _sessionTotal = 0;
 let _sessionXpEarned = 0;
 let _sessionWrongWords = [];
+let _listeningState = [];           // lưu trạng thái cho mỗi từ trong phiên listening
+let _listeningSentenceCache = new Map(); // word -> sentence (dùng lại trong phiên)
 
 async function loadBadges(xp) {
     // Data (_unlockedBadges, _extraBadgeData) đã được load bởi loadUserShopData()
@@ -6190,6 +6272,228 @@ function getValidWordIds(tl) {
         fullLibrary.some(w => (w.word || '').toLowerCase() === id)
     );
     return validIds;
+}
+
+// ================== LISTENING MODE ==================
+function updateListeningProgress() {
+    const pct = Math.round((currentReviewIdx / totalReviewCount) * 100);
+    document.getElementById('listeningProgressFill').style.width = pct + '%';
+    document.getElementById('listeningProgressText').innerText = `${currentReviewIdx} / ${totalReviewCount}`;
+}
+
+async function getOrCreateSentence(wordObj) {
+    const cacheKey = wordObj.word.toLowerCase();
+    if (_listeningSentenceCache.has(cacheKey)) return _listeningSentenceCache.get(cacheKey);
+    let example = wordObj.example;
+    if (!example || example.trim().length < 5) {
+        const key = document.getElementById('apiKey').value.trim() || document.getElementById('apiKeyMobile').value.trim();
+        if (key) {
+            try {
+                const prompt = `Write a short, natural English sentence using the exact word "${wordObj.word}" (meaning: ${wordObj.vn}). Return ONLY the sentence, no extra text.`;
+                const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+                    body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: [{ role: 'user', content: prompt }], temperature: 0.7 })
+                });
+                const data = await res.json();
+                if (data.choices && data.choices[0]) {
+                    example = data.choices[0].message.content.trim().replace(/^"|"$/g, '');
+                }
+            } catch(e) { console.warn(e); }
+        }
+        if (!example) example = `This is a sentence with the word ${wordObj.word}.`;
+    }
+    _listeningSentenceCache.set(cacheKey, example);
+    return example;
+}
+
+async function showListeningQuestion() {
+    if (_reviewTransitioning) return;
+    _reviewTransitioning = true;
+    if (currentReviewIdx >= reviewPool.length) {
+        document.getElementById('listeningArea').style.display = 'none';
+        document.getElementById('reviewStart').classList.remove('hidden');
+        updateListeningProgress();
+        showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} câu.`);
+        await showSessionSummary();
+        return;
+    }
+    updateListeningProgress();
+    const target = reviewPool[currentReviewIdx];
+    currentWord = target;
+    const state = _listeningState[currentReviewIdx];
+
+    const fullSentence = await getOrCreateSentence(target);
+    const regex = new RegExp('\\b(' + escapeRegExp(target.word) + ')\\b', 'i');
+    let sentenceHtml;
+    if (regex.test(fullSentence)) {
+        sentenceHtml = fullSentence.replace(regex, '<span class="fb-blank empty" style="border-bottom:2px solid var(--primary); min-width:100px; display:inline-block;">______</span>');
+    } else {
+        sentenceHtml = fullSentence + ' <span class="fb-blank empty" style="border-bottom:2px solid var(--primary); min-width:100px; display:inline-block;">______</span>';
+    }
+    document.getElementById('listeningSentence').innerHTML = sentenceHtml;
+    document.getElementById('listeningIpa').innerHTML = target.ipa ? `/${target.ipa}/` : '';
+
+    const enInput = document.getElementById('listeningEnInput');
+    const viInput = document.getElementById('listeningViInput');
+    const feedbackDiv = document.getElementById('listeningFeedback');
+    feedbackDiv.style.display = 'none';
+    document.getElementById('listeningCheckBtn').style.display = 'flex';
+    document.getElementById('listeningNextBtn').style.display = 'none';
+
+    if (state.attempt === 2) {
+        if (state.enCorrect) {
+            enInput.disabled = true;
+            enInput.value = state.enInputValue;
+        } else {
+            enInput.disabled = false;
+            enInput.value = '';
+        }
+        if (state.viCorrect) {
+            viInput.disabled = true;
+            viInput.value = state.viInputValue;
+        } else {
+            viInput.disabled = false;
+            viInput.value = '';
+        }
+    } else {
+        enInput.disabled = false;
+        viInput.disabled = false;
+        enInput.value = '';
+        viInput.value = '';
+    }
+    _reviewTransitioning = false;
+}
+
+function speakListeningSentence() {
+    const sentenceDiv = document.getElementById('listeningSentence');
+    let text = sentenceDiv.innerText.replace(/______/g, currentWord.word);
+    speak(text, 'en-US');
+}
+
+async function checkListeningAnswer() {
+    const target = reviewPool[currentReviewIdx];
+    const state = _listeningState[currentReviewIdx];
+    const enInput = document.getElementById('listeningEnInput');
+    const viInput = document.getElementById('listeningViInput');
+    const feedback = document.getElementById('listeningFeedback');
+
+    const userEn = enInput.value.trim().toLowerCase();
+    const userVi = viInput.value.trim();
+    if (state.attempt === 1) {
+        state.enInputValue = userEn;
+        state.viInputValue = userVi;
+    }
+
+    let enCorrect = false, viCorrect = false;
+    let enXp = 0, viXp = 0;
+
+    if (!state.enCorrect) {
+        enCorrect = smartMatch(userEn, target.word);
+        if (enCorrect) {
+            state.enCorrect = true;
+            enXp = (state.attempt === 1) ? 10 : 5;
+            await addXP(enXp);
+        }
+    }
+
+    if (!state.viCorrect) {
+        if (document.getElementById('useAIGrading')?.checked && studyType === 'listening') {
+            const key = document.getElementById('apiKey').value.trim() || document.getElementById('apiKeyMobile').value.trim();
+            if (key) {
+                try {
+                    const systemPrompt = `Bạn là chuyên gia ngôn ngữ Anh–Việt. Đánh giá xem bản dịch tiếng Việt có đúng nghĩa với từ "${target.word}" (nghĩa gốc: ${target.vn}) không. Chỉ trả về true hoặc false.`;
+                    const userPrompt = `Học sinh viết: "${userVi}"`;
+                    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+                        body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }], temperature: 0, max_tokens: 5 })
+                    });
+                    const data = await res.json();
+                    const answer = data.choices?.[0]?.message?.content?.trim().toLowerCase() || '';
+                    viCorrect = answer === 'true';
+                } catch(e) { viCorrect = false; }
+            } else {
+                viCorrect = smartMatch(userVi, target.vn);
+            }
+        } else {
+            viCorrect = smartMatch(userVi, target.vn);
+        }
+        if (viCorrect) {
+            state.viCorrect = true;
+            viXp = (state.attempt === 1) ? 10 : 5;
+            await addXP(viXp);
+        }
+    }
+
+    if (enCorrect) state.enAnswered = true;
+    if (viCorrect) state.viAnswered = true;
+
+    let feedbackHtml = '';
+    if (enCorrect) feedbackHtml += `✅ Tiếng Anh đúng! (+${enXp} XP) `;
+    else if (!state.enCorrect && state.attempt === 1) feedbackHtml += `❌ Tiếng Anh chưa đúng. `;
+    if (viCorrect) feedbackHtml += `✅ Nghĩa đúng! (+${viXp} XP) `;
+    else if (!state.viCorrect && state.attempt === 1) feedbackHtml += `❌ Nghĩa chưa đúng. `;
+
+    const bothCorrect = state.enCorrect && state.viCorrect;
+    const anyWrong = !state.enCorrect || !state.viCorrect;
+
+    if (bothCorrect) {
+        const ref = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(target.word.toLowerCase());
+        const item = fullLibrary.find(i => i.word.toLowerCase() === target.word.toLowerCase()) || {};
+        const srs = srsUpdate(item, true);
+        await ref.set({ correct_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
+        await recordWordReview(target.word, true);
+        trackAnswerStreak(true);
+        trackSessionResult(true);
+        currentReviewIdx++;
+        feedback.style.cssText = 'background:linear-gradient(135deg,#d1fae5,#a7f3d0);color:#065f46;';
+        feedback.innerHTML = feedbackHtml + ' 🎉 Hoàn thành!';
+        feedback.style.display = 'block';
+        playFeedback(true);
+        document.getElementById('listeningCheckBtn').style.display = 'none';
+        document.getElementById('listeningNextBtn').style.display = 'flex';
+        return;
+    }
+
+    if (anyWrong && state.attempt === 1) {
+        feedback.style.cssText = 'background:linear-gradient(135deg,#fee2e2,#fecaca);color:#991b1b;';
+        feedback.innerHTML = feedbackHtml + ' ⏳ Bạn sẽ được làm lại câu này một lần nữa.';
+        feedback.style.display = 'block';
+        playFeedback(false);
+        state.attempt = 2;
+        // Đưa từ hiện tại xuống cuối hàng đợi
+        reviewPool.push(reviewPool.splice(currentReviewIdx, 1)[0]);
+        _listeningState.push(_listeningState.splice(currentReviewIdx, 1)[0]);
+        document.getElementById('listeningCheckBtn').style.display = 'none';
+        document.getElementById('listeningNextBtn').style.display = 'flex';
+        return;
+    }
+
+    if (anyWrong && state.attempt === 2) {
+        const ref = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(target.word.toLowerCase());
+        const item = fullLibrary.find(i => i.word.toLowerCase() === target.word.toLowerCase()) || {};
+        const srs = srsUpdate(item, false);
+        await ref.set({ incorrect_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
+        await recordWordReview(target.word, false);
+        trackAnswerStreak(false);
+        trackSessionResult(false);
+        let wrongParts = [];
+        if (!state.enCorrect) wrongParts.push('tiếng Anh');
+        if (!state.viCorrect) wrongParts.push('nghĩa');
+        feedback.style.cssText = 'background:linear-gradient(135deg,#fee2e2,#fecaca);color:#991b1b;';
+        feedback.innerHTML = `❌ Sai ${wrongParts.join(' và ')} sau 2 lần. Chuyển sang từ tiếp theo.`;
+        feedback.style.display = 'block';
+        playFeedback(false);
+        currentReviewIdx++;
+        document.getElementById('listeningCheckBtn').style.display = 'none';
+        document.getElementById('listeningNextBtn').style.display = 'flex';
+        return;
+    }
+}
+
+function nextListeningQuestion() {
+    showListeningQuestion();
 }
 
 // Đồng bộ tất cả topic lists: cập nhật wordIds chỉ giữ các từ còn trong fullLibrary
