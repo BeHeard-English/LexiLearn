@@ -785,6 +785,25 @@
 .flashcard.flipped .flashcard-face.fc-back {
     visibility: visible;
 }
+/* Midnight Gold animations */
+@keyframes midnightGlowPulse {
+    0% { opacity: 0.5; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.05); }
+    100% { opacity: 0.5; transform: scale(1); }
+}
+@keyframes midnightShimmer {
+    0% { transform: translateX(-100%); }
+    20% { transform: translateX(100%); }
+    100% { transform: translateX(100%); }
+}
+/* Hiệu ứng hover cho Midnight Gold (tự động áp dụng vì dùng biến --accent-glow) */
+.btn-primary, .game-play-btn, .analyze-btn, .theme-buy-btn.buy {
+    transition: box-shadow 0.3s, transform 0.2s;
+}
+.btn-primary:hover, .game-play-btn:hover, .analyze-btn:hover, .theme-buy-btn.buy:hover {
+    box-shadow: 0 0 20px var(--accent-glow);
+    transform: translateY(-2px);
+}
     </style>
 </head>
 <body>
@@ -2043,9 +2062,37 @@ const THEMES = [
   { id:'galaxy',    name:'Galaxy',           emoji:'🌌', price:3500, desc:'Dải ngân hà huyền bí — tối tăm và lộng lẫy',
     preview:['#8b5cf6','#0d0d1a','#13122a'],
     vars:{'--primary':'#8b5cf6','--primary-hover':'#7c3aed','--primary-light':'#2e1065','--primary-mid':'#a78bfa','--bg':'#0d0d1a','--card':'#13122a','--border':'#2d2b5c','--text':'#e9d5ff','--muted':'#a78bfa','--success':'#10b981','--success-bg':'#022c22','--danger':'#f87171','--danger-bg':'#2d0b0b','--nav-bg':'#070714','--gold':'#fbbf24'}},
-  { id:'midnight',  name:'Midnight Gold',    emoji:'👑', price:4000, desc:'Tối thượng — Đêm vàng xa hoa dành cho tinh hoa',
-    preview:['#f59e0b','#0c0a09','#1c1917'],
-    vars:{'--primary':'#d97706','--primary-hover':'#b45309','--primary-light':'#292524','--primary-mid':'#f59e0b','--bg':'#0c0a09','--card':'#1c1917','--border':'#44403c','--text':'#fef3c7','--muted':'#a8a29e','--success':'#10b981','--success-bg':'#022c22','--danger':'#f87171','--danger-bg':'#2d0b0b','--nav-bg':'#09090b','--gold':'#fbbf24'}},
+  {
+    id: 'midnight',
+    name: 'Midnight Gold',
+    emoji: '👑',
+    price: 4000,
+    desc: 'Tối thượng — Đêm vàng xa hoa dành cho tinh hoa',
+    preview: ['#F9E076', '#0D0D0D', '#1F1808'],
+    vars: {
+        '--primary': '#F5B041',
+        '--primary-hover': '#FFD700',
+        '--primary-light': '#2A1E0E',
+        '--primary-mid': '#D4AF37',
+        '--bg': '#030303',
+        '--card': '#0D0D0D',
+        '--border': 'rgba(212, 175, 55, 0.35)',
+        '--text': '#FFF5E1',
+        '--muted': '#B88D3A',
+        '--success': '#2E8B57',
+        '--success-bg': '#0F2A1F',
+        '--danger': '#B22222',
+        '--danger-bg': '#2A0F0F',
+        '--nav-bg': '#000000',
+        '--gold': '#F9E076',
+        '--accent': '#F9E076',
+        '--accent-glow': 'rgba(249, 224, 118, 0.35)',
+        '--input-bg': '#111111',
+        '--input-bg-focus': '#1A1A1A',
+        '--input-text': '#FFF5E1',
+        '--placeholder': '#B88D3A'
+    }
+},
 ];
 
 let _userCoins      = 0;
@@ -2133,6 +2180,7 @@ function applyThemeEffect(themeId) {
     else if (themeId === 'ocean') applyOceanEffect();
     else if (themeId === 'galaxy') applyGalaxyEffect();
     else if (themeId === 'rosegold') applyRoseGoldEffect();
+    else if (themeId === 'midnight') applyMidnightEffect();
 }
 
 // ── Ocean Deep ───────────────────────────────────────────────────────
@@ -2480,6 +2528,128 @@ function applyGalaxyEffect() {
         `<div class="galaxy-nebula"></div>` +
         stars +
         comets;
+}
+
+// ── Midnight Gold ──
+function applyMidnightEffect() {
+    const layer = document.getElementById('themeEffectLayer');
+    if (!layer) return;
+
+    // Xóa nội dung cũ
+    layer.innerHTML = '';
+
+    // 1. Lớp nền gradient ánh kim loại
+    const bgDiv = document.createElement('div');
+    bgDiv.style.cssText = `
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(ellipse at 40% 45%, #1F1808 0%, #030303 70%, #000000 100%);
+        z-index: 0;
+    `;
+    layer.appendChild(bgDiv);
+
+    // 2. Lớp glow vàng từ trung tâm
+    const glowDiv = document.createElement('div');
+    glowDiv.style.cssText = `
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 50% 30%, rgba(212, 175, 55, 0.18) 0%, rgba(0,0,0,0) 70%);
+        pointer-events: none;
+        animation: midnightGlowPulse 6s ease-in-out infinite;
+        z-index: 1;
+    `;
+    layer.appendChild(glowDiv);
+
+    // 3. Hiệu ứng shimmer (ánh sáng chạy ngang)
+    const shimmerDiv = document.createElement('div');
+    shimmerDiv.style.cssText = `
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(115deg, transparent 30%, rgba(249, 224, 118, 0.08) 45%, rgba(249, 224, 118, 0.15) 50%, rgba(249, 224, 118, 0.08) 55%, transparent 70%);
+        transform: translateX(-100%);
+        animation: midnightShimmer 12s ease-in-out infinite;
+        pointer-events: none;
+        z-index: 2;
+    `;
+    layer.appendChild(shimmerDiv);
+
+    // 4. Gold dust (bụi vàng lấp lánh) - dùng canvas
+    const canvas = document.createElement('canvas');
+    canvas.style.cssText = `
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 3;
+    `;
+    layer.appendChild(canvas);
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    let animationId = null;
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        initParticles();
+    }
+
+    function initParticles() {
+        const count = Math.min(120, Math.floor(window.innerWidth * window.innerHeight / 8000));
+        particles = [];
+        for (let i = 0; i < count; i++) {
+            particles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                radius: Math.random() * 2 + 0.8,
+                alpha: Math.random() * 0.4 + 0.2,
+                speedX: (Math.random() - 0.5) * 0.15,
+                speedY: (Math.random() - 0.5) * 0.08,
+                twinkle: Math.random() * Math.PI * 2,
+                twinkleSpeed: 0.01 + Math.random() * 0.02,
+            });
+        }
+    }
+
+    function drawParticles() {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (const p of particles) {
+            p.twinkle += p.twinkleSpeed;
+            const alpha = p.alpha + Math.sin(p.twinkle) * 0.15;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(249, 224, 118, ${Math.max(0.05, Math.min(0.55, alpha))})`;
+            ctx.fill();
+            // Di chuyển chậm
+            p.x += p.speedX;
+            p.y += p.speedY;
+            if (p.x < -10) p.x = canvas.width + 10;
+            if (p.x > canvas.width + 10) p.x = -10;
+            if (p.y < -10) p.y = canvas.height + 10;
+            if (p.y > canvas.height + 10) p.y = -10;
+        }
+        animationId = requestAnimationFrame(drawParticles);
+    }
+
+    function startAnimation() {
+        if (animationId) cancelAnimationFrame(animationId);
+        resizeCanvas();
+        drawParticles();
+    }
+
+    window.addEventListener('resize', () => {
+        resizeCanvas();
+        initParticles();
+    });
+    startAnimation();
+
+    // Dọn dẹp khi chuyển theme
+    if (window._midnightCleanup) window._midnightCleanup();
+    window._midnightCleanup = () => {
+        if (animationId) cancelAnimationFrame(animationId);
+        window.removeEventListener('resize', resizeCanvas);
+    };
 }
 
 // ── Rose Gold — lux (bokeh + shimmer) ─────────────────────────────
