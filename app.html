@@ -6380,6 +6380,8 @@ async function checkListeningAnswer() {
 
     const userEn = enInput.value.trim().toLowerCase();
     const userVi = viInput.value.trim();
+
+    // Lưu lại giá trị người dùng nhập (kể cả sai) để hiển thị lại ở lần 2
     if (state.attempt === 1) {
         state.enInputValue = userEn;
         state.viInputValue = userVi;
@@ -6387,18 +6389,29 @@ async function checkListeningAnswer() {
 
     let enCorrect = false, viCorrect = false;
     let enXp = 0, viXp = 0;
+    let feedbackParts = [];
 
+    // 1. Kiểm tra tiếng Anh (chỉ nếu chưa đúng)
     if (!state.enCorrect) {
         enCorrect = smartMatch(userEn, target.word);
         if (enCorrect) {
             state.enCorrect = true;
             enXp = (state.attempt === 1) ? 10 : 5;
             await addXP(enXp);
+            feedbackParts.push(`✅ Tiếng Anh đúng! (+${enXp} XP)`);
+        } else {
+            feedbackParts.push(`❌ Tiếng Anh chưa đúng.`);
         }
+    } else {
+        // Đã đúng từ lần trước, không kiểm tra lại
+        feedbackParts.push(`✅ Tiếng Anh (đã đúng lần trước)`);
     }
 
+    // 2. Kiểm tra nghĩa tiếng Việt (chỉ nếu chưa đúng)
     if (!state.viCorrect) {
-        if (document.getElementById('useAIGrading')?.checked && studyType === 'listening') {
+        // Dùng AI nếu được bật và có key
+        const useAI = document.getElementById('useAIGrading')?.checked;
+        if (useAI) {
             const key = document.getElementById('apiKey').value.trim() || document.getElementById('apiKeyMobile').value.trim();
             if (key) {
                 try {
@@ -6407,38 +6420,53 @@ async function checkListeningAnswer() {
                     const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-                        body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: userPrompt }], temperature: 0, max_tokens: 5 })
+                        body: JSON.stringify({
+                            model: 'llama-3.3-70b-versatile',
+                            messages: [
+                                { role: 'system', content: systemPrompt },
+                                { role: 'user', content: userPrompt }
+                            ],
+                            temperature: 0,
+                            max_tokens: 5
+                        })
                     });
                     const data = await res.json();
                     const answer = data.choices?.[0]?.message?.content?.trim().toLowerCase() || '';
                     viCorrect = answer === 'true';
-                } catch(e) { viCorrect = false; }
+                } catch(e) {
+                    console.warn(e);
+                    viCorrect = false;
+                }
             } else {
                 viCorrect = smartMatch(userVi, target.vn);
             }
         } else {
             viCorrect = smartMatch(userVi, target.vn);
         }
+
         if (viCorrect) {
             state.viCorrect = true;
             viXp = (state.attempt === 1) ? 10 : 5;
             await addXP(viXp);
+            feedbackParts.push(`✅ Nghĩa đúng! (+${viXp} XP)`);
+        } else {
+            feedbackParts.push(`❌ Nghĩa chưa đúng.`);
         }
+    } else {
+        feedbackParts.push(`✅ Nghĩa (đã đúng lần trước)`);
     }
 
-    if (enCorrect) state.enAnswered = true;
-    if (viCorrect) state.viAnswered = true;
-
-    let feedbackHtml = '';
-    if (enCorrect) feedbackHtml += `✅ Tiếng Anh đúng! (+${enXp} XP) `;
-    else if (!state.enCorrect && state.attempt === 1) feedbackHtml += `❌ Tiếng Anh chưa đúng. `;
-    if (viCorrect) feedbackHtml += `✅ Nghĩa đúng! (+${viXp} XP) `;
-    else if (!state.viCorrect && state.attempt === 1) feedbackHtml += `❌ Nghĩa chưa đúng. `;
-
+    // Hiển thị feedback
+    feedback.style.display = 'block';
     const bothCorrect = state.enCorrect && state.viCorrect;
-    const anyWrong = !state.enCorrect || !state.viCorrect;
 
     if (bothCorrect) {
+        // Hoàn thành từ này (cả hai đều đúng, có thể ở lần 1 hoặc lần 2)
+        feedback.style.cssText = 'background:linear-gradient(135deg,#d1fae5,#a7f3d0);color:#065f46;';
+        feedback.innerHTML = feedbackParts.join('<br>') + ' 🎉 Hoàn thành!';
+        playFeedback(true);
+
+        // Cập nhật SRS và thống kê
         const ref = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(target.word.toLowerCase());
         const item = fullLibrary.find(i => i.word.toLowerCase() === target.word.toLowerCase()) || {};
         const srs = srsUpdate(item, true);
@@ -6446,31 +6474,40 @@ async function checkListeningAnswer() {
         await recordWordReview(target.word, true);
         trackAnswerStreak(true);
         trackSessionResult(true);
+
         currentReviewIdx++;
-        feedback.style.cssText = 'background:linear-gradient(135deg,#d1fae5,#a7f3d0);color:#065f46;';
-        feedback.innerHTML = feedbackHtml + ' 🎉 Hoàn thành!';
-        feedback.style.display = 'block';
-        playFeedback(true);
         document.getElementById('listeningCheckBtn').style.display = 'none';
         document.getElementById('listeningNextBtn').style.display = 'flex';
         return;
     }
 
-    if (anyWrong && state.attempt === 1) {
+    // Nếu chưa hoàn thành (ít nhất một phần sai)
+    if (state.attempt === 1) {
+        // Lần 1: đưa về cuối để làm lại lần 2
         feedback.style.cssText = 'background:linear-gradient(135deg,#fee2e2,#fecaca);color:#991b1b;';
-        feedback.innerHTML = feedbackHtml + ' ⏳ Bạn sẽ được làm lại câu này một lần nữa.';
-        feedback.style.display = 'block';
+        feedback.innerHTML = feedbackParts.join('<br>') + '<br>⏳ Bạn sẽ được làm lại câu này một lần nữa.';
         playFeedback(false);
+
         state.attempt = 2;
-        // Đưa từ hiện tại xuống cuối hàng đợi
+        // Chuyển từ hiện tại xuống cuối hàng đợi
         reviewPool.push(reviewPool.splice(currentReviewIdx, 1)[0]);
         _listeningState.push(_listeningState.splice(currentReviewIdx, 1)[0]);
+
         document.getElementById('listeningCheckBtn').style.display = 'none';
         document.getElementById('listeningNextBtn').style.display = 'flex';
         return;
     }
 
-    if (anyWrong && state.attempt === 2) {
+    if (state.attempt === 2) {
+        // Lần 2 vẫn sai -> kết thúc từ này, không đưa về cuối nữa
+        feedback.style.cssText = 'background:linear-gradient(135deg,#fee2e2,#fecaca);color:#991b1b;';
+        let wrongParts = [];
+        if (!state.enCorrect) wrongParts.push('tiếng Anh');
+        if (!state.viCorrect) wrongParts.push('nghĩa');
+        feedback.innerHTML = feedbackParts.join('<br>') + `<br>❌ Sai ${wrongParts.join(' và ')} sau 2 lần. Chuyển sang từ tiếp theo.`;
+        playFeedback(false);
+
+        // Cập nhật SRS là sai
         const ref = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(target.word.toLowerCase());
         const item = fullLibrary.find(i => i.word.toLowerCase() === target.word.toLowerCase()) || {};
         const srs = srsUpdate(item, false);
@@ -6478,13 +6515,7 @@ async function checkListeningAnswer() {
         await recordWordReview(target.word, false);
         trackAnswerStreak(false);
         trackSessionResult(false);
-        let wrongParts = [];
-        if (!state.enCorrect) wrongParts.push('tiếng Anh');
-        if (!state.viCorrect) wrongParts.push('nghĩa');
-        feedback.style.cssText = 'background:linear-gradient(135deg,#fee2e2,#fecaca);color:#991b1b;';
-        feedback.innerHTML = `❌ Sai ${wrongParts.join(' và ')} sau 2 lần. Chuyển sang từ tiếp theo.`;
-        feedback.style.display = 'block';
-        playFeedback(false);
+
         currentReviewIdx++;
         document.getElementById('listeningCheckBtn').style.display = 'none';
         document.getElementById('listeningNextBtn').style.display = 'flex';
