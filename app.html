@@ -825,6 +825,12 @@
     0% { opacity: 0.3; transform: translateY(0); }
     100% { opacity: 0.8; transform: translateY(-4px); }
 }
+
+@keyframes oceanShimmer {
+    0% { opacity: 0.2; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.03); }
+    100% { opacity: 0.2; transform: scale(1); }
+}
     </style>
 </head>
 <body>
@@ -2062,9 +2068,37 @@ const THEMES = [
   { id:'dark',      name:'Dark Mode',        emoji:'🌙', price:200,  desc:'Giao diện tối huyền bí, bảo vệ mắt ban đêm',
     preview:['#818cf8','#0f172a','#1e293b'],
     vars:{'--primary':'#818cf8','--primary-hover':'#a5b4fc','--primary-light':'#1e1b4b','--primary-mid':'#6366f1','--bg':'#0f172a','--card':'#1e293b','--border':'#334155','--text':'#f1f5f9','--muted':'#94a3b8','--success':'#10b981','--success-bg':'#064e3b','--danger':'#f87171','--danger-bg':'#450a0a','--nav-bg':'#080d1a','--gold':'#fbbf24'}},
-  { id:'ocean',     name:'Ocean Deep',       emoji:'🌊', price:500, desc:'Ocean tối giản với gradient êm và tông xanh biển sâu',
-    preview:['#6EACDA','#021526','#f5f9fc'],
-    vars:{'--primary':'#03346E','--primary-hover':'#022a52','--primary-light':'#e8f2fa','--primary-mid':'#6EACDA','--bg':'#021526','--card':'#f5f9fc','--border':'#c8dce8','--text':'#0c1e2e','--muted':'#4a6b7d','--success':'#0d7a5c','--success-bg':'#d8f3ec','--danger':'#c62828','--danger-bg':'#fde8e8','--nav-bg':'#021526','--gold':'#E2E2B6','--accent':'#6EACDA','--accent-glow':'rgba(110,172,218,.28)'}},
+  {
+    id: 'ocean',
+    name: 'Ocean Deep',
+    emoji: '🌊',
+    price: 500,
+    desc: 'Đại dương sâu thẳm, huyền bí và lấp lánh',
+    preview: ['#0A4C6E', '#012A4A', '#B3E4F5'],
+    vars: {
+        '--primary': '#0D6B8C',
+        '--primary-hover': '#1E88A8',
+        '--primary-light': '#D0EAF5',
+        '--primary-mid': '#2F9EBE',
+        '--bg': '#011C2A',
+        '--card': '#012A3A',
+        '--border': '#1D5A7A',
+        '--text': '#E0F2FE',
+        '--muted': '#7AB3C8',
+        '--success': '#2E8B57',
+        '--success-bg': '#0F2A1F',
+        '--danger': '#C75C6E',
+        '--danger-bg': '#2A1A1F',
+        '--nav-bg': '#011C2A',
+        '--gold': '#6DD5FA',
+        '--accent': '#4BC0E8',
+        '--accent-glow': 'rgba(75, 192, 232, 0.35)',
+        '--input-bg': '#012A3A',
+        '--input-bg-focus': '#013B4F',
+        '--input-text': '#E0F2FE',
+        '--placeholder': '#7AB3C8'
+    }
+},
   {
     id: 'sunset',
     name: 'Sunset Glow',
@@ -2232,8 +2266,204 @@ function applyThemeEffect(themeId) {
 function applyOceanEffect() {
     const layer = document.getElementById('themeEffectLayer');
     if (!layer) return;
-    layer.classList.remove('ocean-lite');
-    layer.innerHTML = `<div class="ocean-bg"></div>`;
+    layer.innerHTML = '';
+
+    // 1. Lớp nền gradient đại dương sâu (từ tối → sáng dần lên trên)
+    const bgDiv = document.createElement('div');
+    bgDiv.style.cssText = `
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(ellipse at 50% 80%, #001E2F 0%, #003D5B 40%, #006A8E 100%);
+        z-index: 0;
+    `;
+    layer.appendChild(bgDiv);
+
+    // 2. Hiệu ứng caustics (ánh sáng gợn sóng từ mặt nước) - dùng canvas
+    const causticsCanvas = document.createElement('canvas');
+    causticsCanvas.style.cssText = `
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 1;
+        opacity: 0.35;
+        mix-blend-mode: overlay;
+    `;
+    layer.appendChild(causticsCanvas);
+    let causticsCtx = causticsCanvas.getContext('2d');
+    let causticsFrame = null;
+
+    function drawCaustics() {
+        if (!causticsCtx) return;
+        const w = causticsCanvas.width, h = causticsCanvas.height;
+        causticsCtx.clearRect(0, 0, w, h);
+        const time = Date.now() / 1200;
+        for (let i = 0; i < 80; i++) {
+            const x = (i * 131) % w;
+            const y = (i * 253) % h;
+            const intensity = 0.2 + 0.15 * Math.sin(x * 0.02 + time) * Math.cos(y * 0.015 + time * 0.7);
+            causticsCtx.beginPath();
+            causticsCtx.ellipse(x, y, 40 + 20 * Math.sin(time + i), 25 + 15 * Math.cos(time * 1.3 + i), 0, 0, Math.PI * 2);
+            causticsCtx.fillStyle = `rgba(255, 255, 200, ${intensity * 0.5})`;
+            causticsCtx.fill();
+        }
+        causticsFrame = requestAnimationFrame(drawCaustics);
+    }
+
+    function resizeCaustics() {
+        causticsCanvas.width = window.innerWidth;
+        causticsCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeCaustics);
+    resizeCaustics();
+    drawCaustics();
+
+    // 3. Bong bóng nước (bubbles) nổi lên
+    const bubbleCanvas = document.createElement('canvas');
+    bubbleCanvas.style.cssText = `
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 2;
+    `;
+    layer.appendChild(bubbleCanvas);
+    let bubbleCtx = bubbleCanvas.getContext('2d');
+    let bubbles = [];
+    let bubbleFrame = null;
+
+    function initBubbles() {
+        const count = 35;
+        bubbles = [];
+        for (let i = 0; i < count; i++) {
+            bubbles.push({
+                x: Math.random() * window.innerWidth,
+                y: Math.random() * window.innerHeight,
+                radius: 3 + Math.random() * 12,
+                speedY: 0.3 + Math.random() * 0.8,
+                alpha: 0.3 + Math.random() * 0.5,
+                wobble: Math.random() * Math.PI * 2,
+                wobbleSpeed: 0.02 + Math.random() * 0.04,
+            });
+        }
+    }
+
+    function drawBubbles() {
+        if (!bubbleCtx) return;
+        const w = bubbleCanvas.width, h = bubbleCanvas.height;
+        bubbleCtx.clearRect(0, 0, w, h);
+        for (let b of bubbles) {
+            b.y -= b.speedY;
+            b.wobble += b.wobbleSpeed;
+            const offsetX = Math.sin(b.wobble) * 1.5;
+            if (b.y + b.radius < 0) {
+                b.y = h + b.radius;
+                b.x = Math.random() * w;
+            }
+            bubbleCtx.beginPath();
+            bubbleCtx.arc(b.x + offsetX, b.y, b.radius, 0, Math.PI * 2);
+            bubbleCtx.fillStyle = `rgba(210, 240, 255, ${b.alpha * 0.5})`;
+            bubbleCtx.fill();
+            bubbleCtx.strokeStyle = `rgba(255, 255, 255, ${b.alpha * 0.6})`;
+            bubbleCtx.lineWidth = 1.2;
+            bubbleCtx.stroke();
+            // Highlight
+            bubbleCtx.beginPath();
+            bubbleCtx.arc(b.x + offsetX - b.radius * 0.3, b.y - b.radius * 0.3, b.radius * 0.2, 0, Math.PI * 2);
+            bubbleCtx.fillStyle = `rgba(255, 255, 255, ${b.alpha * 0.7})`;
+            bubbleCtx.fill();
+        }
+        bubbleFrame = requestAnimationFrame(drawBubbles);
+    }
+
+    function resizeBubbles() {
+        bubbleCanvas.width = window.innerWidth;
+        bubbleCanvas.height = window.innerHeight;
+        initBubbles();
+    }
+    window.addEventListener('resize', resizeBubbles);
+    resizeBubbles();
+    drawBubbles();
+
+    // 4. Sinh vật phát quang (plankton) – những chấm sáng lấp lánh màu xanh ngọc
+    const planktonCanvas = document.createElement('canvas');
+    planktonCanvas.style.cssText = `
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 3;
+    `;
+    layer.appendChild(planktonCanvas);
+    let planktonCtx = planktonCanvas.getContext('2d');
+    let planktons = [];
+    let planktonFrame = null;
+
+    function initPlankton() {
+        const count = 180;
+        planktons = [];
+        for (let i = 0; i < count; i++) {
+            planktons.push({
+                x: Math.random() * window.innerWidth,
+                y: Math.random() * window.innerHeight,
+                radius: 1.2 + Math.random() * 2.5,
+                alpha: 0.2 + Math.random() * 0.6,
+                twinkle: Math.random() * Math.PI * 2,
+                speed: 0.008 + Math.random() * 0.02,
+                color: `hsl(${170 + Math.random() * 30}, 100%, ${60 + Math.random() * 30}%)`
+            });
+        }
+    }
+
+    function drawPlankton() {
+        if (!planktonCtx) return;
+        planktonCtx.clearRect(0, 0, planktonCanvas.width, planktonCanvas.height);
+        for (let p of planktons) {
+            p.twinkle += p.speed;
+            const alpha = p.alpha + Math.sin(p.twinkle) * 0.25;
+            planktonCtx.beginPath();
+            planktonCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            planktonCtx.fillStyle = p.color;
+            planktonCtx.globalAlpha = Math.max(0.1, Math.min(0.9, alpha));
+            planktonCtx.fill();
+        }
+        planktonFrame = requestAnimationFrame(drawPlankton);
+    }
+
+    function resizePlankton() {
+        planktonCanvas.width = window.innerWidth;
+        planktonCanvas.height = window.innerHeight;
+        initPlankton();
+    }
+    window.addEventListener('resize', resizePlankton);
+    resizePlankton();
+    drawPlankton();
+
+    // 5. Lớp shimmer nhẹ trên toàn bộ (tạo cảm giác dưới nước)
+    const shimmerDiv = document.createElement('div');
+    shimmerDiv.style.cssText = `
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 30% 40%, rgba(100, 200, 255, 0.08) 0%, transparent 70%);
+        pointer-events: none;
+        z-index: 4;
+        animation: oceanShimmer 10s ease-in-out infinite;
+    `;
+    layer.appendChild(shimmerDiv);
+
+    // Cleanup tất cả animation khi chuyển theme
+    if (window._oceanCleanup) window._oceanCleanup();
+    window._oceanCleanup = () => {
+        if (causticsFrame) cancelAnimationFrame(causticsFrame);
+        if (bubbleFrame) cancelAnimationFrame(bubbleFrame);
+        if (planktonFrame) cancelAnimationFrame(planktonFrame);
+        window.removeEventListener('resize', resizeCaustics);
+        window.removeEventListener('resize', resizeBubbles);
+        window.removeEventListener('resize', resizePlankton);
+    };
 }
 
 // ── Blue Sky ────────────────────────────────────────────────────────
