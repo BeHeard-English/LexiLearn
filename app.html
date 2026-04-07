@@ -831,6 +831,17 @@
     50% { opacity: 0.5; transform: scale(1.03); }
     100% { opacity: 0.2; transform: scale(1); }
 }
+/* Rose Gold Royal animations */
+@keyframes roseGlowPulse {
+    0% { opacity: 0.2; transform: scale(0.98); }
+    50% { opacity: 0.5; transform: scale(1.02); }
+    100% { opacity: 0.2; transform: scale(0.98); }
+}
+@keyframes roseShimmer {
+    0% { transform: translateX(-100%); }
+    20% { transform: translateX(100%); }
+    100% { transform: translateX(100%); }
+}
     </style>
 </head>
 <body>
@@ -2126,9 +2137,37 @@ const THEMES = [
         '--accent-glow': 'rgba(255, 180, 71, 0.35)'
     }
 },
-  { id:'rosegold',  name:'Rose Gold',        emoji:'✨', price:1500, desc:'Sang trọng, quyến rũ — phong cách đẳng cấp',
-    preview:['#db2777','#fdf2f8','#ffffff'],
-    vars:{'--primary':'#be185d','--primary-hover':'#9d174d','--primary-light':'#fce7f3','--primary-mid':'#db2777','--bg':'#fdf2f8','--card':'#ffffff','--border':'#fbcfe8','--text':'#500724','--muted':'#9d174d','--success':'#059669','--success-bg':'#d1fae5','--danger':'#dc2626','--danger-bg':'#fee2e2','--nav-bg':'#500724','--gold':'#d946ef'}},
+  {
+    id: 'rosegold',
+    name: 'Rose Gold Royal',
+    emoji: '💎',
+    price: 1500,
+    desc: 'Lãng mạn, sang trọng và lấp lánh — Kim cương hồng quý tộc',
+    preview: ['#F9A8D4', '#FDF2F8', '#FCE7F3'],
+    vars: {
+        '--primary': '#D43F82',
+        '--primary-hover': '#E85D9E',
+        '--primary-light': '#FCE4EC',
+        '--primary-mid': '#F0A6C3',
+        '--bg': '#1A0D14',
+        '--card': '#2D1B24',
+        '--border': '#B76E8A',
+        '--text': '#FFF0F5',
+        '--muted': '#E2A9C1',
+        '--success': '#2E8B57',
+        '--success-bg': '#0F2A1F',
+        '--danger': '#C75C6E',
+        '--danger-bg': '#2A1A1F',
+        '--nav-bg': '#1A0D14',
+        '--gold': '#F3B3D1',
+        '--accent': '#F7C9E3',
+        '--accent-glow': 'rgba(247, 201, 227, 0.5)',
+        '--input-bg': '#2D1B24',
+        '--input-bg-focus': '#3D2532',
+        '--input-text': '#FFF0F5',
+        '--placeholder': '#E2A9C1'
+    }
+},
   { id:'bluesky',   name:'Blue Sky',         emoji:'☀️', price:2000,  desc:'Bầu trời trong xanh, mang lại cảm giác tươi mới',
     preview:['#7bbfea','#e8f4fd','#ffffff'],
     vars:{'--primary':'#3b9edd','--primary-hover':'#2980c4','--primary-light':'#dbeeff','--primary-mid':'#5fb3f0','--bg':'#e8f4fd','--card':'#f7fbff','--border':'#c2e0f7','--text':'#1a3a52','--muted':'#5a8aaa','--success':'#2a9d6c','--success-bg':'#d4f4e8','--danger':'#e05c5c','--danger-bg':'#fde8e8','--nav-bg':'#3b9edd','--gold':'#f7c948'}},
@@ -3065,30 +3104,201 @@ function applyMidnightEffect() {
 function applyRoseGoldEffect() {
     const layer = document.getElementById('themeEffectLayer');
     if (!layer) return;
+    layer.innerHTML = '';
 
-    const reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const isMobile = window.innerWidth < 640;
+    // 1. Lớp nền gradient hồng quyến rũ (hồng nhạt → hồng đậm → tím mờ)
+    const bgDiv = document.createElement('div');
+    bgDiv.style.cssText = `
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(ellipse at 60% 40%, #4B2A3A 0%, #2E1A24 40%, #1A0D14 100%);
+        z-index: 0;
+    `;
+    layer.appendChild(bgDiv);
 
-    const bokehCount = reduceMotion ? 0 : (isMobile ? 22 : 40);
-    const bokehDots = Array.from({ length: bokehCount }, () => {
-        const size = 4 + Math.random() * 14;
-        const left = Math.random() * 100;
-        const top = Math.random() * 100;
-        const op = 0.12 + Math.random() * 0.38;
-        const dur = 4.5 + Math.random() * 6.5;
-        const delay = -(Math.random() * dur);
+    // 2. Lớp glow vàng hồng từ trung tâm (tạo ánh sáng quyền quý)
+    const glowDiv = document.createElement('div');
+    glowDiv.style.cssText = `
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 50% 30%, rgba(247, 201, 227, 0.25) 0%, rgba(0,0,0,0) 70%);
+        animation: roseGlowPulse 5s ease-in-out infinite;
+        pointer-events: none;
+        z-index: 1;
+    `;
+    layer.appendChild(glowDiv);
 
-        // Keep palette within rose-gold family for consistency
-        const bg = Math.random() < 0.55 ? 'rgba(255,255,255,.95)' : 'rgba(255,205,220,.9)';
-        const glow = Math.random() < 0.5 ? 'rgba(190,24,93,.55)' : 'rgba(217,70,239,.45)';
+    // 3. Hiệu ứng shimmer vàng hồng chạy ngang (sang trọng)
+    const shimmerDiv = document.createElement('div');
+    shimmerDiv.style.cssText = `
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(115deg, transparent 25%, rgba(247, 201, 227, 0.12) 40%, rgba(247, 201, 227, 0.25) 50%, rgba(247, 201, 227, 0.12) 60%, transparent 75%);
+        transform: translateX(-100%);
+        animation: roseShimmer 10s ease-in-out infinite;
+        pointer-events: none;
+        z-index: 2;
+    `;
+    layer.appendChild(shimmerDiv);
 
-        return `<div class="rosegold-bokeh" style="left:${left}%;top:${top}%;width:${size}px;height:${size}px;background:${bg};opacity:${op};box-shadow:0 0 ${size * 2.2}px ${glow};animation-duration:${dur}s;animation-delay:${delay}s;"></div>`;
-    }).join('');
+    // 4. Kim cương lấp lánh (sparkle 4 cánh) – dùng canvas
+    const diamondCanvas = document.createElement('canvas');
+    diamondCanvas.style.cssText = `
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 3;
+    `;
+    layer.appendChild(diamondCanvas);
+    const ctx = diamondCanvas.getContext('2d');
+    let diamonds = [];
+    let diamondFrame = null;
 
-    layer.innerHTML =
-        `<div class="rosegold-bg"></div>` +
-        `<div class="rosegold-shimmer"></div>` +
-        bokehDots;
+    function drawDiamond(ctx, x, y, size, alpha, angle) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle);
+        ctx.beginPath();
+        // Vẽ hình thoi 4 cánh (kim cương)
+        ctx.moveTo(0, -size);
+        ctx.lineTo(size * 0.4, -size * 0.3);
+        ctx.lineTo(size, 0);
+        ctx.lineTo(size * 0.4, size * 0.3);
+        ctx.lineTo(0, size);
+        ctx.lineTo(-size * 0.4, size * 0.3);
+        ctx.lineTo(-size, 0);
+        ctx.lineTo(-size * 0.4, -size * 0.3);
+        ctx.closePath();
+        ctx.fillStyle = `rgba(255, 220, 240, ${alpha})`;
+        ctx.fill();
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = '#F9A8D4';
+        ctx.strokeStyle = `rgba(255, 200, 220, ${alpha * 0.8})`;
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    function initDiamonds() {
+        const count = Math.min(45, Math.floor(window.innerWidth * window.innerHeight / 15000));
+        diamonds = [];
+        for (let i = 0; i < count; i++) {
+            diamonds.push({
+                x: Math.random() * window.innerWidth,
+                y: Math.random() * window.innerHeight,
+                size: 5 + Math.random() * 12,
+                alpha: 0.1 + Math.random() * 0.5,
+                twinkle: Math.random() * Math.PI * 2,
+                speed: 0.01 + Math.random() * 0.03,
+                angle: Math.random() * Math.PI * 2,
+                rotSpeed: (Math.random() - 0.5) * 0.02,
+            });
+        }
+    }
+
+    function drawDiamonds() {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, diamondCanvas.width, diamondCanvas.height);
+        for (let d of diamonds) {
+            d.twinkle += d.speed;
+            d.angle += d.rotSpeed;
+            const alpha = d.alpha + Math.sin(d.twinkle) * 0.25;
+            drawDiamond(ctx, d.x, d.y, d.size, Math.max(0.1, Math.min(0.8, alpha)), d.angle);
+        }
+        diamondFrame = requestAnimationFrame(drawDiamonds);
+    }
+
+    function resizeDiamonds() {
+        diamondCanvas.width = window.innerWidth;
+        diamondCanvas.height = window.innerHeight;
+        initDiamonds();
+    }
+    window.addEventListener('resize', resizeDiamonds);
+    resizeDiamonds();
+    drawDiamonds();
+
+    // 5. Cánh hoa hồng rơi (lãng mạn, quyến rũ)
+    const petalCanvas = document.createElement('canvas');
+    petalCanvas.style.cssText = `
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 4;
+    `;
+    layer.appendChild(petalCanvas);
+    const petalCtx = petalCanvas.getContext('2d');
+    let petals = [];
+    let petalFrame = null;
+
+    function initPetals() {
+        const count = 24;
+        petals = [];
+        for (let i = 0; i < count; i++) {
+            petals.push({
+                x: Math.random() * window.innerWidth,
+                y: Math.random() * window.innerHeight,
+                size: 8 + Math.random() * 12,
+                speedY: 0.5 + Math.random() * 1.2,
+                speedX: (Math.random() - 0.5) * 0.6,
+                rot: Math.random() * Math.PI * 2,
+                rotSpeed: (Math.random() - 0.5) * 0.03,
+                alpha: 0.6 + Math.random() * 0.4,
+                color: `hsla(${340 + Math.random() * 20}, 80%, ${65 + Math.random() * 20}%, 0.7)`,
+            });
+        }
+    }
+
+    function drawPetal(ctx, p) {
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.beginPath();
+        ctx.ellipse(0, 0, p.size * 0.6, p.size, 0, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+        ctx.restore();
+    }
+
+    function drawPetals() {
+        if (!petalCtx) return;
+        const w = petalCanvas.width, h = petalCanvas.height;
+        petalCtx.clearRect(0, 0, w, h);
+        for (let p of petals) {
+            p.y += p.speedY;
+            p.x += p.speedX;
+            p.rot += p.rotSpeed;
+            if (p.y > h + 30) {
+                p.y = -30;
+                p.x = Math.random() * w;
+            }
+            if (p.x < -50) p.x = w + 50;
+            if (p.x > w + 50) p.x = -50;
+            drawPetal(petalCtx, p);
+        }
+        petalFrame = requestAnimationFrame(drawPetals);
+    }
+
+    function resizePetals() {
+        petalCanvas.width = window.innerWidth;
+        petalCanvas.height = window.innerHeight;
+        initPetals();
+    }
+    window.addEventListener('resize', resizePetals);
+    resizePetals();
+    drawPetals();
+
+    // Cleanup khi chuyển theme
+    if (window._roseCleanup) window._roseCleanup();
+    window._roseCleanup = () => {
+        if (diamondFrame) cancelAnimationFrame(diamondFrame);
+        if (petalFrame) cancelAnimationFrame(petalFrame);
+        window.removeEventListener('resize', resizeDiamonds);
+        window.removeEventListener('resize', resizePetals);
+    };
 }
 // Also need sunsetCloudDrift keyframe (inline via CSS):
 if (!document.getElementById('sunsetCloudDriftStyle')) {
