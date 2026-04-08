@@ -1430,8 +1430,10 @@
             <!-- Ô nhập từ còn thiếu -->
             <div style="text-align:left;margin-bottom:16px;">
                 <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;">Từ còn thiếu:</div>
-                <input type="text" id="lisAnswerInput" class="txt-input" placeholder="Nhập từ tiếng Anh...">
+                <input type="text" id="lisAnswerInput" class="txt-input" placeholder="Nhập từ tiếng Anh..."
+                    onkeydown="if(event.key==='Enter'){const cb=document.getElementById('lisCheckBtn');const nb=document.getElementById('lisNextBtn');if(cb&&cb.style.display!=='none')checkListeningAnswer();else if(nb&&nb.style.display!=='none')nextListening();}">
                 <div id="lisAnswerFeedback" style="display:none;font-size:.8rem;font-weight:700;margin-top:5px;padding:6px 12px;border-radius:8px;"></div>
+                <div id="lisSentenceVn" style="display:none;margin-top:10px;padding:10px 14px;background:var(--primary-light);border-left:3px solid var(--primary-mid);border-radius:8px;font-size:.88rem;color:var(--primary);font-style:italic;"></div>
             </div>
 
             <!-- Các nút -->
@@ -7520,6 +7522,8 @@ async function showListeningQuestion() {
     }
     const fbDiv = document.getElementById('lisAnswerFeedback');
     if (fbDiv) fbDiv.style.display = 'none';
+    const vnDiv = document.getElementById('lisSentenceVn');
+    if (vnDiv) vnDiv.style.display = 'none';
     const checkBtn = document.getElementById('lisCheckBtn');
     if (checkBtn) {
         checkBtn.style.display = 'flex';
@@ -7632,6 +7636,13 @@ async function checkListeningAnswer() {
     const nextBtn = document.getElementById('lisNextBtn');
     if (checkBtn) checkBtn.style.display = 'none';
     if (nextBtn) nextBtn.style.display = 'flex';
+
+    // Hiện dịch nghĩa câu
+    const vnDiv = document.getElementById('lisSentenceVn');
+    if (vnDiv && target.vn) {
+        vnDiv.textContent = `💡 Nghĩa: ${target.vn}`;
+        vnDiv.style.display = 'block';
+    }
 }
 
 // Chuyển câu tiếp theo
