@@ -7639,26 +7639,30 @@ async function checkListeningAnswer() {
 
     // Hiện dịch nghĩa câu
     const vnDiv = document.getElementById('lisSentenceVn');
-if (vnDiv && _lisCurrentSentence) {
-    vnDiv.textContent = '⏳ Đang dịch...';
-    vnDiv.style.display = 'block';
-    try {
-        const key = localStorage.getItem('vflow_api_key') || ...;
-        if (!key) throw new Error('no key');
-        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-            ...
-            body: JSON.stringify({
-                model: 'llama-3.3-70b-versatile',
-                messages: [
-                    { role: 'system', content: 'Dịch Anh–Việt, chỉ trả về bản dịch.' },
-                    { role: 'user', content: _lisCurrentSentence }
-                ]
-            })
-        });
-        const translated = data?.choices?.[0]?.message?.content?.trim();
-        vnDiv.textContent = translated ? `💡 ${translated}` : `💡 Nghĩa từ: ${target.vn}`;
-    } catch {
-        vnDiv.textContent = `💡 Nghĩa từ: ${target.vn}`;
+    if (vnDiv && _lisCurrentSentence) {
+        vnDiv.textContent = '⏳ Đang dịch...';
+        vnDiv.style.display = 'block';
+        try {
+            const key = localStorage.getItem('vflow_api_key') || document.getElementById('apiKey')?.value.trim() || document.getElementById('apiKeyMobile')?.value.trim();
+            if (!key) throw new Error('no key');
+            const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+                body: JSON.stringify({
+                    model: 'llama-3.3-70b-versatile',
+                    max_tokens: 120,
+                    messages: [
+                        { role: 'system', content: 'Bạn là dịch giả Anh–Việt. Dịch câu tiếng Anh sang tiếng Việt tự nhiên. Chỉ trả về bản dịch, không giải thích.' },
+                        { role: 'user', content: _lisCurrentSentence }
+                    ]
+                })
+            });
+            const data = await res.json();
+            const translated = data?.choices?.[0]?.message?.content?.trim();
+            vnDiv.textContent = translated ? `💡 ${translated}` : `💡 Nghĩa từ: ${target.vn}`;
+        } catch {
+            vnDiv.textContent = `💡 Nghĩa từ: ${target.vn}`;
+        }
     }
 }
 
