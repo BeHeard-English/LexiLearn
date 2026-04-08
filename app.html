@@ -842,6 +842,25 @@
     20% { transform: translateX(100%); }
     100% { transform: translateX(100%); }
 }
+/* Neon Arcade animations */
+@keyframes crtFlicker {
+    0% { opacity: 0.02; }
+    50% { opacity: 0.05; }
+    100% { opacity: 0.02; }
+}
+@keyframes neonBarMove {
+    0% { left: -20%; opacity: 0; }
+    10% { opacity: 0.8; }
+    90% { opacity: 0.8; }
+    100% { left: 120%; opacity: 0; }
+}
+@keyframes neonGlowMove {
+    0% { top: 10%; left: -10%; transform: scale(1); opacity: 0.4; }
+    25% { top: 40%; left: 80%; transform: scale(1.5); opacity: 0.7; }
+    50% { top: 70%; left: 20%; transform: scale(1.2); opacity: 0.5; }
+    75% { top: 30%; left: 90%; transform: scale(1.8); opacity: 0.8; }
+    100% { top: 10%; left: -10%; transform: scale(1); opacity: 0.4; }
+}
     </style>
 </head>
 <body>
@@ -2211,6 +2230,37 @@ const THEMES = [
         '--placeholder': '#B88D3A'
     }
 },
+{
+    id: 'neonarcade',
+    name: 'Neon Arcade',
+    emoji: '🕹️',
+    price: 4500,
+    desc: 'Retro arcade rực rỡ, neon glow vui tươi như game cổ điển',
+    preview: ['#00FFCC', '#FF00FF', '#000000'],
+    vars: {
+        '--primary': '#00FFCC',
+        '--primary-hover': '#33FFDD',
+        '--primary-light': '#00CCAA',
+        '--primary-mid': '#00FFAA',
+        '--bg': '#0B0B0B',
+        '--card': '#111111',
+        '--border': '#FF00FF',
+        '--text': '#00FFCC',
+        '--muted': '#FF66CC',
+        '--success': '#00FF66',
+        '--success-bg': '#003322',
+        '--danger': '#FF3366',
+        '--danger-bg': '#330011',
+        '--nav-bg': '#000000',
+        '--gold': '#FFCC00',
+        '--accent': '#FF00FF',
+        '--accent-glow': 'rgba(255, 0, 255, 0.5)',
+        '--input-bg': '#1A1A1A',
+        '--input-bg-focus': '#222222',
+        '--input-text': '#00FFCC',
+        '--placeholder': '#66FFCC'
+    }
+},
 ];
 
 let _userCoins      = 0;
@@ -2299,6 +2349,7 @@ function applyThemeEffect(themeId) {
     else if (themeId === 'galaxy') applyGalaxyEffect();
     else if (themeId === 'rosegold') applyRoseGoldEffect();
     else if (themeId === 'midnight') applyMidnightEffect();
+    else if (themeId === 'neonarcade') applyNeonArcadeEffect();
 }
 
 // ── Ocean Deep ───────────────────────────────────────────────────────
@@ -3298,6 +3349,157 @@ function applyRoseGoldEffect() {
         if (petalFrame) cancelAnimationFrame(petalFrame);
         window.removeEventListener('resize', resizeDiamonds);
         window.removeEventListener('resize', resizePetals);
+    };
+}
+
+function applyNeonArcadeEffect() {
+    const layer = document.getElementById('themeEffectLayer');
+    if (!layer) return;
+    layer.innerHTML = '';
+
+    // 1. Nền đen tuyền với hiệu ứng scanline (tạo cảm giác CRT)
+    const bgDiv = document.createElement('div');
+    bgDiv.style.cssText = `
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(ellipse at 50% 50%, #0F0F0F 0%, #000000 100%);
+        z-index: 0;
+    `;
+    layer.appendChild(bgDiv);
+
+    // 2. Hiệu ứng scanline (đường kẻ ngang mờ)
+    const scanlines = document.createElement('div');
+    scanlines.style.cssText = `
+        position: absolute;
+        inset: 0;
+        background: repeating-linear-gradient(0deg, rgba(0,0,0,0.2) 0px, rgba(0,0,0,0.2) 2px, transparent 2px, transparent 4px);
+        pointer-events: none;
+        z-index: 1;
+        opacity: 0.5;
+    `;
+    layer.appendChild(scanlines);
+
+    // 3. Hiệu ứng CRT flicker nhẹ (nhấp nháy toàn màn hình)
+    const flicker = document.createElement('div');
+    flicker.style.cssText = `
+        position: absolute;
+        inset: 0;
+        background: rgba(0,255,200,0.03);
+        animation: crtFlicker 0.15s infinite;
+        pointer-events: none;
+        z-index: 2;
+    `;
+    layer.appendChild(flicker);
+
+    // 4. Các vạch sáng neon chạy ngang (giống game arcade)
+    const neonBars = [];
+    for (let i = 0; i < 6; i++) {
+        const bar = document.createElement('div');
+        const top = 5 + i * 15;
+        bar.style.cssText = `
+            position: absolute;
+            top: ${top}%;
+            left: -10%;
+            width: 20%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00FFCC, #FF00FF, #00FFCC, transparent);
+            filter: blur(2px);
+            animation: neonBarMove ${8 + i * 2}s linear infinite;
+            animation-delay: ${-i * 1.5}s;
+            opacity: 0.6;
+            pointer-events: none;
+            z-index: 3;
+        `;
+        layer.appendChild(bar);
+        neonBars.push(bar);
+    }
+
+    // 5. Các hạt sáng pixel (pixel dust) - hình vuông nhỏ
+    const pixelCanvas = document.createElement('canvas');
+    pixelCanvas.style.cssText = `
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 4;
+    `;
+    layer.appendChild(pixelCanvas);
+    const ctx = pixelCanvas.getContext('2d');
+    let pixels = [];
+    let pixelFrame = null;
+
+    const COLORS = ['#00FFCC', '#FF00FF', '#00FF66', '#FFCC00', '#FF3366'];
+
+    function initPixels() {
+        const count = 180;
+        pixels = [];
+        for (let i = 0; i < count; i++) {
+            pixels.push({
+                x: Math.random() * window.innerWidth,
+                y: Math.random() * window.innerHeight,
+                size: 2 + Math.random() * 4,
+                alpha: 0.2 + Math.random() * 0.6,
+                twinkle: Math.random() * Math.PI * 2,
+                speed: 0.01 + Math.random() * 0.03,
+                color: COLORS[Math.floor(Math.random() * COLORS.length)],
+                vy: 0.1 + Math.random() * 0.5,
+            });
+        }
+    }
+
+    function drawPixels() {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, pixelCanvas.width, pixelCanvas.height);
+        for (let p of pixels) {
+            p.twinkle += p.speed;
+            p.y += p.vy;
+            if (p.y > pixelCanvas.height + 10) {
+                p.y = -10;
+                p.x = Math.random() * pixelCanvas.width;
+            }
+            const alpha = p.alpha + Math.sin(p.twinkle) * 0.2;
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = Math.max(0.1, Math.min(0.8, alpha));
+            ctx.fillRect(p.x, p.y, p.size, p.size);
+        }
+        pixelFrame = requestAnimationFrame(drawPixels);
+    }
+
+    function resizePixels() {
+        pixelCanvas.width = window.innerWidth;
+        pixelCanvas.height = window.innerHeight;
+        initPixels();
+    }
+    window.addEventListener('resize', resizePixels);
+    resizePixels();
+    drawPixels();
+
+    // 6. Thêm hiệu ứng glow hình tròn di chuyển ngẫu nhiên (giống bóng đèn neon)
+    const glowBalls = [];
+    for (let i = 0; i < 8; i++) {
+        const ball = document.createElement('div');
+        ball.style.cssText = `
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0,255,204,0.4) 0%, rgba(255,0,255,0) 70%);
+            filter: blur(20px);
+            animation: neonGlowMove ${15 + i * 3}s linear infinite;
+            animation-delay: ${-i * 2}s;
+            pointer-events: none;
+            z-index: 5;
+        `;
+        layer.appendChild(ball);
+        glowBalls.push(ball);
+    }
+
+    // Cleanup
+    if (window._neonCleanup) window._neonCleanup();
+    window._neonCleanup = () => {
+        if (pixelFrame) cancelAnimationFrame(pixelFrame);
+        window.removeEventListener('resize', resizePixels);
     };
 }
 // Also need sunsetCloudDrift keyframe (inline via CSS):
