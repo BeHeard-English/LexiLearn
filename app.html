@@ -7639,9 +7639,26 @@ async function checkListeningAnswer() {
 
     // Hiện dịch nghĩa câu
     const vnDiv = document.getElementById('lisSentenceVn');
-    if (vnDiv && target.vn) {
-        vnDiv.textContent = `💡 Nghĩa: ${target.vn}`;
-        vnDiv.style.display = 'block';
+if (vnDiv && _lisCurrentSentence) {
+    vnDiv.textContent = '⏳ Đang dịch...';
+    vnDiv.style.display = 'block';
+    try {
+        const key = localStorage.getItem('vflow_api_key') || ...;
+        if (!key) throw new Error('no key');
+        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            ...
+            body: JSON.stringify({
+                model: 'llama-3.3-70b-versatile',
+                messages: [
+                    { role: 'system', content: 'Dịch Anh–Việt, chỉ trả về bản dịch.' },
+                    { role: 'user', content: _lisCurrentSentence }
+                ]
+            })
+        });
+        const translated = data?.choices?.[0]?.message?.content?.trim();
+        vnDiv.textContent = translated ? `💡 ${translated}` : `💡 Nghĩa từ: ${target.vn}`;
+    } catch {
+        vnDiv.textContent = `💡 Nghĩa từ: ${target.vn}`;
     }
 }
 
