@@ -4606,8 +4606,7 @@ async function checkAnswer(btn, selected, correct, word) {
             const currentCorrect = item.correct_count || 0;
             const newCorrect = Math.max(0, currentCorrect - 1);
             await ref.set({ correct_count: newCorrect, ...srs }, { merge: true });
-            fullLibrary = fullLibrary.map(i => i.word === word ? {...i, correct_count: newCorrect} : i);
-            _saveCache(fullLibrary);
+            _syncSRS(word, srs, { correct_count: newCorrect });
         } else {
             // Nguồn bình thường: tăng incorrect_count, áp dụng SRS
             await ref.set({ incorrect_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
