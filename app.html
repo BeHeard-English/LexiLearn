@@ -4582,7 +4582,7 @@ async function checkAnswer(btn, selected, correct, word) {
         playFeedback(true);
         // Cập nhật đúng: tăng correct_count, áp dụng SRS
         await ref.set({ correct_count: firebase.firestore.FieldValue.increment(1), ...srs }, {merge:true});
-        _syncSRS(target.word, srs, { correct_count: (item.correct_count||0) + 1 });
+        _syncSRS(word, srs, { correct_count: (item.correct_count||0) + 1 });
         await addXP(10);
         await recordWordReview(word, true);
         trackAnswerStreak(true);
