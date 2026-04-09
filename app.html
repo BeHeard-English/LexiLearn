@@ -1122,6 +1122,13 @@
                         <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;left:11px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--muted);" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                         <input id="libSearch" class="lib-search" placeholder="Tìm từ vựng hoặc nghĩa...">
                     </div>
+                    <select id="libSort" onchange="_libPage=1;renderLibrary();" style="padding:7px 12px;border:2px solid var(--border);border-radius:10px;font-family:inherit;font-size:.78rem;font-weight:700;color:var(--input-text);background:var(--input-bg);cursor:pointer;outline:none;transition:.2s;">
+                        <option value="default">🔤 Mặc định (A–Z)</option>
+                        <option value="wrong_desc">❌ Sai nhiều nhất</option>
+                        <option value="wrong_asc">✅ Sai ít nhất</option>
+                        <option value="srs_asc">⏰ SRS sớm nhất</option>
+                        <option value="srs_desc">📅 SRS muộn nhất</option>
+                    </select>
                     <div style="display:flex;gap:6px;flex-wrap:wrap;" id="libLevelFilters">
                         <button class="lib-filter-btn active" data-lf="ALL">Tất cả</button>
                         <button class="lib-filter-btn" data-lf="A1">A1</button>
@@ -4017,6 +4024,28 @@ function renderLibrary() {
     if(q) list = list.filter(i => i.word.toLowerCase().includes(q) || (i.vn||'').toLowerCase().includes(q));
     if(activeLibLevel==='DUE')       list = list.filter(i=>isDue(i));
     else if(activeLibLevel!=='ALL')  list = list.filter(i=>i.level===activeLibLevel);
+
+    // Sắp xếp
+    const sort = document.getElementById('libSort')?.value || 'default';
+    if (sort === 'default') {
+        list = [...list].sort((a,b) => a.word.localeCompare(b.word));
+    } else if (sort === 'wrong_desc') {
+        list = [...list].sort((a,b) => (b.incorrect_count||0) - (a.incorrect_count||0));
+    } else if (sort === 'wrong_asc') {
+        list = [...list].sort((a,b) => (a.incorrect_count||0) - (b.incorrect_count||0));
+    } else if (sort === 'srs_asc') {
+        list = [...list].sort((a,b) => {
+            const da = _toDate(a.srs_next_review) || new Date(0);
+            const db_ = _toDate(b.srs_next_review) || new Date(0);
+            return da - db_;
+        });
+    } else if (sort === 'srs_desc') {
+        list = [...list].sort((a,b) => {
+            const da = _toDate(a.srs_next_review) || new Date(0);
+            const db_ = _toDate(b.srs_next_review) || new Date(0);
+            return db_ - da;
+        });
+    }
 
     const mastered = fullLibrary.filter(i=>(i.correct_count||0)>=10).length;
     const dueCount = fullLibrary.filter(i=>isDue(i)).length;
