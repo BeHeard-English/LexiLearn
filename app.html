@@ -1194,8 +1194,8 @@
                         <button class="mode-btn" data-study="flash" style="gap:6px;">🃏 Flashcard</button>
                         <button class="mode-btn" data-study="typing" style="gap:6px;">⌨️ Gõ đáp án</button>
                         <button class="mode-btn" data-study="fillblank" style="gap:6px;">📝 Điền từ</button>
+                        <button class="mode-btn" data-study="sentence" style="gap:6px;">✍️ Viết Câu</button>
                         <button class="mode-btn" data-study="listening" style="gap:6px;">🎧 Nghe hiểu</button>
-                        <button class="mode-btn" data-mode="writing" onclick="setReviewMode('writing', this)">✍️ Viết câu (AI)</button>
                     </div>
                 </div>
 
@@ -1400,6 +1400,56 @@
             </div>
         </div>
 
+    <!-- ── SENTENCE WRITING AREA ── -->
+    <div id="sentenceArea" style="display:none;">
+        <!-- Progress -->
+        <div style="margin-bottom:16px;padding:0 4px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <span style="font-size:.8rem;font-weight:700;color:var(--muted);">Tiến độ</span>
+                <span id="swProgressText" style="font-size:.8rem;font-weight:800;color:var(--primary);">0 / 0</span>
+            </div>
+            <div class="progress-bar-wrap"><div class="progress-bar-fill" id="swProgressFill" style="width:0%"></div></div>
+        </div>
+
+        <div class="quiz-card">
+            <!-- Generating indicator -->
+            <div id="swGenerating" style="display:none;padding:28px 0;text-align:center;color:var(--muted);">
+                <div style="font-size:2rem;margin-bottom:10px;">🤖</div>
+                <div style="font-weight:700;font-size:.9rem;">AI đang tạo prompt...</div>
+            </div>
+
+            <!-- Main content -->
+            <div id="swContent" style="display:none;">
+                <!-- Vietnamese prompt -->
+                <div style="margin-bottom:20px;">
+                    <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">📝 Yêu cầu</div>
+                    <div id="swPrompt" style="background:linear-gradient(135deg,#ede9fe,#e9d5ff);border:2px solid #c084fc;border-radius:14px;padding:18px 20px;font-size:1rem;line-height:1.7;color:#581c87;font-weight:600;text-align:left;"></div>
+                </div>
+
+                <!-- Word hints -->
+                <div style="margin-bottom:20px;">
+                    <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">💡 Từ gợi ý (có thể dùng)</div>
+                    <div id="swWordHints" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+                </div>
+
+                <!-- English sentence input -->
+                <div style="margin-bottom:20px;">
+                    <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">✍️ Câu tiếng Anh của bạn</div>
+                    <textarea id="swInput" placeholder="Viết câu tiếng Anh ở đây..." style="width:100%;min-height:120px;padding:14px 16px;border:2px solid var(--border);border-radius:12px;font-size:.95rem;line-height:1.6;resize:vertical;background:var(--input-bg);transition:.2s;" onfocus="this.style.borderColor='var(--primary-mid)';this.style.background='var(--input-bg-focus)'" onblur="this.style.borderColor='var(--border)';this.style.background='var(--input-bg)'"></textarea>
+                </div>
+
+                <!-- Feedback -->
+                <div id="swFeedback" style="display:none;"></div>
+
+                <!-- Buttons -->
+                <div style="display:flex;gap:10px;">
+                    <button id="swCheckBtn" class="btn-primary wide" style="padding:14px;" onclick="checkSentenceAnswer()">Kiểm tra</button>
+                    <button id="swNextBtn" class="btn-primary wide" style="padding:14px;display:none;" onclick="nextSentence()">Câu tiếp theo ➜</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     </div><!-- /review-start -->
 
     <!-- ── LISTENING AREA ── -->
@@ -1461,32 +1511,6 @@
                 <button id="lisNextBtn" class="btn-primary wide" style="padding:14px;display:none;" onclick="nextListening()">Câu tiếp theo ➜</button>
             </div>
         </div>
-    </div>
-</div>
-        <div id="writingArea" class="hidden fade-in">
-    <div class="quiz-card">
-        <div class="quiz-prompt-label">Dịch câu sau sang tiếng Anh:</div>
-        <div id="writingPromptVn" class="quiz-word" style="font-size: 1.5rem; line-height: 1.4; margin-bottom: 20px;">
-            <span class="ldot">●</span><span class="ldot">●</span><span class="ldot">●</span>
-        </div>
-        
-        <textarea id="writingInput" class="txt-input" rows="3" 
-                  placeholder="Nhập câu tiếng Anh của bạn..." 
-                  style="margin-bottom: 15px; font-size: 1.1rem;"></textarea>
-
-        <div id="writingFeedback" class="hidden p-4 rounded-xl mb-4" style="border: 1px solid var(--border);">
-            <div class="flex justify-between items-center mb-2">
-                <span class="font-bold text-sm">Điểm AI: <span id="writingScoreDisplay" class="text-xl text-blue-600">0</span>/20</span>
-            </div>
-            <p id="writingAiComment" class="text-sm text-slate-600 italic mb-2"></p>
-            <div class="p-3 bg-green-50 rounded-lg text-sm">
-                <span class="font-bold text-green-700">Đáp án gợi ý:</span>
-                <p id="writingCorrectAnswer" class="text-slate-700 mt-1"></p>
-            </div>
-        </div>
-
-        <button id="checkWritingBtn" class="btn-primary wide">Kiểm tra với AI</button>
-        <button id="nextWritingBtn" class="btn-primary btn-success wide hidden" style="margin-top: 10px;">Câu tiếp theo</button>
     </div>
 </div>
 
@@ -4454,8 +4478,8 @@ document.querySelectorAll('.mode-btn[data-study]').forEach(btn => btn.onclick = 
     studyType = btn.dataset.study;
     const aiOption  = document.getElementById('aiGradingOption');
     const modeWrap  = document.getElementById('reviewModeWrap');
-    // Điền từ không cần chiều học (câu ví dụ luôn tiếng Anh)
-    if (modeWrap) modeWrap.style.display = (studyType === 'fillblank' || studyType === 'listening') ? 'none' : '';
+    // Điền từ, nghe hiểu và viết câu không cần chiều học
+    if (modeWrap) modeWrap.style.display = (studyType === 'fillblank' || studyType === 'listening' || studyType === 'sentence') ? 'none' : '';
     // AI chỉ dùng cho typing normal
     if (aiOption) aiOption.style.display = (studyType === 'typing' && reviewMode === 'normal') ? 'block' : 'none';
 });
@@ -4578,13 +4602,25 @@ async function startReviewQuiz() {
         document.getElementById('flashcardArea').style.display = 'none';
         document.getElementById('typingArea').style.display = 'none';
         document.getElementById('fillBlankArea').style.display = 'none';
+        document.getElementById('sentenceArea').style.display = 'none';
         showListeningQuestion();
+    } else if (studyType === 'sentence') {
+        const key = document.getElementById('apiKey').value.trim() || document.getElementById('apiKeyMobile').value.trim();
+        if (!key) { showToast('⚠️ Cần nhập Groq API Key để dùng chế độ Viết Câu!'); document.getElementById('sentenceArea').style.display='none'; document.getElementById('reviewStart').classList.remove('hidden'); return; }
+        document.getElementById('sentenceArea').style.display = 'block';
+        document.getElementById('reviewQuizArea').style.display = 'none';
+        document.getElementById('flashcardArea').style.display = 'none';
+        document.getElementById('typingArea').style.display = 'none';
+        document.getElementById('fillBlankArea').style.display = 'none';
+        document.getElementById('listeningArea').style.display = 'none';
+        showSentenceWriting();
     } else {
         document.getElementById('reviewQuizArea').style.display = window.innerWidth <= 767 ? 'flex' : 'block';
         document.body.classList.add('quiz-active');
         document.getElementById('flashcardArea').style.display = 'none';
         document.getElementById('typingArea').style.display = 'none';
         document.getElementById('fillBlankArea').style.display = 'none';
+        document.getElementById('sentenceArea').style.display = 'none';
         showReviewQuestion();
     }
 }
@@ -4607,6 +4643,7 @@ async function showReviewQuestion() {
     if(currentReviewIdx>=reviewPool.length){
         document.getElementById('reviewQuizArea').style.display='none';
         document.getElementById('flashcardArea').style.display='none';
+        document.getElementById('sentenceArea').style.display='none';
         document.getElementById('listeningArea').style.display='none'; document.getElementById('reviewStart').classList.remove('hidden');
         updateProgress();
         showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} câu.`);
@@ -5842,6 +5879,7 @@ function showFlashcard() {
     if (window.innerWidth < 768) window.scrollTo({ top: 0, behavior: 'instant' });
     if (currentReviewIdx >= reviewPool.length) {
         document.getElementById('flashcardArea').style.display = 'none';
+        document.getElementById('sentenceArea').style.display = 'none';
         document.getElementById('listeningArea').style.display='none'; document.getElementById('reviewStart').classList.remove('hidden');
         showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} thẻ.`);
         showSessionSummary();
@@ -6739,6 +6777,7 @@ async function showTypingQuestion() {
     if (window.innerWidth < 768) window.scrollTo({ top: 0, behavior: 'instant' });
     if (currentReviewIdx >= reviewPool.length) {
         document.getElementById('typingArea').style.display = 'none';
+        document.getElementById('sentenceArea').style.display = 'none';
         document.getElementById('listeningArea').style.display='none'; document.getElementById('reviewStart').classList.remove('hidden');
         updateTypingProgress();
         showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} câu.`);
@@ -6775,97 +6814,6 @@ async function showTypingQuestion() {
     _reviewTransitioning = false;
 }
 
-// --- LOGIC CHẾ ĐỘ VIẾT CÂU (AI) ---
-
-async function showWritingQuestion() {
-    const target = reviewPool[currentReviewIdx];
-    currentWord = target;
-    
-    // Reset UI
-    document.getElementById('writingArea').classList.remove('hidden');
-    document.getElementById('reviewStart').classList.add('hidden');
-    document.getElementById('writingInput').value = '';
-    document.getElementById('writingFeedback').classList.add('hidden');
-    document.getElementById('checkWritingBtn').classList.remove('hidden');
-    document.getElementById('nextWritingBtn').classList.add('hidden');
-    document.getElementById('writingPromptVn').innerHTML = '<span class="ldot">●</span><span class="ldot">●</span><span class="ldot">●</span>';
-
-    const key = localStorage.getItem('vflow_api_key');
-    if (!key) {
-        showToast("⚠️ Vui lòng nhập API Key ở phần cài đặt!");
-        return;
-    }
-
-    // Bước 1: Gọi AI tạo đề bài tiếng Việt dựa trên từ vựng
-    try {
-        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-            body: JSON.stringify({
-                model: "llama-3.3-70b-versatile",
-                messages: [{ role: "user", content: `Tạo 1 câu tiếng Việt tự nhiên để học sinh dịch sang tiếng Anh, trong câu phải dùng nghĩa của từ: "${target.word}" (${target.vn}). Chỉ trả về duy nhất nội dung câu tiếng Việt.` }],
-                temperature: 0.7
-            })
-        });
-        const data = await res.json();
-        document.getElementById('writingPromptVn').innerText = data.choices[0].message.content.trim();
-    } catch (e) {
-        document.getElementById('writingPromptVn').innerText = "Lỗi kết nối AI. Vui lòng thử lại.";
-    }
-}
-
-async function checkWritingAnswerAI() {
-    const userText = document.getElementById('writingInput').value.trim();
-    if (!userText) return;
-
-    const btn = document.getElementById('checkWritingBtn');
-    btn.disabled = true;
-    btn.innerText = "AI đang chấm điểm...";
-
-    const key = localStorage.getItem('vflow_api_key');
-    const target = reviewPool[currentReviewIdx];
-    const vnPrompt = document.getElementById('writingPromptVn').innerText;
-
-    try {
-        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-            body: JSON.stringify({
-                model: "llama-3.3-70b-versatile",
-                response_format: { type: "json_object" },
-                messages: [
-                    { role: "system", content: "Bạn là giáo viên chấm bài. Trả về JSON: {\"score_20\": số điểm từ 0-20, \"feedback\": \"nhận xét ngắn gọn\", \"correct\": \"câu mẫu chuẩn\"}" },
-                    { role: "user", content: `Dịch câu: "${vnPrompt}". Người dùng viết: "${userText}". Từ khóa bắt buộc: "${target.word}". Hãy chấm điểm độ chính xác.` }
-                ]
-            })
-        });
-        
-        const data = await res.json();
-        const result = JSON.parse(data.choices[0].message.content);
-
-        // Hiển thị kết quả
-        document.getElementById('writingScoreDisplay').innerText = result.score_20;
-        document.getElementById('writingAiComment').innerText = result.feedback;
-        document.getElementById('writingCorrectAnswer').innerText = result.correct;
-        document.getElementById('writingFeedback').classList.remove('hidden');
-        
-        document.getElementById('checkWritingBtn').classList.add('hidden');
-        document.getElementById('nextWritingBtn').classList.remove('hidden');
-
-        // Thêm điểm vào hệ thống XP (nếu điểm > 15)
-        if (result.score_20 >= 15) {
-            _sessionCorrect++;
-            addXP(15); 
-        }
-        _sessionTotal++;
-    } catch (e) {
-        showToast("❌ Lỗi chấm điểm AI.");
-    } finally {
-        btn.disabled = false;
-        btn.innerText = "Kiểm tra với AI";
-    }
-}
-    
 async function checkTypingAnswer() {
     const input = document.getElementById('typingInput');
     const userAnswer = input.value.trim();
@@ -7113,6 +7061,7 @@ async function showFillBlank() {
     if (window.innerWidth < 768) window.scrollTo({ top: 0, behavior: 'instant' });
     if (currentReviewIdx >= reviewPool.length) {
         document.getElementById('fillBlankArea').style.display = 'none';
+        document.getElementById('sentenceArea').style.display = 'none';
         document.getElementById('listeningArea').style.display='none'; document.getElementById('reviewStart').classList.remove('hidden');
         updateFBProgress();
         showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} câu.`);
@@ -7713,8 +7662,10 @@ async function showListeningQuestion() {
 
     if (currentReviewIdx >= reviewPool.length) {
         const listeningArea = document.getElementById('listeningArea');
+        const sentenceArea = document.getElementById('sentenceArea');
         const reviewStart = document.getElementById('reviewStart');
         if (listeningArea) listeningArea.style.display = 'none';
+        if (sentenceArea) sentenceArea.style.display = 'none';
         if (reviewStart) reviewStart.classList.remove('hidden');
         updateListeningProgress();
         showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} câu.`);
@@ -7911,6 +7862,242 @@ function nextListening() {
     const nextBtn = document.getElementById('lisNextBtn');
     if (nextBtn) nextBtn.style.display = 'none';
     showListeningQuestion();
+}
+
+// ══════════════════════════════════════════
+// SENTENCE WRITING MODE
+// ══════════════════════════════════════════
+let swCurrentPrompt = '';
+let swCurrentWords = [];
+let swCurrentTarget = null;
+
+async function showSentenceWriting() {
+    if (currentReviewIdx >= reviewPool.length) {
+        document.getElementById('sentenceArea').style.display = 'none';
+        document.getElementById('reviewStart').classList.remove('hidden');
+        showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} câu.`);
+        await showSessionSummary();
+        return;
+    }
+
+    // Update progress
+    const pct = Math.round((currentReviewIdx / totalReviewCount) * 100);
+    document.getElementById('swProgressFill').style.width = pct + '%';
+    document.getElementById('swProgressText').innerText = `${currentReviewIdx} / ${totalReviewCount}`;
+
+    // Reset UI
+    document.getElementById('swInput').value = '';
+    document.getElementById('swInput').disabled = false;
+    document.getElementById('swCheckBtn').style.display = 'flex';
+    document.getElementById('swCheckBtn').disabled = false;
+    document.getElementById('swNextBtn').style.display = 'none';
+    document.getElementById('swFeedback').style.display = 'none';
+    document.getElementById('swGenerating').style.display = 'flex';
+    document.getElementById('swContent').style.display = 'none';
+
+    // Get 2-3 words for this prompt
+    const numWords = Math.min(3, reviewPool.length - currentReviewIdx);
+    const wordsForPrompt = reviewPool.slice(currentReviewIdx, currentReviewIdx + numWords);
+    swCurrentWords = wordsForPrompt;
+    swCurrentTarget = reviewPool[currentReviewIdx];
+
+    // Generate Vietnamese prompt using AI
+    const key = document.getElementById('apiKey').value.trim() || document.getElementById('apiKeyMobile').value.trim();
+    try {
+        const wordList = wordsForPrompt.map(w => `"${w.word}" (${w.vn})`).join(', ');
+        const prompt = `Tạo một câu yêu cầu bằng tiếng Việt để người học viết câu tiếng Anh sử dụng ${numWords === 1 ? 'từ' : 'các từ'}: ${wordList}.
+
+Yêu cầu phải:
+- Rõ ràng, dễ hiểu
+- Tạo ngữ cảnh thực tế để người học có thể viết câu có nghĩa
+- Không quá dài (1-2 câu)
+- Khuyến khích sáng tạo
+
+Chỉ trả về câu yêu cầu tiếng Việt, không thêm gì khác.`;
+
+        const aiRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${key}`
+            },
+            body: JSON.stringify({
+                model: 'llama-3.3-70b-versatile',
+                messages: [{ role: 'user', content: prompt }],
+                temperature: 0.8,
+                max_tokens: 150
+            })
+        });
+        const data = await aiRes.json();
+        swCurrentPrompt = data.choices[0].message.content.trim();
+
+        // Display UI
+        document.getElementById('swPrompt').innerText = swCurrentPrompt;
+        document.getElementById('swWordHints').innerHTML = wordsForPrompt.map(w => 
+            `<span style="background:var(--primary-light);color:var(--primary);padding:6px 12px;border-radius:8px;font-size:.85rem;font-weight:700;border:2px solid var(--primary-mid);">${w.word} <span style="color:var(--muted);font-weight:500;">(${w.vn})</span></span>`
+        ).join('');
+        
+        document.getElementById('swGenerating').style.display = 'none';
+        document.getElementById('swContent').style.display = 'block';
+        document.getElementById('swInput').focus();
+    } catch (err) {
+        console.error(err);
+        showToast('❌ Lỗi khi tạo prompt. Vui lòng thử lại!');
+        document.getElementById('sentenceArea').style.display = 'none';
+        document.getElementById('reviewStart').classList.remove('hidden');
+    }
+}
+
+async function checkSentenceAnswer() {
+    const userSentence = document.getElementById('swInput').value.trim();
+    if (!userSentence) {
+        showToast('⚠️ Vui lòng viết câu tiếng Anh!');
+        return;
+    }
+
+    const checkBtn = document.getElementById('swCheckBtn');
+    const nextBtn = document.getElementById('swNextBtn');
+    const inputField = document.getElementById('swInput');
+    const feedbackDiv = document.getElementById('swFeedback');
+
+    inputField.disabled = true;
+    checkBtn.disabled = true;
+    checkBtn.style.display = 'none';
+    nextBtn.style.display = 'flex';
+    nextBtn.disabled = true;
+
+    // Show checking message
+    feedbackDiv.style.cssText = 'display:block;padding:14px 18px;margin-top:20px;background:#334155;color:#f1f5f9;border-radius:12px;text-align:center;font-weight:800;font-size:.9rem;';
+    feedbackDiv.innerHTML = '🤖 AI đang chấm điểm...';
+
+    const key = document.getElementById('apiKey').value.trim() || document.getElementById('apiKeyMobile').value.trim();
+
+    try {
+        const wordList = swCurrentWords.map(w => `"${w.word}" (${w.vn})`).join(', ');
+        const systemPrompt = `Bạn là giáo viên tiếng Anh chuyên nghiệp. Nhiệm vụ của bạn là đánh giá câu tiếng Anh mà học sinh viết dựa trên yêu cầu đã cho.
+
+TIÊU CHÍ CHẤM ĐIỂM (thang 20 điểm):
+- Ngữ pháp chính xác: 8 điểm
+- Sử dụng đúng từ vựng yêu cầu: 6 điểm
+- Câu có nghĩa rõ ràng, phù hợp ngữ cảnh: 4 điểm
+- Chính tả: 2 điểm
+
+Trả về JSON với format:
+{
+  "score": <số từ 0-20>,
+  "feedback": "<nhận xét ngắn gọn bằng tiếng Việt, khoảng 2-3 câu>"
+}
+
+Chỉ trả về JSON, không thêm gì khác.`;
+
+        const userPrompt = `Yêu cầu: ${swCurrentPrompt}
+Từ cần dùng: ${wordList}
+Câu của học sinh: "${userSentence}"
+
+Hãy đánh giá và chấm điểm.`;
+
+        const aiRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${key}`
+            },
+            body: JSON.stringify({
+                model: 'llama-3.3-70b-versatile',
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: userPrompt }
+                ],
+                temperature: 0.3,
+                max_tokens: 300
+            })
+        });
+        const data = await aiRes.json();
+        let result = data.choices[0].message.content.trim();
+        
+        // Parse JSON
+        result = result.replace(/```json|```/g, '').trim();
+        const evaluation = JSON.parse(result);
+        const score = evaluation.score || 0;
+        const feedback = evaluation.feedback || 'Đã chấm xong!';
+
+        // Determine if correct (>= 14/20 = 70%)
+        const isCorrect = score >= 14;
+
+        // Display feedback
+        if (isCorrect) {
+            feedbackDiv.style.cssText = 'display:block;padding:16px 20px;margin-top:20px;background:linear-gradient(135deg,#d1fae5,#a7f3d0);border-radius:12px;text-align:left;';
+            feedbackDiv.innerHTML = `
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+                    <div style="font-size:2.5rem;">✅</div>
+                    <div>
+                        <div style="font-weight:900;font-size:1.2rem;color:#065f46;">Tuyệt vời!</div>
+                        <div style="font-weight:800;font-size:1.1rem;color:#047857;margin-top:2px;">Điểm: ${score}/20</div>
+                    </div>
+                </div>
+                <div style="color:#065f46;font-weight:600;font-size:.9rem;line-height:1.5;">${feedback}</div>
+            `;
+            playFeedback(true);
+
+            // Award XP based on score
+            let xpGain = Math.floor(score); // 0-20 XP
+            if (xpGain > 0) {
+                await addXP(xpGain);
+            }
+
+            // Update word stats
+            const ref = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(swCurrentTarget.word.toLowerCase());
+            const item = fullLibrary.find(i => i.word.toLowerCase() === swCurrentTarget.word.toLowerCase()) || {};
+            const srs = srsUpdate(item, true);
+            await ref.set({ correct_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
+            _syncSRS(swCurrentTarget.word, srs, { correct_count: (item.correct_count || 0) + 1 });
+            await recordWordReview(swCurrentTarget.word, true);
+            trackAnswerStreak(true);
+            trackSessionResult(true);
+
+        } else {
+            feedbackDiv.style.cssText = 'display:block;padding:16px 20px;margin-top:20px;background:linear-gradient(135deg,#fee2e2,#fecaca);border-radius:12px;text-align:left;';
+            feedbackDiv.innerHTML = `
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+                    <div style="font-size:2.5rem;">💪</div>
+                    <div>
+                        <div style="font-weight:900;font-size:1.2rem;color:#991b1b;">Cần cố gắng thêm!</div>
+                        <div style="font-weight:800;font-size:1.1rem;color:#b91c1c;margin-top:2px;">Điểm: ${score}/20</div>
+                    </div>
+                </div>
+                <div style="color:#991b1b;font-weight:600;font-size:.9rem;line-height:1.5;">${feedback}</div>
+            `;
+            playFeedback(false);
+
+            // Update word stats (incorrect)
+            const ref = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(swCurrentTarget.word.toLowerCase());
+            const item = fullLibrary.find(i => i.word.toLowerCase() === swCurrentTarget.word.toLowerCase()) || {};
+            const srs = srsUpdate(item, false);
+            await ref.set({ incorrect_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
+            _syncSRS(swCurrentTarget.word, srs, { incorrect_count: (item.incorrect_count || 0) + 1 });
+            await recordWordReview(swCurrentTarget.word, false);
+            trackAnswerStreak(false);
+            trackSessionResult(false);
+        }
+
+        currentReviewIdx++;
+        nextBtn.disabled = false;
+
+    } catch (err) {
+        console.error(err);
+        feedbackDiv.style.cssText = 'display:block;padding:14px 18px;margin-top:20px;background:#fee2e2;color:#991b1b;border-radius:12px;text-align:center;font-weight:700;';
+        feedbackDiv.innerHTML = '❌ Lỗi khi chấm điểm. Vui lòng thử lại!';
+        inputField.disabled = false;
+        checkBtn.style.display = 'flex';
+        checkBtn.disabled = false;
+        nextBtn.style.display = 'none';
+    }
+}
+
+function nextSentence() {
+    const nextBtn = document.getElementById('swNextBtn');
+    if (nextBtn) nextBtn.style.display = 'none';
+    showSentenceWriting();
 }
 
 // ══════════════════════════════════════════
