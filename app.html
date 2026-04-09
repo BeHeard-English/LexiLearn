@@ -1415,10 +1415,20 @@
             <!-- Nút nghe câu -->
             <div style="margin-bottom:20px;">
                 <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px;">Nghe và điền từ còn thiếu</div>
-                <button id="lisPlayBtn" onclick="lisPlaySentence()" style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary-mid));border:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 6px 24px var(--accent-glow);transition:.2s;" title="Nghe câu">
-                    <svg xmlns="http://www.w3.org/2000/svg" style="width:32px;height:32px;color:#fff;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M12 6v12m-3.536-9.536a5 5 0 000 7.072"/></svg>
-                </button>
-                <div style="font-size:.7rem;color:var(--muted);margin-top:8px;">Nhấn để nghe lại</div>
+                <div style="display:flex;align-items:center;justify-content:center;gap:16px;">
+                    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+                        <button id="lisPlayBtn" onclick="lisPlaySentence()" style="width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--primary-mid));border:none;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 6px 24px var(--accent-glow);transition:.2s;" title="Nghe toàn câu">
+                            <svg xmlns="http://www.w3.org/2000/svg" style="width:32px;height:32px;color:#fff;" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M12 6v12m-3.536-9.536a5 5 0 000 7.072"/></svg>
+                        </button>
+                        <div style="font-size:.68rem;color:var(--muted);font-weight:600;">Nghe câu</div>
+                    </div>
+                    <div style="display:flex;flex-direction:column;align-items:center;gap:6px;">
+                        <button id="lisPlayWordBtn" onclick="lisPlayWord()" style="width:52px;height:52px;border-radius:50%;background:var(--primary-light);border:2px solid var(--primary-mid);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:.2s;" title="Nghe từ cần điền">
+                            <svg xmlns="http://www.w3.org/2000/svg" style="width:22px;height:22px;color:var(--primary);" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg>
+                        </button>
+                        <div style="font-size:.68rem;color:var(--muted);font-weight:600;">Nghe từ</div>
+                    </div>
+                </div>
             </div>
 
             <!-- Câu với chỗ trống -->
@@ -4134,18 +4144,35 @@ function _renderEditWordListPicker(wordKey) {
     }
     picker.innerHTML = topicLists.map(tl => {
         const inList = (tl.wordIds || []).includes(wordKey);
-        return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:10px;border:1.5px solid ${inList ? 'var(--success)' : 'var(--border)'};background:${inList ? 'var(--success-bg)' : 'var(--card)'};">
+        return `<div onclick="${inList ? `removeEditWordFromList('${tl.id}')` : `addEditWordToList('${tl.id}')`}"
+            style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:10px;
+            border:1.5px solid ${inList ? 'var(--success)' : 'var(--border)'};
+            background:${inList ? 'var(--success-bg)' : 'var(--card)'};
+            cursor:pointer;transition:.2s;user-select:none;"
+            onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">
             <div style="display:flex;align-items:center;gap:8px;">
                 <span style="font-size:1.1rem;">${tl.icon || '📋'}</span>
                 <span style="font-size:.83rem;font-weight:700;color:var(--text);">${tl.name}</span>
                 <span style="font-size:.65rem;color:var(--muted);">${(tl.wordIds||[]).length} từ</span>
             </div>
-            ${inList
-                ? `<span style="font-size:.7rem;font-weight:800;color:var(--success);">✅ Đã có</span>`
-                : `<button onclick="addEditWordToList('${tl.id}')" style="font-size:.72rem;font-weight:800;color:var(--primary);background:var(--primary-light);border:none;border-radius:7px;padding:4px 10px;cursor:pointer;transition:.2s;" onmouseover="this.style.background='#d4dbff'" onmouseout="this.style.background='var(--primary-light)'">+ Thêm</button>`
-            }
+            <span style="font-size:.72rem;font-weight:800;color:${inList ? 'var(--success)' : 'var(--muted)'};">
+                ${inList ? '✅ Đã có · Bỏ chọn' : '+ Thêm'}
+            </span>
         </div>`;
     }).join('');
+}
+
+async function removeEditWordFromList(listId) {
+    const wordKey = _editingWord.toLowerCase();
+    const tl = topicLists.find(t => t.id === listId);
+    if (!tl) return;
+    tl.wordIds = (tl.wordIds || []).filter(w => w !== wordKey);
+    await db.collection('users').doc(currentUser.uid).collection('topicLists').doc(listId)
+        .update({ wordIds: tl.wordIds });
+    _renderEditWordListPicker(wordKey);
+    renderTopicLists();
+    populateReviewVocabSelect();
+    showToast(`🗑️ Đã xoá "${_editingWord}" khỏi "${tl.name}"!`);
 }
 
 async function addEditWordToList(listId) {
@@ -6437,31 +6464,37 @@ function playFeedbackSound(isCorrect) {
     try {
         const ctx = _getAudioCtx();
         if (isCorrect) {
-            // Âm đúng: hai nốt lên (ding-ding)
-            [[880, 0, 0.06], [1320, 0.1, 0.12]].forEach(([freq, delay, dur]) => {
+            // Duolingo correct: 3 nốt vui tươi đi lên C5→E5→G5
+            const notes = [
+                { freq: 523.25, t: 0,    dur: 0.12 },  // C5
+                { freq: 659.25, t: 0.13, dur: 0.12 },  // E5
+                { freq: 783.99, t: 0.26, dur: 0.22 },  // G5
+            ];
+            notes.forEach(({ freq, t, dur }) => {
                 const osc  = ctx.createOscillator();
                 const gain = ctx.createGain();
                 osc.connect(gain); gain.connect(ctx.destination);
-                osc.type = 'sine'; osc.frequency.value = freq;
-                const t = ctx.currentTime + delay;
-                gain.gain.setValueAtTime(0, t);
-                gain.gain.linearRampToValueAtTime(0.22, t + 0.02);
-                gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
-                osc.start(t); osc.stop(t + dur + 0.02);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, ctx.currentTime + t);
+                const st = ctx.currentTime + t;
+                gain.gain.setValueAtTime(0, st);
+                gain.gain.linearRampToValueAtTime(0.28, st + 0.015);
+                gain.gain.setValueAtTime(0.28, st + dur - 0.04);
+                gain.gain.exponentialRampToValueAtTime(0.001, st + dur);
+                osc.start(st); osc.stop(st + dur + 0.02);
             });
         } else {
-            // Âm sai: tiếng "thud" trầm
-            [[220, 0, 0.18], [180, 0.05, 0.22]].forEach(([freq, delay, dur]) => {
-                const osc  = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.connect(gain); gain.connect(ctx.destination);
-                osc.type = 'sawtooth'; osc.frequency.value = freq;
-                const t = ctx.currentTime + delay;
-                gain.gain.setValueAtTime(0, t);
-                gain.gain.linearRampToValueAtTime(0.18, t + 0.03);
-                gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
-                osc.start(t); osc.stop(t + dur + 0.02);
-            });
+            // Duolingo wrong: 1 nốt trầm ngắn đi xuống, kèm chút "thud"
+            const osc1  = ctx.createOscillator();
+            const gain1 = ctx.createGain();
+            osc1.connect(gain1); gain1.connect(ctx.destination);
+            osc1.type = 'sine';
+            osc1.frequency.setValueAtTime(370, ctx.currentTime);
+            osc1.frequency.exponentialRampToValueAtTime(220, ctx.currentTime + 0.25);
+            gain1.gain.setValueAtTime(0, ctx.currentTime);
+            gain1.gain.linearRampToValueAtTime(0.32, ctx.currentTime + 0.02);
+            gain1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.28);
+            osc1.start(ctx.currentTime); osc1.stop(ctx.currentTime + 0.3);
         }
     } catch(e) { /* Trình duyệt không hỗ trợ */ }
 }
@@ -7585,6 +7618,27 @@ function lisPlaySentence() {
     const btn = document.getElementById('lisPlayBtn');
     if (btn) {
         btn.style.opacity = '0.6';
+        utt.onend = () => { btn.style.opacity = '1'; };
+    }
+    window.speechSynthesis.speak(utt);
+}
+
+// Phát âm chỉ từ cần điền
+function lisPlayWord() {
+    const target = reviewPool[currentReviewIdx];
+    if (!target) return;
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const utt = new SpeechSynthesisUtterance(target.word);
+    utt.lang = 'en-US';
+    utt.rate = 0.82;
+    const voices = window.speechSynthesis.getVoices();
+    const enVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Google UK') || v.name.includes('Samantha') || v.name.includes('Microsoft David'))) ||
+                    voices.find(v => v.lang.startsWith('en'));
+    if (enVoice) utt.voice = enVoice;
+    const btn = document.getElementById('lisPlayWordBtn');
+    if (btn) {
+        btn.style.opacity = '0.5';
         utt.onend = () => { btn.style.opacity = '1'; };
     }
     window.speechSynthesis.speak(utt);
