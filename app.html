@@ -1195,6 +1195,7 @@
                         <button class="mode-btn" data-study="typing" style="gap:6px;">⌨️ Gõ đáp án</button>
                         <button class="mode-btn" data-study="fillblank" style="gap:6px;">📝 Điền từ</button>
                         <button class="mode-btn" data-study="listening" style="gap:6px;">🎧 Nghe hiểu</button>
+                        <button class="mode-btn" data-mode="writing" onclick="setReviewMode('writing', this)">✍️ Viết câu (AI)</button>
                     </div>
                 </div>
 
@@ -1460,6 +1461,32 @@
                 <button id="lisNextBtn" class="btn-primary wide" style="padding:14px;display:none;" onclick="nextListening()">Câu tiếp theo ➜</button>
             </div>
         </div>
+    </div>
+</div>
+        <div id="writingArea" class="hidden fade-in">
+    <div class="quiz-card">
+        <div class="quiz-prompt-label">Dịch câu sau sang tiếng Anh:</div>
+        <div id="writingPromptVn" class="quiz-word" style="font-size: 1.5rem; line-height: 1.4; margin-bottom: 20px;">
+            <span class="ldot">●</span><span class="ldot">●</span><span class="ldot">●</span>
+        </div>
+        
+        <textarea id="writingInput" class="txt-input" rows="3" 
+                  placeholder="Nhập câu tiếng Anh của bạn..." 
+                  style="margin-bottom: 15px; font-size: 1.1rem;"></textarea>
+
+        <div id="writingFeedback" class="hidden p-4 rounded-xl mb-4" style="border: 1px solid var(--border);">
+            <div class="flex justify-between items-center mb-2">
+                <span class="font-bold text-sm">Điểm AI: <span id="writingScoreDisplay" class="text-xl text-blue-600">0</span>/20</span>
+            </div>
+            <p id="writingAiComment" class="text-sm text-slate-600 italic mb-2"></p>
+            <div class="p-3 bg-green-50 rounded-lg text-sm">
+                <span class="font-bold text-green-700">Đáp án gợi ý:</span>
+                <p id="writingCorrectAnswer" class="text-slate-700 mt-1"></p>
+            </div>
+        </div>
+
+        <button id="checkWritingBtn" class="btn-primary wide">Kiểm tra với AI</button>
+        <button id="nextWritingBtn" class="btn-primary btn-success wide hidden" style="margin-top: 10px;">Câu tiếp theo</button>
     </div>
 </div>
 
@@ -6748,6 +6775,97 @@ async function showTypingQuestion() {
     _reviewTransitioning = false;
 }
 
+// --- LOGIC CHẾ ĐỘ VIẾT CÂU (AI) ---
+
+async function showWritingQuestion() {
+    const target = reviewPool[currentReviewIdx];
+    currentWord = target;
+    
+    // Reset UI
+    document.getElementById('writingArea').classList.remove('hidden');
+    document.getElementById('reviewStart').classList.add('hidden');
+    document.getElementById('writingInput').value = '';
+    document.getElementById('writingFeedback').classList.add('hidden');
+    document.getElementById('checkWritingBtn').classList.remove('hidden');
+    document.getElementById('nextWritingBtn').classList.add('hidden');
+    document.getElementById('writingPromptVn').innerHTML = '<span class="ldot">●</span><span class="ldot">●</span><span class="ldot">●</span>';
+
+    const key = localStorage.getItem('vflow_api_key');
+    if (!key) {
+        showToast("⚠️ Vui lòng nhập API Key ở phần cài đặt!");
+        return;
+    }
+
+    // Bước 1: Gọi AI tạo đề bài tiếng Việt dựa trên từ vựng
+    try {
+        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+            body: JSON.stringify({
+                model: "llama-3.3-70b-versatile",
+                messages: [{ role: "user", content: `Tạo 1 câu tiếng Việt tự nhiên để học sinh dịch sang tiếng Anh, trong câu phải dùng nghĩa của từ: "${target.word}" (${target.vn}). Chỉ trả về duy nhất nội dung câu tiếng Việt.` }],
+                temperature: 0.7
+            })
+        });
+        const data = await res.json();
+        document.getElementById('writingPromptVn').innerText = data.choices[0].message.content.trim();
+    } catch (e) {
+        document.getElementById('writingPromptVn').innerText = "Lỗi kết nối AI. Vui lòng thử lại.";
+    }
+}
+
+async function checkWritingAnswerAI() {
+    const userText = document.getElementById('writingInput').value.trim();
+    if (!userText) return;
+
+    const btn = document.getElementById('checkWritingBtn');
+    btn.disabled = true;
+    btn.innerText = "AI đang chấm điểm...";
+
+    const key = localStorage.getItem('vflow_api_key');
+    const target = reviewPool[currentReviewIdx];
+    const vnPrompt = document.getElementById('writingPromptVn').innerText;
+
+    try {
+        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+            body: JSON.stringify({
+                model: "llama-3.3-70b-versatile",
+                response_format: { type: "json_object" },
+                messages: [
+                    { role: "system", content: "Bạn là giáo viên chấm bài. Trả về JSON: {\"score_20\": số điểm từ 0-20, \"feedback\": \"nhận xét ngắn gọn\", \"correct\": \"câu mẫu chuẩn\"}" },
+                    { role: "user", content: `Dịch câu: "${vnPrompt}". Người dùng viết: "${userText}". Từ khóa bắt buộc: "${target.word}". Hãy chấm điểm độ chính xác.` }
+                ]
+            })
+        });
+        
+        const data = await res.json();
+        const result = JSON.parse(data.choices[0].message.content);
+
+        // Hiển thị kết quả
+        document.getElementById('writingScoreDisplay').innerText = result.score_20;
+        document.getElementById('writingAiComment').innerText = result.feedback;
+        document.getElementById('writingCorrectAnswer').innerText = result.correct;
+        document.getElementById('writingFeedback').classList.remove('hidden');
+        
+        document.getElementById('checkWritingBtn').classList.add('hidden');
+        document.getElementById('nextWritingBtn').classList.remove('hidden');
+
+        // Thêm điểm vào hệ thống XP (nếu điểm > 15)
+        if (result.score_20 >= 15) {
+            _sessionCorrect++;
+            addXP(15); 
+        }
+        _sessionTotal++;
+    } catch (e) {
+        showToast("❌ Lỗi chấm điểm AI.");
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "Kiểm tra với AI";
+    }
+}
+    
 async function checkTypingAnswer() {
     const input = document.getElementById('typingInput');
     const userAnswer = input.value.trim();
