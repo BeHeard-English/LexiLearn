@@ -861,13 +861,6 @@
     75% { top: 30%; left: 90%; transform: scale(1.8); opacity: 0.8; }
     100% { top: 10%; left: -10%; transform: scale(1); opacity: 0.4; }
 }
-/* Multi-select study type buttons */
-.study-type-btn.selected {
-    background: var(--primary) !important;
-    border-color: var(--primary) !important;
-    color: #fff !important;
-    box-shadow: 0 3px 10px rgba(3,19,131,.25);
-}
     </style>
 </head>
 <body>
@@ -1193,19 +1186,18 @@
                     </select>
                 </div>
 
-                <!-- Study type (multi-select) -->
-<div style="text-align:left;margin-bottom:22px;">
-    <div class="section-label" style="margin-bottom:10px;">Hình thức học <span style="font-weight:400;color:#94a3b8;text-transform:none;letter-spacing:0;">(chọn nhiều)</span></div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;" id="studyTypeContainer">
-        <button class="mode-btn study-type-btn selected" data-study="quiz">🎯 Trắc nghiệm</button>
-        <button class="mode-btn study-type-btn" data-study="flash">🃏 Flashcard</button>
-        <button class="mode-btn study-type-btn" data-study="typing">⌨️ Gõ đáp án</button>
-        <button class="mode-btn study-type-btn" data-study="fillblank">📝 Điền từ</button>
-        <button class="mode-btn study-type-btn" data-study="sentence">✍️ Viết Câu</button>
-        <button class="mode-btn study-type-btn" data-study="listening">🎧 Nghe hiểu</button>
-    </div>
-</div>
-                
+                <!-- Study type -->
+                <div style="text-align:left;margin-bottom:22px;">
+                    <div class="section-label" style="margin-bottom:10px;">Hình thức học</div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                        <button class="mode-btn active" data-study="quiz" style="gap:6px;">🎯 Trắc nghiệm</button>
+                        <button class="mode-btn" data-study="flash" style="gap:6px;">🃏 Flashcard</button>
+                        <button class="mode-btn" data-study="typing" style="gap:6px;">⌨️ Gõ đáp án</button>
+                        <button class="mode-btn" data-study="fillblank" style="gap:6px;">📝 Điền từ</button>
+                        <button class="mode-btn" data-study="sentence" style="gap:6px;">✍️ Viết Câu</button>
+                        <button class="mode-btn" data-study="listening" style="gap:6px;">🎧 Nghe hiểu</button>
+                    </div>
+                </div>
 
                 <!-- Mode (ẩn khi chọn điền từ vì câu ví dụ luôn là tiếng Anh) -->
                 <div id="reviewModeWrap" style="text-align:left;margin-bottom:22px;">
@@ -4461,137 +4453,11 @@ document.getElementById('checkDragDropBtn').onclick = () => {
     document.getElementById('dragDropScore').innerHTML=`<div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px;text-align:center;color:#10b981;font-weight:800;">KẾT QUẢ: ${ok}/${zones.length} — ${Math.round(ok/zones.length*100)}% ✨</div>`;
 };
 function closeDragDrop(){_selectedDragItem=null;document.getElementById('dragDropContainer').classList.add('hidden');document.getElementById('vocabContainer').classList.remove('hidden');}
-// ─── Multi-select study types ────────────────────────────────────────
-function toggleStudyType(btn) {
-    btn.classList.toggle('selected');
-    updateSelectedStudyTypes();
-}
 
-function updateSelectedStudyTypes() {
-    const btns = document.querySelectorAll('.study-type-btn.selected');
-    selectedStudyTypes = Array.from(btns).map(b => b.dataset.study);
-    if (selectedStudyTypes.length === 0) {
-        // Nếu không chọn gì, mặc định chọn quiz
-        const defaultBtn = document.querySelector('.study-type-btn[data-study="quiz"]');
-        if (defaultBtn) {
-            defaultBtn.classList.add('selected');
-            selectedStudyTypes = ['quiz'];
-        }
-    }
-}
-
-// Tạo mảng tasks phân bổ đều các loại
-function generateMixedTasks(totalCount, types, wordPool) {
-    if (wordPool.length < 4) return [];
-    
-    const baseCount = Math.floor(totalCount / types.length);
-    let remainder = totalCount % types.length;
-    
-    const typeCounts = types.map((type, index) => ({
-        type,
-        count: baseCount + (index < remainder ? 1 : 0)
-    }));
-
-    let tasks = [];
-    typeCounts.forEach(({type, count}) => {
-        for (let i = 0; i < count; i++) {
-            // Chọn ngẫu nhiên một từ từ wordPool (có thể trùng)
-            const randomIndex = Math.floor(Math.random() * wordPool.length);
-            const word = { ...wordPool[randomIndex] }; // clone để tránh tham chiếu
-            tasks.push({ word, type });
-        }
-    });
-
-    return shuffle(tasks);
-}
-
-// Dispatcher hiển thị task theo type
-function showCurrentTask() {
-    if (currentReviewIdx >= reviewPool.length) {
-        finishReviewSession();
-        return;
-    }
-    
-    const task = reviewPool[currentReviewIdx];
-    currentWord = task.word;
-    const type = task.type;
-    
-    // Ẩn tất cả area
-    document.getElementById('reviewQuizArea').style.display = 'none';
-    document.getElementById('flashcardArea').style.display = 'none';
-    document.getElementById('typingArea').style.display = 'none';
-    document.getElementById('fillBlankArea').style.display = 'none';
-    document.getElementById('sentenceArea').style.display = 'none';
-    document.getElementById('listeningArea').style.display = 'none';
-    document.body.classList.remove('quiz-active');
-    
-    // Cập nhật progress chung
-    updateGlobalProgress();
-    
-    switch (type) {
-        case 'quiz':
-            document.getElementById('reviewQuizArea').style.display = window.innerWidth <= 767 ? 'flex' : 'block';
-            document.body.classList.add('quiz-active');
-            showReviewQuestion();
-            break;
-        case 'flash':
-            document.getElementById('flashcardArea').style.display = 'block';
-            showFlashcard();
-            break;
-        case 'typing':
-            document.getElementById('typingArea').style.display = 'block';
-            showTypingQuestion();
-            break;
-        case 'fillblank':
-            document.getElementById('fillBlankArea').style.display = 'block';
-            showFillBlank();
-            break;
-        case 'sentence':
-            document.getElementById('sentenceArea').style.display = 'block';
-            showSentenceWriting();
-            break;
-        case 'listening':
-            document.getElementById('listeningArea').style.display = 'block';
-            showListeningQuestion();
-            break;
-        default:
-            // fallback
-            document.getElementById('reviewQuizArea').style.display = window.innerWidth <= 767 ? 'flex' : 'block';
-            document.body.classList.add('quiz-active');
-            showReviewQuestion();
-    }
-}
-
-function updateGlobalProgress() {
-    const pct = Math.round((currentReviewIdx / totalReviewCount) * 100);
-    const fillIds = ['progressFill', 'fcProgressFill', 'typingProgressFill', 'fbProgressFill', 'swProgressFill', 'lisProgressFill'];
-    fillIds.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.style.width = pct + '%';
-    });
-    const textIds = ['progressText', 'fcProgressText', 'typingProgressText', 'fbProgressText', 'swProgressText', 'lisProgressText'];
-    textIds.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.innerText = `${currentReviewIdx} / ${totalReviewCount}`;
-    });
-}
-
-async function finishReviewSession() {
-    document.getElementById('reviewQuizArea').style.display = 'none';
-    document.getElementById('flashcardArea').style.display = 'none';
-    document.getElementById('typingArea').style.display = 'none';
-    document.getElementById('fillBlankArea').style.display = 'none';
-    document.getElementById('sentenceArea').style.display = 'none';
-    document.getElementById('listeningArea').style.display = 'none';
-    document.getElementById('reviewStart').classList.remove('hidden');
-    document.body.classList.remove('quiz-active');
-    showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} câu.`);
-    await showSessionSummary();
-}
 // ══════════════════════════════════════════
 // REVIEW SETTINGS BUTTONS
 // ══════════════════════════════════════════
-let selectedStudyTypes = ['quiz']; // Mảng chứa các loại bài tập được chọn
+let studyType = 'quiz'; // 'quiz' | 'flash'
 
 document.querySelectorAll('.mode-btn[data-study]').forEach(btn => btn.onclick = () => {
     document.querySelectorAll('.mode-btn[data-study]').forEach(b => b.classList.remove('active'));
@@ -4648,24 +4514,22 @@ async function loadSRSDueCount() {
 async function startReviewQuiz() {
     const count  = parseInt(document.querySelector('.count-btn.active')?.dataset.count||'10');
     const levels = Array.from(document.querySelectorAll('.level-btn.active')).map(b=>b.dataset.level);
+    reviewMode   = document.querySelector('.mode-btn[data-mode].active')?.dataset.mode||'normal';
+    studyType    = document.querySelector('.mode-btn[data-study].active')?.dataset.study||'quiz';
     const vocabSource = document.getElementById('reviewVocabSource')?.value || 'all';
-    const modeBtns = document.querySelectorAll('.mode-btn[data-mode]');
-    reviewMode = Array.from(modeBtns).find(b => b.classList.contains('active'))?.dataset.mode || 'normal';
-    
-    updateSelectedStudyTypes();
-    const types = [...selectedStudyTypes];
-    if (types.length === 0) types.push('quiz');
-    
     if(!levels.length){ showToast('⚠️ Hãy chọn ít nhất 1 cấp độ!'); return; }
 
     window._wordHardCount = {};
     _reviewTransitioning = false;
+    window._wordCorrectCount = {};
     window._wordWrongCount = {};
     window._typingProceed = null;
-    window._sessionReviewedWords = new Set();
+    window._sessionReviewedWords = new Set(); // Chỉ đếm mỗi từ 1 lần/session
 
-    let pool = fullLibrary.filter(i => levels.includes(i.level) && (i.correct_count||0) < 10);
-    
+    const snap = { docs: fullLibrary.filter(i => (i.correct_count||0) < 10).map(d => ({ data: () => d })) };
+    let pool = snap.docs.map(d=>d.data()).filter(i=>levels.includes(i.level));
+
+    // Xử lý nguồn từ vựng
     if (vocabSource !== 'all') {
         if (vocabSource === 'mastered') {
             pool = fullLibrary.filter(i => (i.correct_count||0) >= 10 && levels.includes(i.level));
@@ -4678,32 +4542,87 @@ async function startReviewQuiz() {
             pool = [...pool.filter(i => ids.includes((i.word||'').toLowerCase())), ...masteredDue];
         }
     } else {
+        // Nguồn "tất cả": bổ sung từ đã thuộc nhưng đến hạn SRS
         const masteredDue = fullLibrary
             .filter(i => (i.correct_count||0) >= 10 && levels.includes(i.level) && isDue(i))
             .map(i=>({...i, _isMastered:true}));
         pool = [...pool, ...masteredDue];
     }
 
-    if(pool.length < 4){ showToast('⚠️ Cần tối thiểu 4 từ ở cấp đã chọn trong nguồn này!'); return; }
+    if(pool.length<4){ showToast('⚠️ Cần tối thiểu 4 từ ở cấp đã chọn trong nguồn này!'); return; }
 
+    // SRS: due words first
     const due    = shuffle(pool.filter(i=> isDue(i)));
     const notDue = shuffle(pool.filter(i=>!isDue(i)));
-    const wordPool = [...due, ...notDue];
-    
-    let tasks = generateMixedTasks(count, types, wordPool);
-    if (tasks.length === 0) { showToast('⚠️ Không đủ từ để tạo bài tập!'); return; }
-    
-    reviewPool = tasks;
+    reviewPool = [...due, ...notDue].slice(0, count);
     totalReviewCount = reviewPool.length;
     currentReviewIdx = 0;
-    
+
     window._currentReviewSource = vocabSource;
-    
+
     document.getElementById('reviewStart').classList.add('hidden');
     startSessionTimer(reviewPool.length);
-    _sessionCorrect = 0; _sessionTotal = reviewPool.length; _sessionXpEarned = 0; _sessionWrongWords = [];
-    
-    showCurrentTask();
+    _sessionCorrect = 0; _sessionTotal = reviewPool.length;
+
+    if (studyType === 'flash') {
+        document.getElementById('flashcardArea').style.display = 'block';
+        document.getElementById('reviewQuizArea').style.display = 'none';
+        document.getElementById('typingArea').style.display = 'none';
+        document.getElementById('fillBlankArea').style.display = 'none';
+        document.getElementById('listeningArea').style.display = 'none';
+        showFlashcard();
+    } else if (studyType === 'typing') {
+        document.getElementById('typingArea').style.display = 'block';
+        document.getElementById('reviewQuizArea').style.display = 'none';
+        document.getElementById('flashcardArea').style.display = 'none';
+        document.getElementById('fillBlankArea').style.display = 'none';
+        document.getElementById('listeningArea').style.display = 'none';
+        showTypingQuestion();
+    } else if (studyType === 'fillblank') {
+        // Lọc chỉ giữ từ có câu ví dụ; nếu không đủ 4, báo lỗi
+        const withEx = reviewPool.filter(i => i.example && i.example.trim().length > 3);
+        if (withEx.length < 2) {
+            document.getElementById('listeningArea').style.display='none'; document.getElementById('reviewStart').classList.remove('hidden');
+            showToast('⚠️ Cần ít nhất 2 từ có câu ví dụ để dùng chế độ Điền từ. Hãy thêm câu ví dụ cho từ vựng!');
+            return;
+        }
+        reviewPool = withEx;
+        totalReviewCount = reviewPool.length;
+        document.getElementById('fillBlankArea').style.display = 'block';
+        document.getElementById('reviewQuizArea').style.display = 'none';
+        document.getElementById('flashcardArea').style.display = 'none';
+        document.getElementById('typingArea').style.display = 'none';
+        document.getElementById('listeningArea').style.display = 'none';
+        showFillBlank();
+    } else if (studyType === 'listening') {
+        const key = document.getElementById('apiKey').value.trim() || document.getElementById('apiKeyMobile').value.trim();
+        if (!key) { showToast('⚠️ Cần nhập Groq API Key để dùng chế độ Nghe hiểu!'); document.getElementById('listeningArea').style.display='none'; document.getElementById('reviewStart').classList.remove('hidden'); return; }
+        document.getElementById('listeningArea').style.display = 'block';
+        document.getElementById('reviewQuizArea').style.display = 'none';
+        document.getElementById('flashcardArea').style.display = 'none';
+        document.getElementById('typingArea').style.display = 'none';
+        document.getElementById('fillBlankArea').style.display = 'none';
+        document.getElementById('sentenceArea').style.display = 'none';
+        showListeningQuestion();
+    } else if (studyType === 'sentence') {
+        const key = document.getElementById('apiKey').value.trim() || document.getElementById('apiKeyMobile').value.trim();
+        if (!key) { showToast('⚠️ Cần nhập Groq API Key để dùng chế độ Viết Câu!'); document.getElementById('sentenceArea').style.display='none'; document.getElementById('reviewStart').classList.remove('hidden'); return; }
+        document.getElementById('sentenceArea').style.display = 'block';
+        document.getElementById('reviewQuizArea').style.display = 'none';
+        document.getElementById('flashcardArea').style.display = 'none';
+        document.getElementById('typingArea').style.display = 'none';
+        document.getElementById('fillBlankArea').style.display = 'none';
+        document.getElementById('listeningArea').style.display = 'none';
+        showSentenceWriting();
+    } else {
+        document.getElementById('reviewQuizArea').style.display = window.innerWidth <= 767 ? 'flex' : 'block';
+        document.body.classList.add('quiz-active');
+        document.getElementById('flashcardArea').style.display = 'none';
+        document.getElementById('typingArea').style.display = 'none';
+        document.getElementById('fillBlankArea').style.display = 'none';
+        document.getElementById('sentenceArea').style.display = 'none';
+        showReviewQuestion();
+    }
 }
 
 // ══════════════════════════════════════════
@@ -4835,10 +4754,8 @@ async function checkAnswer(btn, selected, correct, word) {
     }
 
     const nb = document.getElementById('nextReviewBtn');
-nb.style.display='flex';
-nb.onclick = () => {
-    showCurrentTask();
-};
+    nb.style.display='flex';
+    nb.onclick=()=>{ showReviewQuestion(); };
 }
 // ══════════════════════════════════════════
 // ADD WORD DROPDOWN MENU
@@ -6092,10 +6009,13 @@ async function rateFC(rating) {
 
     // Tiếp tục hoặc kết thúc phiên
     if (currentReviewIdx < reviewPool.length) {
-    showCurrentTask();
-} else {
-    finishReviewSession();
-}
+        showFlashcard();
+    } else {
+        document.getElementById('flashcardArea').style.display = 'none';
+        document.getElementById('listeningArea').style.display='none'; document.getElementById('reviewStart').classList.remove('hidden');
+        showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} thẻ.`);
+        await showSessionSummary();
+    }
 }
 
 // ══════════════════════════════════════════
@@ -7064,12 +6984,15 @@ Học sinh có hiểu đúng nghĩa không?`;
     }
 
     const proceed = () => {
-    if (currentReviewIdx < reviewPool.length) {
-        showCurrentTask(); // thay vì showTypingQuestion()
-    } else {
-        finishReviewSession();
-    }
-};
+        if (currentReviewIdx < reviewPool.length) {
+            showTypingQuestion();
+        } else {
+            document.getElementById('typingArea').style.display = 'none';
+            document.getElementById('listeningArea').style.display='none'; document.getElementById('reviewStart').classList.remove('hidden');
+            showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} câu.`);
+            showSessionSummary();
+        }
+    };
 
     window._typingProceed = proceed;
     nextBtn.onclick = () => {
@@ -7118,21 +7041,7 @@ function updateAIOptionVisibility() {
         aiOption.style.display = isVisible ? 'block' : 'none';
     }
 }
-// Khởi tạo multi-select study types
-document.addEventListener('DOMContentLoaded', function() {
-    const container = document.getElementById('studyTypeContainer');
-    if (container) {
-        container.querySelectorAll('.study-type-btn').forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                this.classList.toggle('selected');
-                updateSelectedStudyTypes();
-            });
-        });
-        // Đảm bảo mảng selectedStudyTypes đồng bộ với giao diện
-        updateSelectedStudyTypes();
-    }
-});
+
 // ══════════════════════════════════════════
 // FILL BLANK MODE
 // ══════════════════════════════════════════
@@ -7531,7 +7440,7 @@ async function checkFillBlank() {
 }
 
 function nextFillBlank() {
-    showCurrentTask(); // thay vì showFillBlank()
+    showFillBlank();
 }
 
 function speakFB() {
@@ -7952,7 +7861,7 @@ async function checkListeningAnswer() {
 function nextListening() {
     const nextBtn = document.getElementById('lisNextBtn');
     if (nextBtn) nextBtn.style.display = 'none';
-    showCurrentTask();
+    showListeningQuestion();
 }
 
 // ══════════════════════════════════════════
@@ -8159,7 +8068,7 @@ Hãy chấm điểm và đưa ra nhận xét + đề xuất câu đúng.`;
 function nextSentence() {
     const nextBtn = document.getElementById('swNextBtn');
     if (nextBtn) nextBtn.style.display = 'none';
-    showCurrentTask(); // thay vì showSentenceWriting()
+    showSentenceWriting();
 }
 
 // ══════════════════════════════════════════
