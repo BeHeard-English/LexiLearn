@@ -1415,27 +1415,27 @@
             <!-- Generating indicator -->
             <div id="swGenerating" style="display:none;padding:28px 0;text-align:center;color:var(--muted);">
                 <div style="font-size:2rem;margin-bottom:10px;">🤖</div>
-                <div style="font-weight:700;font-size:.9rem;">AI đang tạo prompt...</div>
+                <div style="font-weight:700;font-size:.9rem;">AI đang tạo câu...</div>
             </div>
 
             <!-- Main content -->
             <div id="swContent" style="display:none;">
-                <!-- Vietnamese prompt -->
-                <div style="margin-bottom:20px;">
-                    <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">📝 Yêu cầu</div>
-                    <div id="swPrompt" style="background:linear-gradient(135deg,#ede9fe,#e9d5ff);border:2px solid #c084fc;border-radius:14px;padding:18px 20px;font-size:1rem;line-height:1.7;color:#581c87;font-weight:600;text-align:left;"></div>
+                <!-- Vietnamese sentence -->
+                <div style="margin-bottom:24px;">
+                    <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">🇻🇳 Câu tiếng Việt</div>
+                    <div id="swVietnameseSentence" style="background:linear-gradient(135deg,#f0f9ff,#e0f2fe);border:2px solid #0284c7;border-radius:14px;padding:20px 24px;font-size:1.15rem;line-height:1.8;color:#0c4a6e;font-weight:600;text-align:left;"></div>
                 </div>
 
-                <!-- Word hints -->
-                <div style="margin-bottom:20px;">
-                    <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">💡 Từ gợi ý (có thể dùng)</div>
-                    <div id="swWordHints" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+                <!-- Target word hint -->
+                <div style="margin-bottom:24px;">
+                    <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">💡 Từ cần dùng</div>
+                    <div id="swTargetWord" style="display:inline-flex;align-items:center;gap:8px;background:var(--primary-light);color:var(--primary);padding:8px 16px;border-radius:10px;border:2px solid var(--primary-mid);"></div>
                 </div>
 
                 <!-- English sentence input -->
                 <div style="margin-bottom:20px;">
                     <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">✍️ Câu tiếng Anh của bạn</div>
-                    <textarea id="swInput" placeholder="Viết câu tiếng Anh ở đây..." style="width:100%;min-height:120px;padding:14px 16px;border:2px solid var(--border);border-radius:12px;font-size:.95rem;line-height:1.6;resize:vertical;background:var(--input-bg);transition:.2s;" onfocus="this.style.borderColor='var(--primary-mid)';this.style.background='var(--input-bg-focus)'" onblur="this.style.borderColor='var(--border)';this.style.background='var(--input-bg)'"></textarea>
+                    <textarea id="swInput" placeholder="Write your English sentence here..." style="width:100%;min-height:140px;padding:16px 20px;border:2px solid var(--border);border-radius:12px;font-size:1.05rem;line-height:1.7;resize:vertical;background:var(--input-bg);transition:.2s;" onfocus="this.style.borderColor='var(--primary-mid)';this.style.background='var(--input-bg-focus)'" onblur="this.style.borderColor='var(--border)';this.style.background='var(--input-bg)'"></textarea>
                 </div>
 
                 <!-- Feedback -->
@@ -7975,25 +7975,22 @@ async function showSentenceWriting() {
     document.getElementById('swGenerating').style.display = 'flex';
     document.getElementById('swContent').style.display = 'none';
 
-    // Get 2-3 words for this prompt
-    const numWords = Math.min(3, reviewPool.length - currentReviewIdx);
-    const wordsForPrompt = reviewPool.slice(currentReviewIdx, currentReviewIdx + numWords);
-    swCurrentWords = wordsForPrompt;
-    swCurrentTarget = reviewPool[currentReviewIdx];
+    // Get current word
+    const targetWord = reviewPool[currentReviewIdx];
+    swCurrentTarget = targetWord;
 
-    // Generate Vietnamese prompt using AI
+    // Generate Vietnamese sentence using AI
     const key = document.getElementById('apiKey').value.trim() || document.getElementById('apiKeyMobile').value.trim();
     try {
-        const wordList = wordsForPrompt.map(w => `"${w.word}" (${w.vn})`).join(', ');
-        const prompt = `Tạo một câu yêu cầu bằng tiếng Việt để người học viết câu tiếng Anh sử dụng ${numWords === 1 ? 'từ' : 'các từ'}: ${wordList}.
+        const prompt = `Tạo một câu tiếng Việt tự nhiên, đơn giản sử dụng từ tiếng Anh "${targetWord.word}" (nghĩa: ${targetWord.vn}).
 
-Yêu cầu phải:
-- Rõ ràng, dễ hiểu
-- Tạo ngữ cảnh thực tế để người học có thể viết câu có nghĩa
-- Không quá dài (1-2 câu)
-- Khuyến khích sáng tạo
+Yêu cầu:
+- Câu tiếng Việt ngắn gọn, dễ hiểu (10-15 từ)
+- Sử dụng ngữ cảnh thực tế, tự nhiên
+- Không quá phức tạp
+- Từ "${targetWord.word}" phải xuất hiện rõ ràng trong câu tiếng Anh tương ứng
 
-Chỉ trả về câu yêu cầu tiếng Việt, không thêm gì khác.`;
+Chỉ trả về câu tiếng Việt, không thêm gì khác.`;
 
         const aiRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
@@ -8004,25 +8001,26 @@ Chỉ trả về câu yêu cầu tiếng Việt, không thêm gì khác.`;
             body: JSON.stringify({
                 model: 'llama-3.3-70b-versatile',
                 messages: [{ role: 'user', content: prompt }],
-                temperature: 0.8,
-                max_tokens: 150
+                temperature: 0.7,
+                max_tokens: 100
             })
         });
         const data = await aiRes.json();
-        swCurrentPrompt = data.choices[0].message.content.trim();
+        swCurrentPrompt = data.choices[0].message.content.trim().replace(/^["']|["']$/g, '');
 
         // Display UI
-        document.getElementById('swPrompt').innerText = swCurrentPrompt;
-        document.getElementById('swWordHints').innerHTML = wordsForPrompt.map(w => 
-            `<span style="background:var(--primary-light);color:var(--primary);padding:6px 12px;border-radius:8px;font-size:.85rem;font-weight:700;border:2px solid var(--primary-mid);">${w.word} <span style="color:var(--muted);font-weight:500;">(${w.vn})</span></span>`
-        ).join('');
+        document.getElementById('swVietnameseSentence').innerText = swCurrentPrompt;
+        document.getElementById('swTargetWord').innerHTML = `
+            <span style="font-size:1.05rem;font-weight:800;">${targetWord.word}</span>
+            <span style="color:var(--muted);font-weight:600;font-size:.9rem;">(${targetWord.vn})</span>
+        `;
         
         document.getElementById('swGenerating').style.display = 'none';
         document.getElementById('swContent').style.display = 'block';
         document.getElementById('swInput').focus();
     } catch (err) {
         console.error(err);
-        showToast('❌ Lỗi khi tạo prompt. Vui lòng thử lại!');
+        showToast('❌ Lỗi khi tạo câu. Vui lòng thử lại!');
         document.getElementById('sentenceArea').style.display = 'none';
         document.getElementById('reviewStart').classList.remove('hidden');
     }
@@ -8053,28 +8051,51 @@ async function checkSentenceAnswer() {
     const key = document.getElementById('apiKey').value.trim() || document.getElementById('apiKeyMobile').value.trim();
 
     try {
-        const wordList = swCurrentWords.map(w => `"${w.word}" (${w.vn})`).join(', ');
-        const systemPrompt = `Bạn là giáo viên tiếng Anh chuyên nghiệp. Nhiệm vụ của bạn là đánh giá câu tiếng Anh mà học sinh viết dựa trên yêu cầu đã cho.
+        const systemPrompt = `Bạn là giáo viên tiếng Anh chuyên nghiệp. Nhiệm vụ của bạn là đánh giá câu tiếng Anh mà học sinh viết dựa trên câu tiếng Việt đã cho.
 
 TIÊU CHÍ CHẤM ĐIỂM (thang 20 điểm):
-- Ngữ pháp chính xác: 8 điểm
-- Sử dụng đúng từ vựng yêu cầu: 6 điểm
-- Câu có nghĩa rõ ràng, phù hợp ngữ cảnh: 4 điểm
-- Chính tả: 2 điểm
+
+1. **Nghĩa đúng** (0-8 điểm):
+   - Câu tiếng Anh có truyền tải đúng ý nghĩa của câu tiếng Việt không?
+   - Có sử dụng đúng từ "${swCurrentTarget.word}" không?
+
+2. **Ngữ pháp** (0-6 điểm):
+   - Thì động từ đúng chưa?
+   - Cấu trúc câu chính xác chưa?
+   - Trật tự từ hợp lý chưa?
+
+3. **Chính tả** (0-3 điểm):
+   - Có lỗi chính tả không?
+   - Dấu câu đúng chưa?
+
+4. **Sự tự nhiên & cách chọn từ** (0-3 điểm):
+   - Câu có tự nhiên như người bản ngữ không?
+   - Cách chọn từ có phù hợp không?
+   - Có dùng từ quá trang trọng hoặc quá thô tục không?
+
+QUY TẮC CHẤM:
+- Lỗi nhỏ (chính tả nhỏ, dấu câu): -0.5 đến -1 điểm
+- Lỗi vừa (ngữ pháp sai nhẹ, chọn từ chưa hay): -1 đến -3 điểm
+- Lỗi lớn (sai thì, sai nghĩa, thiếu từ bắt buộc): -3 đến -6 điểm
+- SAI HOÀN TOÀN nghĩa hoặc không dùng từ yêu cầu: 0-5 điểm
 
 Trả về JSON với format:
 {
   "score": <số từ 0-20>,
-  "feedback": "<nhận xét ngắn gọn bằng tiếng Việt, khoảng 2-3 câu>"
+  "meaning": <điểm nghĩa 0-8>,
+  "grammar": <điểm ngữ pháp 0-6>,
+  "spelling": <điểm chính tả 0-3>,
+  "naturalness": <điểm tự nhiên 0-3>,
+  "feedback": "<nhận xét chi tiết bằng tiếng Việt, chỉ ra LỖI CỤ THỂ và CÁCH SỬA, 2-4 câu>"
 }
 
 Chỉ trả về JSON, không thêm gì khác.`;
 
-        const userPrompt = `Yêu cầu: ${swCurrentPrompt}
-Từ cần dùng: ${wordList}
-Câu của học sinh: "${userSentence}"
+        const userPrompt = `Câu tiếng Việt: "${swCurrentPrompt}"
+Từ bắt buộc phải dùng: "${swCurrentTarget.word}" (${swCurrentTarget.vn})
+Câu tiếng Anh của học sinh: "${userSentence}"
 
-Hãy đánh giá và chấm điểm.`;
+Hãy đánh giá và chấm điểm chi tiết.`;
 
         const aiRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
@@ -8088,8 +8109,8 @@ Hãy đánh giá và chấm điểm.`;
                     { role: 'system', content: systemPrompt },
                     { role: 'user', content: userPrompt }
                 ],
-                temperature: 0.3,
-                max_tokens: 300
+                temperature: 0.2,
+                max_tokens: 400
             })
         });
         const data = await aiRes.json();
@@ -8104,23 +8125,31 @@ Hãy đánh giá và chấm điểm.`;
         // Determine if correct (>= 14/20 = 70%)
         const isCorrect = score >= 14;
 
-        // Display feedback
+        // Display detailed feedback
         if (isCorrect) {
-            feedbackDiv.style.cssText = 'display:block;padding:16px 20px;margin-top:20px;background:linear-gradient(135deg,#d1fae5,#a7f3d0);border-radius:12px;text-align:left;';
+            feedbackDiv.style.cssText = 'display:block;padding:18px 22px;margin-top:20px;background:linear-gradient(135deg,#d1fae5,#a7f3d0);border-radius:14px;text-align:left;';
             feedbackDiv.innerHTML = `
-                <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-                    <div style="font-size:2.5rem;">✅</div>
-                    <div>
-                        <div style="font-weight:900;font-size:1.2rem;color:#065f46;">Tuyệt vời!</div>
-                        <div style="font-weight:800;font-size:1.1rem;color:#047857;margin-top:2px;">Điểm: ${score}/20</div>
+                <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+                    <div style="font-size:3rem;">✅</div>
+                    <div style="flex:1;">
+                        <div style="font-weight:900;font-size:1.3rem;color:#065f46;">Xuất sắc!</div>
+                        <div style="font-weight:800;font-size:1.8rem;color:#047857;margin-top:4px;">${score}/20 điểm</div>
                     </div>
                 </div>
-                <div style="color:#065f46;font-weight:600;font-size:.9rem;line-height:1.5;">${feedback}</div>
+                <div style="background:rgba(255,255,255,.5);border-radius:10px;padding:12px 14px;margin-bottom:14px;">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:.85rem;font-weight:700;">
+                        <div style="color:#065f46;">📖 Nghĩa: ${evaluation.meaning || 0}/8</div>
+                        <div style="color:#065f46;">📝 Ngữ pháp: ${evaluation.grammar || 0}/6</div>
+                        <div style="color:#065f46;">✍️ Chính tả: ${evaluation.spelling || 0}/3</div>
+                        <div style="color:#065f46;">🌟 Tự nhiên: ${evaluation.naturalness || 0}/3</div>
+                    </div>
+                </div>
+                <div style="color:#065f46;font-weight:600;font-size:.95rem;line-height:1.6;background:rgba(255,255,255,.4);border-radius:8px;padding:10px 12px;">${feedback}</div>
             `;
             playFeedback(true);
 
             // Award XP based on score
-            let xpGain = Math.floor(score); // 0-20 XP
+            let xpGain = Math.floor(score); // 14-20 XP
             if (xpGain > 0) {
                 await addXP(xpGain);
             }
@@ -8136,16 +8165,24 @@ Hãy đánh giá và chấm điểm.`;
             trackSessionResult(true);
 
         } else {
-            feedbackDiv.style.cssText = 'display:block;padding:16px 20px;margin-top:20px;background:linear-gradient(135deg,#fee2e2,#fecaca);border-radius:12px;text-align:left;';
+            feedbackDiv.style.cssText = 'display:block;padding:18px 22px;margin-top:20px;background:linear-gradient(135deg,#fee2e2,#fecaca);border-radius:14px;text-align:left;';
             feedbackDiv.innerHTML = `
-                <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-                    <div style="font-size:2.5rem;">💪</div>
-                    <div>
-                        <div style="font-weight:900;font-size:1.2rem;color:#991b1b;">Cần cố gắng thêm!</div>
-                        <div style="font-weight:800;font-size:1.1rem;color:#b91c1c;margin-top:2px;">Điểm: ${score}/20</div>
+                <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+                    <div style="font-size:3rem;">💪</div>
+                    <div style="flex:1;">
+                        <div style="font-weight:900;font-size:1.3rem;color:#991b1b;">Cần cố gắng thêm!</div>
+                        <div style="font-weight:800;font-size:1.8rem;color:#b91c1c;margin-top:4px;">${score}/20 điểm</div>
                     </div>
                 </div>
-                <div style="color:#991b1b;font-weight:600;font-size:.9rem;line-height:1.5;">${feedback}</div>
+                <div style="background:rgba(255,255,255,.5);border-radius:10px;padding:12px 14px;margin-bottom:14px;">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:.85rem;font-weight:700;">
+                        <div style="color:#991b1b;">📖 Nghĩa: ${evaluation.meaning || 0}/8</div>
+                        <div style="color:#991b1b;">📝 Ngữ pháp: ${evaluation.grammar || 0}/6</div>
+                        <div style="color:#991b1b;">✍️ Chính tả: ${evaluation.spelling || 0}/3</div>
+                        <div style="color:#991b1b;">🌟 Tự nhiên: ${evaluation.naturalness || 0}/3</div>
+                    </div>
+                </div>
+                <div style="color:#991b1b;font-weight:600;font-size:.95rem;line-height:1.6;background:rgba(255,255,255,.4);border-radius:8px;padding:10px 12px;">${feedback}</div>
             `;
             playFeedback(false);
 
