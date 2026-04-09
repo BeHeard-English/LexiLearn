@@ -3604,6 +3604,14 @@ function srsUpdate(item, correct) {
     next.setDate(next.getDate() + interval);
     return { srs_interval:interval, srs_ease:ease, srs_reps:reps, srs_next_review: firebase.firestore.Timestamp.fromDate(next) };
 }
+function _syncSRS(word, srs, extra = {}) {
+    fullLibrary = fullLibrary.map(i =>
+        i.word.toLowerCase() === word.toLowerCase()
+            ? { ...i, ...srs, ...extra }
+            : i
+    );
+    _saveCache(fullLibrary);
+}
 function _toDate(val) {
     if (!val) return null;
     if (typeof val.toDate === 'function') return val.toDate();           // Firestore Timestamp
@@ -4574,6 +4582,7 @@ async function checkAnswer(btn, selected, correct, word) {
         playFeedback(true);
         // Cập nhật đúng: tăng correct_count, áp dụng SRS
         await ref.set({ correct_count: firebase.firestore.FieldValue.increment(1), ...srs }, {merge:true});
+        _syncSRS(target.word, srs, { correct_count: (item.correct_count||0) + 1 });
         await addXP(10);
         await recordWordReview(word, true);
         trackAnswerStreak(true);
@@ -4602,6 +4611,7 @@ async function checkAnswer(btn, selected, correct, word) {
         } else {
             // Nguồn bình thường: tăng incorrect_count, áp dụng SRS
             await ref.set({ incorrect_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
+            _syncSRS(word, srs, { incorrect_count: (item.incorrect_count||0) + 1 });
         }
 
         // Nếu không phải mastered, đẩy từ về cuối để ôn lại (tối đa 1 lần)
@@ -5835,6 +5845,7 @@ async function rateFC(rating) {
     if (isCorrect) {
         // Đúng: tăng correct_count
         await ref.set({ correct_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
+        _syncSRS(word, srs, { correct_count: (item.correct_count||0) + 1 });
         await addXP(rating === 'easy' ? 10 : 5);
         await recordWordReview(word, true);
         playFeedback(true);
@@ -5852,11 +5863,11 @@ async function rateFC(rating) {
             const currentCorrect = item.correct_count || 0;
             const newCorrect = Math.max(0, currentCorrect - 1);
             await ref.set({ correct_count: newCorrect, ...srs }, { merge: true });
-            fullLibrary = fullLibrary.map(i => i.word === word ? {...i, correct_count: newCorrect} : i);
-            _saveCache(fullLibrary);
+            _syncSRS(word, srs, { correct_count: newCorrect });
             skipWord = true; // Bỏ qua từ này, không đưa về cuối
         } else {
             await ref.set({ incorrect_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
+            _syncSRS(word, srs, { incorrect_count: (item.incorrect_count||0) + 1 });
         }
 
         // Ghi nhận hoạt động
@@ -6820,6 +6831,7 @@ Học sinh có hiểu đúng nghĩa không?`;
         }
 
         await ref.set({ correct_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
+        _syncSRS(target.word, srs, { correct_count: (item.correct_count||0) + 1 });
         await recordWordReview(target.word, true);
         trackAnswerStreak(true);
         trackSessionResult(true);
@@ -6830,6 +6842,7 @@ Học sinh có hiểu đúng nghĩa không?`;
         let wrongCount = window._wordWrongCount[wordKey];
 
         await ref.set({ incorrect_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
+        _syncSRS(target.word, srs, { incorrect_count: (item.incorrect_count||0) + 1 });
         await recordWordReview(target.word, false);
         trackAnswerStreak(false);
         trackSessionResult(false);
@@ -7233,6 +7246,7 @@ async function checkFillBlank() {
         const item = fullLibrary.find(i => i.word.toLowerCase() === target.word.toLowerCase()) || {};
         const srs  = srsUpdate(item, true);
         await ref.set({ correct_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
+        _syncSRS(target.word, srs, { correct_count: (item.correct_count||0) + 1 });
         await addXP(10); await recordWordReview(target.word, true);
         trackAnswerStreak(true); trackSessionResult(true);
         currentReviewIdx++;
@@ -7254,6 +7268,7 @@ async function checkFillBlank() {
         const item = fullLibrary.find(i => i.word.toLowerCase() === target.word.toLowerCase()) || {};
         const srs  = srsUpdate(item, false);
         await ref.set({ incorrect_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
+        _syncSRS(target.word, srs, { incorrect_count: (item.incorrect_count||0) + 1 });
         await recordWordReview(target.word, false);
         trackAnswerStreak(false); trackSessionResult(false);
 
@@ -7603,6 +7618,7 @@ async function checkListeningAnswer() {
         const item = fullLibrary.find(i => i.word.toLowerCase() === target.word.toLowerCase()) || {};
         const srs = srsUpdate(item, true);
         await ref.set({ correct_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
+        _syncSRS(target.word, srs, { correct_count: (item.correct_count||0) + 1 });
         await addXP(10);
         await recordWordReview(target.word, true);
         trackAnswerStreak(true);
@@ -7617,6 +7633,7 @@ async function checkListeningAnswer() {
         const item = fullLibrary.find(i => i.word.toLowerCase() === target.word.toLowerCase()) || {};
         const srs = srsUpdate(item, false);
         await ref.set({ incorrect_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
+        _syncSRS(target.word, srs, { incorrect_count: (item.incorrect_count||0) + 1 });
         await recordWordReview(target.word, false);
         trackAnswerStreak(false);
         trackSessionResult(false);
