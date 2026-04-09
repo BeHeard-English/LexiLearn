@@ -7975,12 +7975,29 @@ async function showSentenceWriting() {
     document.getElementById('swGenerating').style.display = 'flex';
     document.getElementById('swContent').style.display = 'none';
 
-    // Get current word
     const targetWord = reviewPool[currentReviewIdx];
     swCurrentTarget = targetWord;
 
-    // Generate Vietnamese sentence using AI
+    // Kiểm tra cache trước khi gọi AI
+    let cachedVi = await _getCachedVietnameseSentence(targetWord.word);
+    if (cachedVi) {
+        swCurrentPrompt = cachedVi;
+        displaySentenceUI(targetWord, swCurrentPrompt);
+        document.getElementById('swGenerating').style.display = 'none';
+        document.getElementById('swContent').style.display = 'block';
+        document.getElementById('swInput').focus();
+        return;
+    }
+
+    // Không có cache, gọi AI sinh câu mới
     const key = document.getElementById('apiKey').value.trim() || document.getElementById('apiKeyMobile').value.trim();
+    if (!key) {
+        showToast('⚠️ Cần nhập Groq API Key để tạo câu mẫu!');
+        document.getElementById('sentenceArea').style.display = 'none';
+        document.getElementById('reviewStart').classList.remove('hidden');
+        return;
+    }
+
     try {
         const prompt = `Tạo một câu tiếng Việt tự nhiên, đơn giản sử dụng từ tiếng Anh "${targetWord.word}" (nghĩa: ${targetWord.vn}).
 
@@ -8006,24 +8023,31 @@ Chỉ trả về câu tiếng Việt, không thêm gì khác.`;
             })
         });
         const data = await aiRes.json();
-        swCurrentPrompt = data.choices[0].message.content.trim().replace(/^["']|["']$/g, '');
+        let viSentence = data.choices[0].message.content.trim().replace(/^["']|["']$/g, '');
+        swCurrentPrompt = viSentence;
 
-        // Display UI
-        document.getElementById('swVietnameseSentence').innerText = swCurrentPrompt;
-        document.getElementById('swTargetWord').innerHTML = `
-            <span style="font-size:1.05rem;font-weight:800;">${targetWord.word}</span>
-            <span style="color:var(--muted);font-weight:600;font-size:.9rem;">(${targetWord.vn})</span>
-        `;
-        
+        // Lưu cache
+        await _saveVietnameseSentenceCache(targetWord.word, viSentence);
+
+        displaySentenceUI(targetWord, viSentence);
         document.getElementById('swGenerating').style.display = 'none';
         document.getElementById('swContent').style.display = 'block';
         document.getElementById('swInput').focus();
     } catch (err) {
         console.error(err);
-        showToast('❌ Lỗi khi tạo câu. Vui lòng thử lại!');
+        showToast('❌ Lỗi khi tạo câu mẫu. Vui lòng thử lại!');
         document.getElementById('sentenceArea').style.display = 'none';
         document.getElementById('reviewStart').classList.remove('hidden');
     }
+}
+
+// Hàm phụ để hiển thị UI câu (tách ra để dùng chung)
+function displaySentenceUI(targetWord, viSentence) {
+    document.getElementById('swVietnameseSentence').innerText = viSentence;
+    document.getElementById('swTargetWord').innerHTML = `
+        <span style="font-size:1.05rem;font-weight:800;">${targetWord.word}</span>
+        <span style="color:var(--muted);font-weight:600;font-size:.9rem;">(${targetWord.vn})</span>
+    `;
 }
 
 async function checkSentenceAnswer() {
@@ -8044,65 +8068,39 @@ async function checkSentenceAnswer() {
     nextBtn.style.display = 'flex';
     nextBtn.disabled = true;
 
-    // Show checking message
     feedbackDiv.style.cssText = 'display:block;padding:14px 18px;margin-top:20px;background:#334155;color:#f1f5f9;border-radius:12px;text-align:center;font-weight:800;font-size:.9rem;';
     feedbackDiv.innerHTML = '🤖 AI đang chấm điểm...';
 
     const key = document.getElementById('apiKey').value.trim() || document.getElementById('apiKeyMobile').value.trim();
+    let evaluation = null;
+    let isCorrect = false;
 
     try {
+        if (!key) throw new Error('No API key');
+
         const systemPrompt = `Bạn là giáo viên tiếng Anh chuyên nghiệp. Nhiệm vụ của bạn là đánh giá câu tiếng Anh mà học sinh viết dựa trên câu tiếng Việt đã cho.
 
 TIÊU CHÍ CHẤM ĐIỂM (thang 20 điểm):
-
-1. **Nghĩa đúng** (0-8 điểm):
-   - Câu tiếng Anh có truyền tải đúng ý nghĩa của câu tiếng Việt không?
-   - Có sử dụng đúng từ "${swCurrentTarget.word}" không?
-
-2. **Ngữ pháp** (0-6 điểm):
-   - Thì động từ đúng chưa?
-   - Cấu trúc câu chính xác chưa?
-   - Trật tự từ hợp lý chưa?
-
-3. **Chính tả** (0-3 điểm):
-   - Có lỗi chính tả không?
-   - Dấu câu đúng chưa?
-
-4. **Sự tự nhiên & cách chọn từ** (0-3 điểm):
-   - Câu có tự nhiên như người bản ngữ không?
-   - Cách chọn từ có phù hợp không?
-   - Có dùng từ quá trang trọng hoặc quá thô tục không?
+1. Nghĩa đúng (0-8): Câu có truyền tải đúng ý nghĩa không? Có dùng đúng từ "${swCurrentTarget.word}" không?
+2. Ngữ pháp (0-6): Thì, cấu trúc, trật tự từ.
+3. Chính tả (0-3): Lỗi chính tả, dấu câu.
+4. Sự tự nhiên (0-3): Câu có tự nhiên như người bản ngữ không?
 
 QUY TẮC CHẤM:
-- Lỗi nhỏ (chính tả nhỏ, dấu câu): -0.5 đến -1 điểm
-- Lỗi vừa (ngữ pháp sai nhẹ, chọn từ chưa hay): -1 đến -3 điểm
-- Lỗi lớn (sai thì, sai nghĩa, thiếu từ bắt buộc): -3 đến -6 điểm
-- SAI HOÀN TOÀN nghĩa hoặc không dùng từ yêu cầu: 0-5 điểm
+- Lỗi nhỏ: -0.5 → -1
+- Lỗi vừa: -1 → -3
+- Lỗi lớn (sai thì, sai nghĩa, thiếu từ bắt buộc): -3 → -6
 
-Trả về JSON với format:
-{
-  "score": <số từ 0-20>,
-  "meaning": <điểm nghĩa 0-8>,
-  "grammar": <điểm ngữ pháp 0-6>,
-  "spelling": <điểm chính tả 0-3>,
-  "naturalness": <điểm tự nhiên 0-3>,
-  "feedback": "<nhận xét chi tiết bằng tiếng Việt, chỉ ra LỖI CỤ THỂ và CÁCH SỬA, 2-4 câu>"
-}
-
-Chỉ trả về JSON, không thêm gì khác.`;
+Trả về JSON với format: {"score":number, "meaning":number, "grammar":number, "spelling":number, "naturalness":number, "feedback":"string"}
+Chỉ JSON, không giải thích thêm.`;
 
         const userPrompt = `Câu tiếng Việt: "${swCurrentPrompt}"
-Từ bắt buộc phải dùng: "${swCurrentTarget.word}" (${swCurrentTarget.vn})
-Câu tiếng Anh của học sinh: "${userSentence}"
-
-Hãy đánh giá và chấm điểm chi tiết.`;
+Từ bắt buộc: "${swCurrentTarget.word}" (${swCurrentTarget.vn})
+Câu học sinh: "${userSentence}"`;
 
         const aiRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${key}`
-            },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
             body: JSON.stringify({
                 model: 'llama-3.3-70b-versatile',
                 messages: [
@@ -8114,100 +8112,110 @@ Hãy đánh giá và chấm điểm chi tiết.`;
             })
         });
         const data = await aiRes.json();
-        let result = data.choices[0].message.content.trim();
-        
-        // Parse JSON
-        result = result.replace(/```json|```/g, '').trim();
-        const evaluation = JSON.parse(result);
-        const score = evaluation.score || 0;
-        const feedback = evaluation.feedback || 'Đã chấm xong!';
+        const raw = data.choices[0].message.content.trim();
+        evaluation = _safeJsonParse(raw);
+        if (!evaluation || typeof evaluation.score !== 'number') throw new Error('Invalid JSON');
 
-        // Determine if correct (>= 14/20 = 70%)
-        const isCorrect = score >= 14;
-
-        // Display detailed feedback
-        if (isCorrect) {
-            feedbackDiv.style.cssText = 'display:block;padding:18px 22px;margin-top:20px;background:linear-gradient(135deg,#d1fae5,#a7f3d0);border-radius:14px;text-align:left;';
-            feedbackDiv.innerHTML = `
-                <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
-                    <div style="font-size:3rem;">✅</div>
-                    <div style="flex:1;">
-                        <div style="font-weight:900;font-size:1.3rem;color:#065f46;">Xuất sắc!</div>
-                        <div style="font-weight:800;font-size:1.8rem;color:#047857;margin-top:4px;">${score}/20 điểm</div>
-                    </div>
-                </div>
-                <div style="background:rgba(255,255,255,.5);border-radius:10px;padding:12px 14px;margin-bottom:14px;">
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:.85rem;font-weight:700;">
-                        <div style="color:#065f46;">📖 Nghĩa: ${evaluation.meaning || 0}/8</div>
-                        <div style="color:#065f46;">📝 Ngữ pháp: ${evaluation.grammar || 0}/6</div>
-                        <div style="color:#065f46;">✍️ Chính tả: ${evaluation.spelling || 0}/3</div>
-                        <div style="color:#065f46;">🌟 Tự nhiên: ${evaluation.naturalness || 0}/3</div>
-                    </div>
-                </div>
-                <div style="color:#065f46;font-weight:600;font-size:.95rem;line-height:1.6;background:rgba(255,255,255,.4);border-radius:8px;padding:10px 12px;">${feedback}</div>
-            `;
-            playFeedback(true);
-
-            // Award XP based on score
-            let xpGain = Math.floor(score); // 14-20 XP
-            if (xpGain > 0) {
-                await addXP(xpGain);
-            }
-
-            // Update word stats
-            const ref = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(swCurrentTarget.word.toLowerCase());
-            const item = fullLibrary.find(i => i.word.toLowerCase() === swCurrentTarget.word.toLowerCase()) || {};
-            const srs = srsUpdate(item, true);
-            await ref.set({ correct_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
-            _syncSRS(swCurrentTarget.word, srs, { correct_count: (item.correct_count || 0) + 1 });
-            await recordWordReview(swCurrentTarget.word, true);
-            trackAnswerStreak(true);
-            trackSessionResult(true);
-
-        } else {
-            feedbackDiv.style.cssText = 'display:block;padding:18px 22px;margin-top:20px;background:linear-gradient(135deg,#fee2e2,#fecaca);border-radius:14px;text-align:left;';
-            feedbackDiv.innerHTML = `
-                <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
-                    <div style="font-size:3rem;">💪</div>
-                    <div style="flex:1;">
-                        <div style="font-weight:900;font-size:1.3rem;color:#991b1b;">Cần cố gắng thêm!</div>
-                        <div style="font-weight:800;font-size:1.8rem;color:#b91c1c;margin-top:4px;">${score}/20 điểm</div>
-                    </div>
-                </div>
-                <div style="background:rgba(255,255,255,.5);border-radius:10px;padding:12px 14px;margin-bottom:14px;">
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:.85rem;font-weight:700;">
-                        <div style="color:#991b1b;">📖 Nghĩa: ${evaluation.meaning || 0}/8</div>
-                        <div style="color:#991b1b;">📝 Ngữ pháp: ${evaluation.grammar || 0}/6</div>
-                        <div style="color:#991b1b;">✍️ Chính tả: ${evaluation.spelling || 0}/3</div>
-                        <div style="color:#991b1b;">🌟 Tự nhiên: ${evaluation.naturalness || 0}/3</div>
-                    </div>
-                </div>
-                <div style="color:#991b1b;font-weight:600;font-size:.95rem;line-height:1.6;background:rgba(255,255,255,.4);border-radius:8px;padding:10px 12px;">${feedback}</div>
-            `;
-            playFeedback(false);
-
-            // Update word stats (incorrect)
-            const ref = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(swCurrentTarget.word.toLowerCase());
-            const item = fullLibrary.find(i => i.word.toLowerCase() === swCurrentTarget.word.toLowerCase()) || {};
-            const srs = srsUpdate(item, false);
-            await ref.set({ incorrect_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
-            _syncSRS(swCurrentTarget.word, srs, { incorrect_count: (item.incorrect_count || 0) + 1 });
-            await recordWordReview(swCurrentTarget.word, false);
-            trackAnswerStreak(false);
-            trackSessionResult(false);
-        }
-
-        currentReviewIdx++;
-        nextBtn.disabled = false;
-
+        isCorrect = evaluation.score >= 14;
     } catch (err) {
-        console.error(err);
-        feedbackDiv.style.cssText = 'display:block;padding:14px 18px;margin-top:20px;background:#fee2e2;color:#991b1b;border-radius:12px;text-align:center;font-weight:700;';
-        feedbackDiv.innerHTML = '❌ Lỗi khi chấm điểm. Vui lòng thử lại!';
-        inputField.disabled = false;
-        checkBtn.style.display = 'flex';
-        checkBtn.disabled = false;
-        nextBtn.style.display = 'none';
+        console.warn('AI evaluation failed, using fallback', err);
+        evaluation = _fallbackEvaluateSentence(userSentence, swCurrentTarget, swCurrentPrompt);
+        isCorrect = evaluation.score >= 14;
+        feedbackDiv.innerHTML = '⚠️ AI tạm thời không khả dụng, chấm điểm cơ bản. ' + evaluation.feedback;
+        // Ghi log lỗi để phân tích (tuỳ chọn)
+        if (currentUser) {
+            await db.collection('users').doc(currentUser.uid).collection('errorLogs').add({
+                type: 'sentence_eval_fallback',
+                word: swCurrentTarget.word,
+                userSentence,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+        }
+    }
+
+    // Hiển thị feedback chi tiết
+    const score = evaluation.score;
+    const feedback = evaluation.feedback || (isCorrect ? 'Tốt lắm!' : 'Cố gắng hơn nhé!');
+    if (isCorrect) {
+        feedbackDiv.style.cssText = 'display:block;padding:18px 22px;margin-top:20px;background:linear-gradient(135deg,#d1fae5,#a7f3d0);border-radius:14px;text-align:left;';
+        feedbackDiv.innerHTML = `
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+                <div style="font-size:3rem;">✅</div>
+                <div style="flex:1;">
+                    <div style="font-weight:900;font-size:1.3rem;color:#065f46;">Xuất sắc!</div>
+                    <div style="font-weight:800;font-size:1.8rem;color:#047857;margin-top:4px;">${score}/20 điểm</div>
+                </div>
+            </div>
+            <div style="background:rgba(255,255,255,.5);border-radius:10px;padding:12px 14px;margin-bottom:14px;">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:.85rem;font-weight:700;">
+                    <div style="color:#065f46;">📖 Nghĩa: ${evaluation.meaning || 0}/8</div>
+                    <div style="color:#065f46;">📝 Ngữ pháp: ${evaluation.grammar || 0}/6</div>
+                    <div style="color:#065f46;">✍️ Chính tả: ${evaluation.spelling || 0}/3</div>
+                    <div style="color:#065f46;">🌟 Tự nhiên: ${evaluation.naturalness || 0}/3</div>
+                </div>
+            </div>
+            <div style="color:#065f46;font-weight:600;font-size:.95rem;line-height:1.6;background:rgba(255,255,255,.4);border-radius:8px;padding:10px 12px;">${feedback}</div>
+        `;
+        playFeedback(true);
+        let xpGain = Math.floor(score);
+        if (xpGain > 0) await addXP(xpGain);
+    } else {
+        feedbackDiv.style.cssText = 'display:block;padding:18px 22px;margin-top:20px;background:linear-gradient(135deg,#fee2e2,#fecaca);border-radius:14px;text-align:left;';
+        feedbackDiv.innerHTML = `
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+                <div style="font-size:3rem;">💪</div>
+                <div style="flex:1;">
+                    <div style="font-weight:900;font-size:1.3rem;color:#991b1b;">Cần cố gắng thêm!</div>
+                    <div style="font-weight:800;font-size:1.8rem;color:#b91c1c;margin-top:4px;">${score}/20 điểm</div>
+                </div>
+            </div>
+            <div style="background:rgba(255,255,255,.5);border-radius:10px;padding:12px 14px;margin-bottom:14px;">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:.85rem;font-weight:700;">
+                    <div style="color:#991b1b;">📖 Nghĩa: ${evaluation.meaning || 0}/8</div>
+                    <div style="color:#991b1b;">📝 Ngữ pháp: ${evaluation.grammar || 0}/6</div>
+                    <div style="color:#991b1b;">✍️ Chính tả: ${evaluation.spelling || 0}/3</div>
+                    <div style="color:#991b1b;">🌟 Tự nhiên: ${evaluation.naturalness || 0}/3</div>
+                </div>
+            </div>
+            <div style="color:#991b1b;font-weight:600;font-size:.95rem;line-height:1.6;background:rgba(255,255,255,.4);border-radius:8px;padding:10px 12px;">${feedback}</div>
+        `;
+        playFeedback(false);
+    }
+
+    // Cập nhật SRS, XP, thống kê
+    const ref = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(swCurrentTarget.word.toLowerCase());
+    const item = fullLibrary.find(i => i.word.toLowerCase() === swCurrentTarget.word.toLowerCase()) || {};
+    const srs = srsUpdate(item, isCorrect);
+    if (isCorrect) {
+        await ref.set({ correct_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
+        _syncSRS(swCurrentTarget.word, srs, { correct_count: (item.correct_count || 0) + 1 });
+        await recordWordReview(swCurrentTarget.word, true);
+        trackAnswerStreak(true);
+        trackSessionResult(true);
+    } else {
+        await ref.set({ incorrect_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
+        _syncSRS(swCurrentTarget.word, srs, { incorrect_count: (item.incorrect_count || 0) + 1 });
+        await recordWordReview(swCurrentTarget.word, false);
+        trackAnswerStreak(false);
+        trackSessionResult(false);
+    }
+
+    currentReviewIdx++;
+    nextBtn.disabled = false;
+
+    // Lưu kết quả chấm vào Firestore (để phân tích sau)
+    if (currentUser) {
+        await db.collection('users').doc(currentUser.uid).collection('sentenceEvalLogs').add({
+            word: swCurrentTarget.word,
+            userSentence,
+            score: evaluation.score,
+            meaning: evaluation.meaning,
+            grammar: evaluation.grammar,
+            spelling: evaluation.spelling,
+            naturalness: evaluation.naturalness,
+            feedback: feedback,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
     }
 }
 
@@ -8216,7 +8224,61 @@ function nextSentence() {
     if (nextBtn) nextBtn.style.display = 'none';
     showNextQuestion();
 }
+// ================== SENTENCE WRITING IMPROVEMENTS ==================
+// Cache câu tiếng Việt cho từng từ (lưu trong Firestore)
+async function _getCachedVietnameseSentence(word) {
+    if (!currentUser) return null;
+    const doc = await db.collection('users').doc(currentUser.uid)
+                .collection('sentenceCache').doc(word.toLowerCase()).get();
+    return doc.exists ? doc.data().viSentence : null;
+}
+async function _saveVietnameseSentenceCache(word, viSentence) {
+    if (!currentUser) return;
+    await db.collection('users').doc(currentUser.uid)
+            .collection('sentenceCache').doc(word.toLowerCase())
+            .set({ viSentence, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+}
 
+// Parse JSON an toàn, thử nhiều cách
+function _safeJsonParse(str) {
+    try {
+        return JSON.parse(str);
+    } catch(e) {
+        // Thử loại bỏ markdown và tìm object { ... }
+        const cleaned = str.replace(/```json|```/g, '').trim();
+        const match = cleaned.match(/\{[\s\S]*\}/);
+        if (match) {
+            try {
+                return JSON.parse(match[0]);
+            } catch(e2) {}
+        }
+        return null;
+    }
+}
+
+// Fallback chấm điểm cơ bản (không cần AI)
+function _fallbackEvaluateSentence(userSentence, targetWord, viPrompt) {
+    const word = targetWord.word.toLowerCase();
+    const userLower = userSentence.toLowerCase();
+    const containsWord = userLower.includes(word);
+    const lengthOk = userSentence.split(/\s+/).length >= 5;
+    let score = 0;
+    if (containsWord && lengthOk) score = 14;
+    else if (containsWord) score = 10;
+    else if (lengthOk) score = 5;
+    else score = 2;
+    const feedback = containsWord ? 
+        `Bạn đã dùng từ "${targetWord.word}". Câu của bạn ${lengthOk ? 'khá ổn' : 'hơi ngắn, hãy viết dài hơn một chút'}.` :
+        `Câu của bạn không chứa từ "${targetWord.word}". Hãy thử lại.`;
+    return {
+        score: score,
+        meaning: containsWord ? 6 : 2,
+        grammar: lengthOk ? 4 : 2,
+        spelling: 2,
+        naturalness: 2,
+        feedback: feedback + " (chấm cơ bản do AI tạm thời không khả dụng)"
+    };
+}
 // ══════════════════════════════════════════
 // CONFETTI ENGINE
 // ══════════════════════════════════════════
