@@ -6966,7 +6966,7 @@ async function checkTypingAnswer() {
     // ── Bước 1: Kiểm tra nhanh bằng smartMatch (không cần gọi AI) ──────
     const localMatch = smartMatch(userAnswer, correctAnswer);
 
-    if (useAI && reviewMode === 'normal' && studyType === 'typing') {
+    if (useAI && reviewMode === 'normal') {
         if (localMatch) {
             // Khớp hoàn toàn → đúng ngay, không cần gọi AI
             isCorrect = true;
@@ -6978,7 +6978,7 @@ async function checkTypingAnswer() {
 
             const key = document.getElementById('apiKey').value.trim() || document.getElementById('apiKeyMobile').value.trim();
             if (!key) {
-                isCorrect = false;
+                isCorrect = smartMatch(userAnswer, correctAnswer);
             } else {
                 try {
                     const systemPrompt = `Bạn là chuyên gia ngôn ngữ Anh–Việt, chuyên đánh giá bài dịch theo nghĩa, KHÔNG theo từng chữ.
@@ -7037,7 +7037,9 @@ Học sinh có hiểu đúng nghĩa không?`;
                     isCorrect = answer.startsWith('true');
                 } catch (err) {
                     console.error(err);
-                    isCorrect = false;
+                    // Groq lỗi → fallback về smartMatch, không chấm sai oan
+                    isCorrect = smartMatch(userAnswer, correctAnswer);
+                    console.warn('AI grading failed, fell back to smartMatch');
                 }
             }
         }
