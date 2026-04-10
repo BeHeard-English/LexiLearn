@@ -2135,12 +2135,20 @@ async function getUserXP() {
 async function addXP(amount) {
     if (!currentUser) return;
     _sessionXpEarned += amount;
-    _cachedXP += amount; // cập nhật local ngay, không cần re-fetch
-    await db.collection('users').doc(currentUser.uid).set({ xp: firebase.firestore.FieldValue.increment(amount) }, { merge:true });
+    _cachedXP += amount;
+    if (_sqSessionActive) {
+        // Trong session → queue, flush cuối session
+        _sqXpDelta += amount;
+    } else {
+        // Ngoài session → ghi ngay
+        await db.collection('users').doc(currentUser.uid).set(
+            { xp: firebase.firestore.FieldValue.increment(amount) }, { merge: true }
+        );
+    }
     updateXPUI(_cachedXP);
     showXPPop(amount);
     await checkAndAwardBadges(_cachedXP);
-    // Coin = XP, cộng đồng thời
+    // Coin = XP, cộng đồng thời (cũng queue)
     await addCoins(amount);
 }
 function updateXPUI(xp) {
@@ -2309,30 +2317,30 @@ const THEMES = [
     name: 'Neon Arcade',
     emoji: '🕹️',
     price: 4500,
-    desc: 'Retro arcade dịu mắt — pastel neon vui tươi, không chói',
-    preview: ['#2dd4bf', '#1a1a2e', '#f472b6'],
+    desc: 'Retro arcade rực rỡ, neon glow vui tươi như game cổ điển',
+    preview: ['#2DD4BF', '#7C3AED', '#0D1117'],
     vars: {
-        '--primary': '#2dd4bf',
-        '--primary-hover': '#5eead4',
-        '--primary-light': '#134e4a',
-        '--primary-mid': '#14b8a6',
-        '--bg': '#1a1a2e',
-        '--card': '#222233',
-        '--border': '#f472b6',
-        '--text': '#b0ffe6',
-        '--muted': '#c084fc',
-        '--success': '#34d399',
-        '--success-bg': '#064e3b',
-        '--danger': '#fb7185',
-        '--danger-bg': '#451a1a',
-        '--nav-bg': '#11111f',
-        '--gold': '#fbbf24',
-        '--accent': '#f472b6',
-        '--accent-glow': 'rgba(244, 114, 182, 0.3)',
-        '--input-bg': '#1e1e30',
-        '--input-bg-focus': '#2a2a40',
-        '--input-text': '#b0ffe6',
-        '--placeholder': '#94a3b8'
+        '--primary': '#2DD4BF',
+        '--primary-hover': '#5EEAD4',
+        '--primary-light': '#0F2A2E',
+        '--primary-mid': '#14B8A6',
+        '--bg': '#0D1117',
+        '--card': '#161B27',
+        '--border': '#7C3AED',
+        '--text': '#E2F8F5',
+        '--muted': '#8B7EC8',
+        '--success': '#34D399',
+        '--success-bg': '#052E1F',
+        '--danger': '#F87171',
+        '--danger-bg': '#2D0A0A',
+        '--nav-bg': '#0A0D14',
+        '--gold': '#FCD34D',
+        '--accent': '#A855F7',
+        '--accent-glow': 'rgba(168, 85, 247, 0.35)',
+        '--input-bg': '#1C2333',
+        '--input-bg-focus': '#222C42',
+        '--input-text': '#E2F8F5',
+        '--placeholder': '#6B8A8E'
     }
 },
 ];
@@ -2373,10 +2381,18 @@ function updateCoinUI() {
     if (big) big.textContent = _userCoins.toLocaleString('vi-VN');
 }
 
-async function addCoins(amount) {
+async function addCoins(amount, _direct = false) {
     if (!currentUser) return;
     _userCoins += amount;
-    await db.collection('users').doc(currentUser.uid).set({ coins: firebase.firestore.FieldValue.increment(amount) }, { merge:true });
+    if (_direct || !_sqSessionActive) {
+        // Ngoài session (mua theme, bonus...) → ghi ngay
+        await db.collection('users').doc(currentUser.uid).set(
+            { coins: firebase.firestore.FieldValue.increment(amount) }, { merge: true }
+        );
+    } else {
+        // Trong session → queue, flush cuối session
+        _sqCoinDelta += amount;
+    }
     updateCoinUI();
     // Floating coin pop
     const el = document.createElement('div');
@@ -2567,14 +2583,14 @@ function applyOceanEffect() {
     let planktonFrame = null;
 
     function initPlankton() {
-        const count = 180;
+        const count = 120;
         planktons = [];
         for (let i = 0; i < count; i++) {
             planktons.push({
                 x: Math.random() * window.innerWidth,
                 y: Math.random() * window.innerHeight,
                 radius: 1.2 + Math.random() * 2.5,
-                alpha: 0.2 + Math.random() * 0.6,
+                alpha: 0.15 + Math.random() * 0.35,
                 twinkle: Math.random() * Math.PI * 2,
                 speed: 0.008 + Math.random() * 0.02,
                 color: `hsl(${170 + Math.random() * 30}, 100%, ${60 + Math.random() * 30}%)`
@@ -3050,7 +3066,7 @@ function applySunsetEffect() {
             ctx.beginPath();
             ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
             ctx.fillStyle = p.color;
-            ctx.globalAlpha = Math.max(0.1, Math.min(0.8, alpha));
+            ctx.globalAlpha = Math.max(0.08, Math.min(0.45, alpha));
             ctx.fill();
         }
         animFrame = requestAnimationFrame(drawSparkles);
@@ -3436,7 +3452,7 @@ function applyNeonArcadeEffect() {
     bgDiv.style.cssText = `
         position: absolute;
         inset: 0;
-        background: radial-gradient(ellipse at 50% 50%, #0F0F0F 0%, #000000 100%);
+        background: radial-gradient(ellipse at 30% 20%, #131A2E 0%, #0D1117 55%, #080B12 100%);
         z-index: 0;
     `;
     layer.appendChild(bgDiv);
@@ -3458,7 +3474,7 @@ function applyNeonArcadeEffect() {
     flicker.style.cssText = `
         position: absolute;
         inset: 0;
-        background: rgba(0,255,200,0.03);
+        background: rgba(45,212,191,0.015);
         animation: crtFlicker 0.15s infinite;
         pointer-events: none;
         z-index: 2;
@@ -3476,11 +3492,11 @@ function applyNeonArcadeEffect() {
             left: -10%;
             width: 20%;
             height: 2px;
-            background: linear-gradient(90deg, transparent, #00FFCC, #FF00FF, #00FFCC, transparent);
+            background: linear-gradient(90deg, transparent, #2DD4BF, #A855F7, #2DD4BF, transparent);
             filter: blur(2px);
             animation: neonBarMove ${8 + i * 2}s linear infinite;
             animation-delay: ${-i * 1.5}s;
-            opacity: 0.6;
+            opacity: 0.35;
             pointer-events: none;
             z-index: 3;
         `;
@@ -3503,7 +3519,7 @@ function applyNeonArcadeEffect() {
     let pixels = [];
     let pixelFrame = null;
 
-    const COLORS = ['#00FFCC', '#FF00FF', '#00FF66', '#FFCC00', '#FF3366'];
+    const COLORS = ['#2DD4BF', '#A855F7', '#34D399', '#FCD34D', '#F87171'];
 
     function initPixels() {
         const count = 180;
@@ -3558,7 +3574,7 @@ function applyNeonArcadeEffect() {
             width: 80px;
             height: 80px;
             border-radius: 50%;
-            background: radial-gradient(circle, rgba(0,255,204,0.4) 0%, rgba(255,0,255,0) 70%);
+            background: radial-gradient(circle, rgba(45,212,191,0.2) 0%, rgba(168,85,247,0.08) 60%, transparent 75%);
             filter: blur(20px);
             animation: neonGlowMove ${15 + i * 3}s linear infinite;
             animation-delay: ${-i * 2}s;
@@ -3682,7 +3698,9 @@ function _syncSRS(word, srs, extra = {}) {
             ? { ...i, ...srs, ...extra }
             : i
     );
-    _saveCache(fullLibrary);
+    // Trong session: bỏ qua localStorage (flush sẽ gọi _saveCache khi kết thúc)
+    // Ngoài session: lưu ngay
+    if (!_sqSessionActive) _saveCache(fullLibrary);
 }
 function _toDate(val) {
     if (!val) return null;
@@ -3947,6 +3965,8 @@ document.getElementById('logoutBtn').onclick = () =>
   auth.signOut().then(() => window.location.href = 'index.html');
 
 function switchTab(name) {
+    // Nếu đang trong session và người dùng chuyển tab → flush trước khi rời
+    if (_sqSessionActive) { _sqSessionActive = false; _sqFlush(); } // flush + deactivate immediately
     document.querySelectorAll('[id^="tab-"]').forEach(el => { el.classList.add('hidden'); el.classList.remove('fade-in'); });
     const tab = document.getElementById('tab-'+name);
     tab.classList.remove('hidden');
@@ -4553,6 +4573,8 @@ async function startReviewQuiz() {
     _reviewTransitioning = false;
     window._wordCorrectCount = {};
     window._wordWrongCount = {};
+    _sqReset(); // Xoá queue từ session cũ
+    _sqSessionActive = true; // Bắt đầu session → gom writes
     window._typingProceed = null;
     window._sessionReviewedWords = new Set();
 
@@ -4650,7 +4672,7 @@ async function startReviewQuiz() {
 // ══════════════════════════════════════════
 // REVIEW — ROUTING (Multi-Mode Support)
 // ══════════════════════════════════════════
-function showNextQuestion() {
+async function showNextQuestion() {
     if (currentReviewIdx >= reviewPool.length) {
         // Kết thúc session
         document.getElementById('reviewQuizArea').style.display = 'none';
@@ -4662,7 +4684,7 @@ function showNextQuestion() {
         document.body.classList.remove('quiz-active');
         document.getElementById('reviewStart').classList.remove('hidden');
         showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} câu.`);
-        showSessionSummary();
+        await showSessionSummary();
         return;
     }
 
@@ -4771,7 +4793,6 @@ async function checkAnswer(btn, selected, correct, word) {
     if (_reviewTransitioning) return;
     const allBtns = document.querySelectorAll('.choice-btn');
     const overlay = document.getElementById('feedbackOverlay');
-    const ref     = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(word.toLowerCase());
     const item    = fullLibrary.find(i => i.word.toLowerCase() === word.toLowerCase()) || {};
 
     allBtns.forEach(b=>b.disabled=true);
@@ -4785,7 +4806,7 @@ async function checkAnswer(btn, selected, correct, word) {
         overlay.innerText='✅ Chính xác!';
         playFeedback(true);
         // Cập nhật đúng: tăng correct_count, áp dụng SRS
-        await ref.set({ correct_count: firebase.firestore.FieldValue.increment(1), ...srs }, {merge:true});
+        _sqQueueVocab(word, { correct_count_delta: 1, ...srs });
         _syncSRS(word, srs, { correct_count: (item.correct_count||0) + 1 });
         await addXP(10);
         await recordWordReview(word, true);
@@ -4809,11 +4830,11 @@ async function checkAnswer(btn, selected, correct, word) {
         if (_isMasteredWord) {
             const currentCorrect = item.correct_count || 0;
             const newCorrect = Math.max(0, currentCorrect - 1);
-            await ref.set({ correct_count: newCorrect, ...srs }, { merge: true });
+            _sqQueueVocab(word, { correct_count: newCorrect, ...srs });
             _syncSRS(word, srs, { correct_count: newCorrect });
         } else {
             // Nguồn bình thường: tăng incorrect_count, áp dụng SRS
-            await ref.set({ incorrect_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
+            _sqQueueVocab(word, { incorrect_count_delta: 1, ...srs });
             _syncSRS(word, srs, { incorrect_count: (item.incorrect_count||0) + 1 });
         }
 
@@ -6006,14 +6027,14 @@ function updateFCProgress() {
     document.getElementById('fcProgressText').innerText = `${currentReviewIdx} / ${totalReviewCount}`;
 }
 
-function showFlashcard() {
+async function showFlashcard() {
     if (window.innerWidth < 768) window.scrollTo({ top: 0, behavior: 'instant' });
     if (currentReviewIdx >= reviewPool.length) {
         document.getElementById('flashcardArea').style.display = 'none';
         document.getElementById('sentenceArea').style.display = 'none';
         document.getElementById('listeningArea').style.display='none'; document.getElementById('reviewStart').classList.remove('hidden');
         showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} thẻ.`);
-        showSessionSummary();
+        await showSessionSummary();
         return;
     }
     updateFCProgress();
@@ -6079,7 +6100,6 @@ async function rateFC(rating) {
     const xpMap  = { easy: 15, ok: 10, hard: 0 };
     const target = reviewPool[currentReviewIdx];
     const word   = target.word.toLowerCase();
-    const ref    = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(word);
     const item   = fullLibrary.find(i => i.word.toLowerCase() === word) || {};
 
     const isCorrect = (rating !== 'hard');
@@ -6097,8 +6117,8 @@ async function rateFC(rating) {
     }
 
     if (isCorrect) {
-        // Đúng: tăng correct_count
-        await ref.set({ correct_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
+        // Đúng: tăng correct_count (queue, flush cuối session)
+        _sqQueueVocab(word, { correct_count_delta: 1, ...srs });
         _syncSRS(word, srs, { correct_count: (item.correct_count||0) + 1 });
         await addXP(rating === 'easy' ? 10 : 5);
         await recordWordReview(word, true);
@@ -6116,11 +6136,11 @@ async function rateFC(rating) {
         if (window._currentReviewSource === 'mastered' || target._isMastered) {
             const currentCorrect = item.correct_count || 0;
             const newCorrect = Math.max(0, currentCorrect - 1);
-            await ref.set({ correct_count: newCorrect, ...srs }, { merge: true });
+            _sqQueueVocab(word, { correct_count: newCorrect, ...srs });
             _syncSRS(word, srs, { correct_count: newCorrect });
-            skipWord = true; // Bỏ qua từ này, không đưa về cuối
+            skipWord = true;
         } else {
-            await ref.set({ incorrect_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
+            _sqQueueVocab(word, { incorrect_count_delta: 1, ...srs });
             _syncSRS(word, srs, { incorrect_count: (item.incorrect_count||0) + 1 });
         }
 
@@ -6172,26 +6192,28 @@ function recordWordReview(wordKey, isCorrect) {
 async function recordDailyActivity(reviewed = 1, correct = 0) {
     if (!currentUser) return;
     const key = todayKey();
-    const ref = db.collection('users').doc(currentUser.uid).collection('activity').doc(key);
-    await ref.set({
-        reviewed: firebase.firestore.FieldValue.increment(reviewed),
-        correct:  firebase.firestore.FieldValue.increment(correct),
-        date: key
-    }, { merge: true });
-    
-    // Cập nhật streak display ngay sau khi có hoạt động mới
+    // Queue write — flush khi kết thúc session
+    _sqActivityReviewed += reviewed;
+    _sqActivityCorrect  += correct;
+    // Cập nhật streak display local ngay
     if (reviewed > 0) {
-        // Thêm ngày hôm nay vào tập dữ liệu streak (nếu chưa có)
-        if (typeof _streakStudiedSet !== 'undefined') {
-            _streakStudiedSet.add(key);
-        }
+        if (typeof _streakStudiedSet !== 'undefined') _streakStudiedSet.add(key);
         updateStreakDisplay();
     }
-    
-    if (document.getElementById('tab-library') && !document.getElementById('tab-library').classList.contains('hidden')) {
-        renderProgressChart();
-    }
     _streakDataLoaded = false;
+    // Debounce chart render (không gọi mỗi câu)
+    _debouncedChartRender();
+}
+
+// Debounce renderProgressChart — không vẽ lại sau mỗi câu trả lời
+let _chartDebounceTimer = null;
+function _debouncedChartRender() {
+    clearTimeout(_chartDebounceTimer);
+    _chartDebounceTimer = setTimeout(() => {
+        if (document.getElementById('tab-library') && !document.getElementById('tab-library').classList.contains('hidden')) {
+            renderProgressChart();
+        }
+    }, 3000); // chờ 3 giây sau lần gọi cuối
 }
 
 async function renderProgressChart() {
@@ -6530,6 +6552,112 @@ let _sessionTotal = 0;
 let _sessionXpEarned = 0;
 let _sessionWrongWords = [];
 
+// ── SESSION WRITE QUEUE ─────────────────────────────────────
+// Tích lũy tất cả writes trong session, flush 1 batch khi kết thúc
+// Giảm từ ~80 writes/session xuống còn ~22 (1 write/từ + 1 XP + 1 coin + 1 activity)
+let _sqVocab   = {}; // { wordKey: { ...fields to merge } }
+let _sqXpDelta = 0;
+let _sqCoinDelta = 0;
+let _sqActivityReviewed = 0;
+let _sqActivityCorrect  = 0;
+
+let _sqSessionActive = false; // true khi đang trong session ôn tập
+
+function _sqReset() {
+    _sqVocab = {}; _sqXpDelta = 0; _sqCoinDelta = 0;
+    _sqActivityReviewed = 0; _sqActivityCorrect = 0;
+    _sqSessionActive = false;
+}
+
+// Flush nếu có dữ liệu chưa lưu (dùng khi thoát session sớm)
+async function _sqFlushIfNeeded() {
+    if (!_sqSessionActive) return;
+    const hasData = Object.keys(_sqVocab).length > 0
+        || _sqXpDelta !== 0 || _sqCoinDelta !== 0
+        || _sqActivityReviewed !== 0;
+    if (hasData) await _sqFlush();
+    else _sqReset();
+}
+
+// Ghi vocab SRS vào queue thay vì Firestore ngay
+function _sqQueueVocab(wordKey, fields) {
+    const k = wordKey.toLowerCase();
+    const existing = _sqVocab[k] || {};
+    const merged = { ...existing };
+    for (const [fk, fv] of Object.entries(fields)) {
+        if (fk.endsWith('_delta') && typeof fv === 'number' && typeof merged[fk] === 'number') {
+            merged[fk] = merged[fk] + fv; // cộng dồn delta, không overwrite
+        } else {
+            merged[fk] = fv;
+        }
+    }
+    _sqVocab[k] = merged;
+    // Cập nhật fullLibrary local ngay để UI phản hồi tức thì
+    fullLibrary = fullLibrary.map(i =>
+        i.word.toLowerCase() === k ? { ...i, ...fields } : i
+    );
+}
+
+// Flush toàn bộ queue vào Firestore bằng 1 batch
+async function _sqFlush() {
+    if (!currentUser) return;
+    const uid = currentUser.uid;
+    const vocabEntries = Object.entries(_sqVocab);
+    const todayK = todayKey();
+
+    // Chia batch thành nhóm 500 (giới hạn Firebase)
+    const chunks = [];
+    for (let i = 0; i < vocabEntries.length; i += 490) {
+        chunks.push(vocabEntries.slice(i, i + 490));
+    }
+
+    try {
+        // Vocab writes
+        for (const chunk of chunks) {
+            const batch = db.batch();
+            for (const [k, fields] of chunk) {
+                // Chuyển đổi increment deltas thành FieldValue
+                const toWrite = {};
+                for (const [fk, fv] of Object.entries(fields)) {
+                    if (typeof fv === 'number' && fk.endsWith('_delta')) {
+                        const realKey = fk.replace('_delta', '');
+                        toWrite[realKey] = firebase.firestore.FieldValue.increment(fv);
+                    } else {
+                        toWrite[fk] = fv;
+                    }
+                }
+                batch.set(
+                    db.collection('users').doc(uid).collection('vocabulary').doc(k),
+                    toWrite, { merge: true }
+                );
+            }
+            await batch.commit();
+        }
+
+        // XP + Coins: 2 writes vào user doc (hoặc 1 nếu gộp)
+        if (_sqXpDelta !== 0 || _sqCoinDelta !== 0) {
+            const userUpdate = {};
+            if (_sqXpDelta !== 0) userUpdate.xp = firebase.firestore.FieldValue.increment(_sqXpDelta);
+            if (_sqCoinDelta !== 0) userUpdate.coins = firebase.firestore.FieldValue.increment(_sqCoinDelta);
+            await db.collection('users').doc(uid).set(userUpdate, { merge: true });
+        }
+
+        // Activity: 1 write
+        if (_sqActivityReviewed !== 0 || _sqActivityCorrect !== 0) {
+            await db.collection('users').doc(uid).collection('activity').doc(todayK).set({
+                reviewed: firebase.firestore.FieldValue.increment(_sqActivityReviewed),
+                correct:  firebase.firestore.FieldValue.increment(_sqActivityCorrect),
+                date: todayK
+            }, { merge: true });
+        }
+    } catch(e) {
+        console.error('Session flush error:', e);
+    }
+
+    _sqReset();
+    _saveCache(fullLibrary); // cập nhật localStorage cache sau flush
+}
+
 async function loadBadges(xp) {
     // Data (_unlockedBadges, _extraBadgeData) đã được load bởi loadUserShopData()
     // Không cần đọc Firestore thêm, chỉ re-check và render
@@ -6781,6 +6909,8 @@ const SESSION_PRAISE = [
 ];
 
 async function showSessionSummary() {
+    // Flush tất cả writes tích lũy trong session — đây là điểm duy nhất ghi Firestore hàng loạt
+    await _sqFlush();
     await finalizeSessionBadges();
     loadSRSDueCount();
 
@@ -6840,11 +6970,11 @@ function closeSessionSummary(goToLibrary) {
     document.getElementById('sessionSummaryModal').classList.remove('open');
     document.getElementById('listeningArea').style.display='none'; document.getElementById('reviewStart').classList.remove('hidden');
     document.body.classList.remove('quiz-active');
-    // Ẩn tất cả area ôn tập
     ['reviewQuizArea','flashcardArea','typingArea','fillBlankArea'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = 'none';
     });
+    _sqReset(); // session đã kết thúc hoàn toàn
     if (goToLibrary) switchTab('library');
 }
 
@@ -7061,7 +7191,6 @@ Học sinh có hiểu đúng nghĩa không?`;
         playFeedback(false);
     }
 
-    const ref = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(target.word.toLowerCase());
     const item = fullLibrary.find(i => i.word.toLowerCase() === target.word.toLowerCase()) || {};
     const srs = srsUpdate(item, isCorrect);
 
@@ -7081,7 +7210,7 @@ Học sinh có hiểu đúng nghĩa không?`;
             feedbackDiv.innerText += ` (đã hết XP)`;
         }
 
-        await ref.set({ correct_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
+        _sqQueueVocab(target.word, { correct_count_delta: 1, ...srs });
         _syncSRS(target.word, srs, { correct_count: (item.correct_count||0) + 1 });
         await recordWordReview(target.word, true);
         trackAnswerStreak(true);
@@ -7092,7 +7221,7 @@ Học sinh có hiểu đúng nghĩa không?`;
         window._wordWrongCount[wordKey] = (window._wordWrongCount[wordKey] || 0) + 1;
         let wrongCount = window._wordWrongCount[wordKey];
 
-        await ref.set({ incorrect_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
+        _sqQueueVocab(target.word, { incorrect_count_delta: 1, ...srs });
         _syncSRS(target.word, srs, { incorrect_count: (item.incorrect_count||0) + 1 });
         await recordWordReview(target.word, false);
         trackAnswerStreak(false);
@@ -7102,9 +7231,7 @@ Học sinh có hiểu đúng nghĩa không?`;
         if (window._currentReviewSource === 'mastered' || target._isMastered) {
             const currentCorrect = item.correct_count || 0;
             const newCorrect = Math.max(0, currentCorrect - 1);
-            await ref.set({ correct_count: newCorrect }, { merge: true });
-            fullLibrary = fullLibrary.map(i => i.word === target.word ? {...i, correct_count: newCorrect} : i);
-            _saveCache(fullLibrary);
+            _sqQueueVocab(target.word, { correct_count: newCorrect });
             skipWord = true;
         } else if (wrongCount >= 2) {
             skipWord = true;
@@ -7118,7 +7245,7 @@ Học sinh có hiểu đúng nghĩa không?`;
         }
     }
 
-    const proceed = () => {
+    const proceed = async () => {
         if (currentReviewIdx < reviewPool.length) {
             showNextQuestion();
         } else {
@@ -7126,7 +7253,7 @@ Học sinh có hiểu đúng nghĩa không?`;
             document.getElementById('sentenceArea').style.display = 'none';
             document.getElementById('listeningArea').style.display='none'; document.getElementById('reviewStart').classList.remove('hidden');
             showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} câu.`);
-            showSessionSummary();
+            await showSessionSummary();
         }
     };
 
@@ -7219,7 +7346,7 @@ async function showFillBlank() {
         document.getElementById('listeningArea').style.display='none'; document.getElementById('reviewStart').classList.remove('hidden');
         updateFBProgress();
         showToast(`🎉 Xong! Hoàn thành ${totalReviewCount} câu.`);
-        showSessionSummary();
+        await showSessionSummary();
         return;
     }
     updateFBProgress();
@@ -7534,10 +7661,9 @@ async function checkFillBlank() {
         fb.innerHTML = `✅ Chính xác! <span style="font-weight:600;font-size:.82rem;">${target.word}</span>`;
         playFeedback(true);
 
-        const ref  = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(target.word.toLowerCase());
         const item = fullLibrary.find(i => i.word.toLowerCase() === target.word.toLowerCase()) || {};
         const srs  = srsUpdate(item, true);
-        await ref.set({ correct_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
+        _sqQueueVocab(target.word, { correct_count_delta: 1, ...srs });
         _syncSRS(target.word, srs, { correct_count: (item.correct_count||0) + 1 });
         await addXP(10); await recordWordReview(target.word, true);
         trackAnswerStreak(true); trackSessionResult(true);
@@ -7556,10 +7682,9 @@ async function checkFillBlank() {
             correctChip.style.cssText = 'background:var(--success-bg);border-color:var(--success);color:var(--success);pointer-events:none;';
         }
 
-        const ref  = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(target.word.toLowerCase());
         const item = fullLibrary.find(i => i.word.toLowerCase() === target.word.toLowerCase()) || {};
         const srs  = srsUpdate(item, false);
-        await ref.set({ incorrect_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
+        _sqQueueVocab(target.word, { incorrect_count_delta: 1, ...srs });
         _syncSRS(target.word, srs, { incorrect_count: (item.incorrect_count||0) + 1 });
         await recordWordReview(target.word, false);
         trackAnswerStreak(false); trackSessionResult(false);
@@ -7980,10 +8105,9 @@ async function checkListeningAnswer() {
         playFeedback(true);
 
         // Cập nhật SRS và XP
-        const ref = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(target.word.toLowerCase());
         const item = fullLibrary.find(i => i.word.toLowerCase() === target.word.toLowerCase()) || {};
         const srs = srsUpdate(item, true);
-        await ref.set({ correct_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
+        _sqQueueVocab(target.word, { correct_count_delta: 1, ...srs });
         _syncSRS(target.word, srs, { correct_count: (item.correct_count||0) + 1 });
         await addXP(10);
         await recordWordReview(target.word, true);
@@ -7995,10 +8119,9 @@ async function checkListeningAnswer() {
         fbDiv.innerHTML = `❌ Chưa đúng! Đáp án đúng: <strong>${target.word}</strong>`;
         playFeedback(false);
 
-        const ref = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(target.word.toLowerCase());
         const item = fullLibrary.find(i => i.word.toLowerCase() === target.word.toLowerCase()) || {};
         const srs = srsUpdate(item, false);
-        await ref.set({ incorrect_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
+        _sqQueueVocab(target.word, { incorrect_count_delta: 1, ...srs });
         _syncSRS(target.word, srs, { incorrect_count: (item.incorrect_count||0) + 1 });
         await recordWordReview(target.word, false);
         trackAnswerStreak(false);
@@ -8278,17 +8401,16 @@ Câu học sinh: "${userSentence}"`;
     }
 
     // Cập nhật SRS, XP, thống kê
-    const ref = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(swCurrentTarget.word.toLowerCase());
     const item = fullLibrary.find(i => i.word.toLowerCase() === swCurrentTarget.word.toLowerCase()) || {};
     const srs = srsUpdate(item, isCorrect);
     if (isCorrect) {
-        await ref.set({ correct_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
+        _sqQueueVocab(swCurrentTarget.word, { correct_count_delta: 1, ...srs });
         _syncSRS(swCurrentTarget.word, srs, { correct_count: (item.correct_count || 0) + 1 });
         await recordWordReview(swCurrentTarget.word, true);
         trackAnswerStreak(true);
         trackSessionResult(true);
     } else {
-        await ref.set({ incorrect_count: firebase.firestore.FieldValue.increment(1), ...srs }, { merge: true });
+        _sqQueueVocab(swCurrentTarget.word, { incorrect_count_delta: 1, ...srs });
         _syncSRS(swCurrentTarget.word, srs, { incorrect_count: (item.incorrect_count || 0) + 1 });
         await recordWordReview(swCurrentTarget.word, false);
         trackAnswerStreak(false);
