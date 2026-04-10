@@ -3991,6 +3991,7 @@ document.getElementById('generateBtn').onclick = async () => {
         },
         body: JSON.stringify({
             model: "llama-3.3-70b-versatile",
+            max_tokens: 800,
             messages: [
                 {
                     role: "user",
@@ -4932,7 +4933,7 @@ Do not output any markdown formatting or extra text, just the raw JSON array.`;
         const aiRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-            body: JSON.stringify({ model: 'llama-3.3-70b-versatile', messages: [{ role: 'user', content: prompt }] })
+            body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 1200, messages: [{ role: 'user', content: prompt }] })
         });
         const data = await aiRes.json();
         let jsonStr = data.choices[0].message.content.replace(/```json|```/g, '').trim();
@@ -5271,7 +5272,7 @@ Return a JSON array: [{"word":"string","ipa":"string","vn":"(keep provided Vietn
 Only raw JSON, no markdown.`;
         const aiRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`},
-            body: JSON.stringify({ model:'llama-3.3-70b-versatile', messages:[{ role:'user', content:prompt }] })
+            body: JSON.stringify({ model:'llama-3.3-70b-versatile', max_tokens:1200, messages:[{ role:'user', content:prompt }] })
         });
         const aiData = await aiRes.json();
         let finalData;
@@ -5328,7 +5329,7 @@ Return a JSON array: [{"word":"string","ipa":"string","vn":"(keep provided Vietn
 Only raw JSON, no markdown.`;
             const aiRes  = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`},
-                body: JSON.stringify({ model:'llama-3.3-70b-versatile', messages:[{ role:'user', content:prompt }] })
+                body: JSON.stringify({ model:'llama-3.3-70b-versatile', max_tokens:1200, messages:[{ role:'user', content:prompt }] })
             });
             const aiData = await aiRes.json();
             let finalData;
@@ -5685,6 +5686,7 @@ document.getElementById('libFileInput').onchange = async (e) => {
     },
     body: JSON.stringify({
         model: "llama-3.3-70b-versatile",
+        max_tokens: 1200,
         messages: [
             {
                 role: "user",
@@ -7257,26 +7259,34 @@ async function showFillBlank() {
     let exampleText = target.example || ''; // Dùng câu cũ làm phương án dự phòng
 
     if (key) {
-        try {
-            // Prompt ép AI dùng đúng dạng từ và trả về chỉ 1 câu duy nhất
-            const prompt = `Write a short, clear English sentence using the exact word "${target.word}". The sentence should demonstrate its meaning ("${target.vn}"). Do not use the word "${target.word}" more than once. Return ONLY the sentence, no quotes, no conversational filler.`;
-            
-            const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-                body: JSON.stringify({
-                    model: 'llama-3.3-70b-versatile',
-                    messages: [{ role: 'user', content: prompt }],
-                    temperature: 0.7
-                })
-            });
-            const data = await res.json();
-            if (data.choices && data.choices[0]) {
-                exampleText = data.choices[0].message.content.trim().replace(/^"|"$/g, '');
+        // Kiểm tra cache trước
+        const _fbCached = _getCachedSentence(target.word);
+        if (_fbCached) {
+            exampleText = _fbCached;
+        } else {
+            try {
+                // Prompt ép AI dùng đúng dạng từ và trả về chỉ 1 câu duy nhất
+                const prompt = `Write a short, clear English sentence using the exact word "${target.word}". The sentence should demonstrate its meaning ("${target.vn}"). Do not use the word "${target.word}" more than once. Return ONLY the sentence, no quotes, no conversational filler.`;
+                
+                const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+                    body: JSON.stringify({
+                        model: 'llama-3.3-70b-versatile',
+                        max_tokens: 80,
+                        messages: [{ role: 'user', content: prompt }],
+                        temperature: 0.7
+                    })
+                });
+                const data = await res.json();
+                if (data.choices && data.choices[0]) {
+                    exampleText = data.choices[0].message.content.trim().replace(/^"|"$/g, '');
+                    _cacheSentence(target.word, exampleText); // lưu cache
+                }
+            } catch(e) {
+                console.error("Lỗi tạo câu AI:", e);
+                // Nếu lỗi mạng, hệ thống sẽ tự động dùng lại exampleText dự phòng
             }
-        } catch(e) {
-            console.error("Lỗi tạo câu AI:", e);
-            // Nếu lỗi mạng, hệ thống sẽ tự động dùng lại exampleText dự phòng
         }
     }
 
@@ -7564,35 +7574,45 @@ async function checkFillBlank() {
     const fbSentenceVn = document.getElementById('fbSentenceVn');
     const fbSentenceEl = document.getElementById('fbSentence');
     if (fbSentenceVn && fbSentenceEl) {
-        const rawSentence = fbSentenceEl.innerText.replace('___', target.word);
-        fbSentenceVn.textContent = '⏳ Đang dịch...';
+        // Dùng nghĩa từ có sẵn thay vì gọi AI dịch — tiết kiệm API call
+        fbSentenceVn.textContent = `💡 Nghĩa từ: ${target.vn}`;
         fbSentenceVn.style.display = 'block';
-        try {
-            const key = localStorage.getItem('vflow_api_key') || document.getElementById('apiKey')?.value.trim() || document.getElementById('apiKeyMobile')?.value.trim();
-            if (!key) throw new Error('no key');
-            const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-                body: JSON.stringify({
-                    model: 'llama-3.3-70b-versatile',
-                    max_tokens: 120,
-                    messages: [
-                        { role: 'system', content: 'Bạn là dịch giả Anh–Việt. Dịch câu tiếng Anh sang tiếng Việt tự nhiên. Chỉ trả về bản dịch, không giải thích.' },
-                        { role: 'user', content: rawSentence }
-                    ]
-                })
-            });
-            const data = await res.json();
-            const translated = data?.choices?.[0]?.message?.content?.trim();
-            fbSentenceVn.textContent = translated ? `💡 ${translated}` : `💡 Nghĩa từ: ${target.vn}`;
-        } catch {
-            fbSentenceVn.textContent = `💡 Nghĩa từ: ${target.vn}`;
-        }
     }
 }
 
 function nextFillBlank() {
     showNextQuestion();
+}
+
+// ══════════════════════════════════════════
+// SENTENCE CACHE (localStorage) — dùng cho fill-blank & listening
+// ══════════════════════════════════════════
+const _SENT_CACHE_KEY = 'lexipro_sent_v1';
+const _SENT_CACHE_MAX = 300; // giới hạn số từ được cache
+
+function _getSentCache() {
+    try { return JSON.parse(localStorage.getItem(_SENT_CACHE_KEY) || '{}'); }
+    catch { return {}; }
+}
+function _setSentCache(cache) {
+    // Nếu quá giới hạn, xoá bớt các entry cũ nhất
+    const entries = Object.entries(cache);
+    if (entries.length > _SENT_CACHE_MAX) {
+        entries.sort((a, b) => (a[1].t || 0) - (b[1].t || 0));
+        const trimmed = Object.fromEntries(entries.slice(entries.length - _SENT_CACHE_MAX));
+        localStorage.setItem(_SENT_CACHE_KEY, JSON.stringify(trimmed));
+    } else {
+        localStorage.setItem(_SENT_CACHE_KEY, JSON.stringify(cache));
+    }
+}
+function _getCachedSentence(word) {
+    const cache = _getSentCache();
+    return cache[word.toLowerCase()]?.s || null;
+}
+function _cacheSentence(word, sentence) {
+    const cache = _getSentCache();
+    cache[word.toLowerCase()] = { s: sentence, t: Date.now() };
+    _setSentCache(cache);
 }
 
 function speakFB() {
@@ -7785,6 +7805,9 @@ async function _lisGenerateSentence(target) {
     if (!key) {
         return `This is a ${target.word} example.`;
     }
+    // Kiểm tra cache trước
+    const _lisCached = _getCachedSentence(target.word);
+    if (_lisCached) return _lisCached;
     try {
         const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
@@ -7800,7 +7823,9 @@ async function _lisGenerateSentence(target) {
             })
         });
         const data = await res.json();
-        return data.choices?.[0]?.message?.content?.trim() || `She ${target.word} every day.`;
+        const sentence = data.choices?.[0]?.message?.content?.trim() || `She ${target.word} every day.`;
+        _cacheSentence(target.word, sentence); // lưu cache
+        return sentence;
     } catch(e) {
         return target.example?.trim() || `She ${target.word} every day.`;
     }
@@ -7980,32 +8005,11 @@ async function checkListeningAnswer() {
     if (checkBtn) checkBtn.style.display = 'none';
     if (nextBtn) nextBtn.style.display = 'flex';
 
-    // Hiện dịch nghĩa câu
+    // Hiện nghĩa từ có sẵn — tiết kiệm API call
     const vnDiv = document.getElementById('lisSentenceVn');
-    if (vnDiv && _lisCurrentSentence) {
-        vnDiv.textContent = '⏳ Đang dịch...';
+    if (vnDiv) {
+        vnDiv.textContent = `💡 Nghĩa từ: ${target.vn}`;
         vnDiv.style.display = 'block';
-        try {
-            const key = localStorage.getItem('vflow_api_key') || document.getElementById('apiKey')?.value.trim() || document.getElementById('apiKeyMobile')?.value.trim();
-            if (!key) throw new Error('no key');
-            const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-                body: JSON.stringify({
-                    model: 'llama-3.3-70b-versatile',
-                    max_tokens: 120,
-                    messages: [
-                        { role: 'system', content: 'Bạn là dịch giả Anh–Việt. Dịch câu tiếng Anh sang tiếng Việt tự nhiên. Chỉ trả về bản dịch, không giải thích.' },
-                        { role: 'user', content: _lisCurrentSentence }
-                    ]
-                })
-            });
-            const data = await res.json();
-            const translated = data?.choices?.[0]?.message?.content?.trim();
-            vnDiv.textContent = translated ? `💡 ${translated}` : `💡 Nghĩa từ: ${target.vn}`;
-        } catch {
-            vnDiv.textContent = `💡 Nghĩa từ: ${target.vn}`;
-        }
     }
 }
 
