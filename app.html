@@ -7265,27 +7265,37 @@ async function showFillBlank() {
             exampleText = _fbCached;
         } else {
             try {
-                // Prompt ép AI dùng đúng dạng từ và trả về chỉ 1 câu duy nhất
-                const prompt = `Write a short, clear English sentence using the exact word "${target.word}". The sentence should demonstrate its meaning ("${target.vn}"). Do not use the word "${target.word}" more than once. Return ONLY the sentence, no quotes, no conversational filler.`;
+                // 1 call trả về cả câu EN + bản dịch VN
+                const prompt = `Write a short English sentence using the exact word "${target.word}" (meaning: "${target.vn}"). Do not use "${target.word}" more than once.
+Return ONLY a JSON object, no markdown:
+{"en":"<English sentence>","vn":"<Vietnamese translation>"}`;
                 
                 const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
                     body: JSON.stringify({
                         model: 'llama-3.3-70b-versatile',
-                        max_tokens: 80,
+                        max_tokens: 120,
                         messages: [{ role: 'user', content: prompt }],
                         temperature: 0.7
                     })
                 });
                 const data = await res.json();
                 if (data.choices && data.choices[0]) {
-                    exampleText = data.choices[0].message.content.trim().replace(/^"|"$/g, '');
-                    _cacheSentence(target.word, exampleText); // lưu cache
+                    const raw = data.choices[0].message.content.trim().replace(/```json|```/g, '');
+                    try {
+                        const parsed = JSON.parse(raw);
+                        exampleText = (parsed.en || '').replace(/^"|"$/g, '');
+                        const vnTranslation = parsed.vn || '';
+                        _cacheSentence(target.word, exampleText, vnTranslation); // lưu cả en + vn
+                    } catch {
+                        // fallback nếu AI không trả đúng JSON
+                        exampleText = raw.replace(/^"|"$/g, '');
+                        _cacheSentence(target.word, exampleText);
+                    }
                 }
             } catch(e) {
                 console.error("Lỗi tạo câu AI:", e);
-                // Nếu lỗi mạng, hệ thống sẽ tự động dùng lại exampleText dự phòng
             }
         }
     }
@@ -7570,12 +7580,11 @@ async function checkFillBlank() {
     // Enable nút tiếp theo sau khi mọi xử lý hoàn tất
     document.getElementById('fbNextBtn').disabled = false;
 
-    // Dịch câu ví dụ bằng Groq API
+    // Hiển thị bản dịch câu từ cache (đã lấy cùng lúc khi tạo câu, không tốn thêm API call)
     const fbSentenceVn = document.getElementById('fbSentenceVn');
-    const fbSentenceEl = document.getElementById('fbSentence');
-    if (fbSentenceVn && fbSentenceEl) {
-        // Dùng nghĩa từ có sẵn thay vì gọi AI dịch — tiết kiệm API call
-        fbSentenceVn.textContent = `💡 Nghĩa từ: ${target.vn}`;
+    if (fbSentenceVn) {
+        const cachedVn = _getCachedSentenceVn(target.word);
+        fbSentenceVn.textContent = cachedVn ? `💡 ${cachedVn}` : `💡 Nghĩa từ: ${target.vn}`;
         fbSentenceVn.style.display = 'block';
     }
 }
@@ -7609,9 +7618,15 @@ function _getCachedSentence(word) {
     const cache = _getSentCache();
     return cache[word.toLowerCase()]?.s || null;
 }
-function _cacheSentence(word, sentence) {
+function _getCachedSentenceVn(word) {
     const cache = _getSentCache();
-    cache[word.toLowerCase()] = { s: sentence, t: Date.now() };
+    return cache[word.toLowerCase()]?.vn || null;
+}
+function _cacheSentence(word, sentence, vnTranslation) {
+    const cache = _getSentCache();
+    const entry = { s: sentence, t: Date.now() };
+    if (vnTranslation) entry.vn = vnTranslation;
+    cache[word.toLowerCase()] = entry;
     _setSentCache(cache);
 }
 
