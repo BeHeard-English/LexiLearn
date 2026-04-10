@@ -483,6 +483,9 @@
         /* ── BADGES ── */
         /* ── INLINE ICON PICKER ── */
         .td-icon-btn{cursor:pointer;border-radius:10px;padding:4px 6px;border:1.5px solid transparent;transition:.15s;display:inline-flex;align-items:center;justify-content:center;line-height:1;}
+        #tdName{cursor:pointer;border-radius:6px;padding:2px 6px;transition:.15s;}
+        #tdName:hover{background:var(--primary-light);}
+        #tdNameInput{font-family:'Nunito',sans-serif;font-weight:800;font-size:1.05rem;color:var(--primary);border:2px solid var(--primary);border-radius:8px;padding:2px 8px;outline:none;background:var(--input-bg);width:160px;max-width:200px;}
         .td-icon-btn:hover{background:var(--primary-light);border-color:#c7d2ff;}
         .icon-picker-popup{position:absolute;top:calc(100% + 8px);left:0;z-index:800;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:12px;box-shadow:0 8px 32px rgba(3,19,131,.18);display:grid;grid-template-columns:repeat(6,1fr);gap:6px;width:260px;}
         .icon-picker-popup button{background:none;border:1.5px solid transparent;border-radius:8px;font-size:1.4rem;padding:6px;cursor:pointer;transition:.15s;line-height:1;}
@@ -1873,7 +1876,7 @@
                     <div id="tdIconPickerPopup" class="icon-picker-popup" style="display:none;"></div>
                 </div>
                 <div>
-                    <div id="tdName" style="font-family:'Nunito',sans-serif;font-weight:800;font-size:1.05rem;color:var(--primary);"></div>
+                    <div id="tdName" style="font-family:'Nunito',sans-serif;font-weight:800;font-size:1.05rem;color:var(--primary);" onclick="startEditTopicName()" title="Bấm để đổi tên danh sách"></div>
                     <div id="tdCount" style="font-size:.72rem;color:var(--muted);margin-top:2px;"></div>
                 </div>
             </div>
@@ -5361,12 +5364,60 @@ Only raw JSON, no markdown.`;
 // ══════════════════════════════════════════
 // TOPIC LIST DETAIL MODAL
 // ══════════════════════════════════════════
+function startEditTopicName() {
+    const nameEl = document.getElementById('tdName');
+    const current = nameEl.textContent;
+    const inp = document.createElement('input');
+    inp.id = 'tdNameInput';
+    inp.value = current;
+    inp.maxLength = 40;
+    nameEl.replaceWith(inp);
+    inp.focus();
+    inp.select();
+
+    async function commitRename() {
+        const newName = inp.value.trim();
+        const div = document.createElement('div');
+        div.id = 'tdName';
+        div.style.cssText = "font-family:'Nunito',sans-serif;font-weight:800;font-size:1.05rem;color:var(--primary);cursor:pointer;border-radius:6px;padding:2px 6px;transition:.15s;";
+        div.title = 'Bấm để đổi tên danh sách';
+        div.onclick = startEditTopicName;
+        if (!newName || newName === current) {
+            div.textContent = current;
+            inp.replaceWith(div);
+            return;
+        }
+        div.textContent = newName;
+        inp.replaceWith(div);
+        // Update local
+        const tl = topicLists.find(t => t.id === currentTopicListId);
+        if (tl) tl.name = newName;
+        // Update Firestore
+        try {
+            await db.collection('users').doc(currentUser.uid)
+                .collection('topicLists').doc(currentTopicListId)
+                .update({ name: newName });
+            renderTopicChips();
+            showToast('✅ Đã đổi tên danh sách!');
+        } catch(e) {
+            showToast('❌ Lỗi khi lưu tên!');
+        }
+    }
+
+    inp.addEventListener('blur', commitRename);
+    inp.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); inp.blur(); }
+        if (e.key === 'Escape') { inp.value = current; inp.blur(); }
+    });
+}
+
 async function openTopicListDetail(listId) {
     currentTopicListId = listId;
     const tl = topicLists.find(t => t.id === listId);
     if (!tl) return;
     document.getElementById('tdIcon').textContent = tl.icon || '📋';
     document.getElementById('tdName').textContent = tl.name;
+    document.getElementById('tdName').title = 'Bấm để đổi tên danh sách';
     document.getElementById('tdSearch').value = '';
     document.getElementById('tdCount').textContent = `Đang tải...`;
     document.getElementById('topicDetailModal').classList.add('open');
@@ -6812,6 +6863,7 @@ const VI_WORD_TO_NUM = Object.fromEntries(Object.entries(VI_NUM_TO_WORD).map(([k
 function normalizeString(s) {
     // Giữ nguyên ký tự tiếng Việt, chỉ loại dấu câu và chuẩn hoá khoảng trắng
     return s.toLowerCase().trim()
+        .replace(/[\u2018\u2019\u201A\u201B\u2032\u2035]/g, "'") // chuẩn hoá curly/smart apostrophe → straight
         .replace(/[.,/#!$%^&*;:{}=\-_`~()"'[\]]/g, '')
         .replace(/\s+/g, ' ');
 }
