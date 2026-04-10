@@ -3729,7 +3729,9 @@ function _syncSRS(word, srs, extra = {}) {
             ? { ...i, ...srs, ...extra }
             : i
     );
-    _saveCache(fullLibrary);
+    // Trong session: bỏ qua localStorage (flush sẽ gọi _saveCache khi kết thúc)
+    // Ngoài session: lưu ngay
+    if (!_sqSessionActive) _saveCache(fullLibrary);
 }
 function _toDate(val) {
     if (!val) return null;
@@ -3994,6 +3996,8 @@ document.getElementById('logoutBtn').onclick = () =>
   auth.signOut().then(() => window.location.href = 'index.html');
 
 function switchTab(name) {
+    // Nếu đang trong session và người dùng chuyển tab → flush trước khi rời
+    if (_sqSessionActive) _sqFlushIfNeeded();
     document.querySelectorAll('[id^="tab-"]').forEach(el => { el.classList.add('hidden'); el.classList.remove('fade-in'); });
     const tab = document.getElementById('tab-'+name);
     tab.classList.remove('hidden');
@@ -6598,10 +6602,29 @@ function _sqReset() {
     _sqSessionActive = false;
 }
 
+// Flush nếu có dữ liệu chưa lưu (dùng khi thoát session sớm)
+async function _sqFlushIfNeeded() {
+    if (!_sqSessionActive) return;
+    const hasData = Object.keys(_sqVocab).length > 0
+        || _sqXpDelta !== 0 || _sqCoinDelta !== 0
+        || _sqActivityReviewed !== 0;
+    if (hasData) await _sqFlush();
+    else _sqReset();
+}
+
 // Ghi vocab SRS vào queue thay vì Firestore ngay
 function _sqQueueVocab(wordKey, fields) {
     const k = wordKey.toLowerCase();
-    _sqVocab[k] = { ...(_sqVocab[k] || {}), ...fields };
+    const existing = _sqVocab[k] || {};
+    const merged = { ...existing };
+    for (const [fk, fv] of Object.entries(fields)) {
+        if (fk.endsWith('_delta') && typeof fv === 'number' && typeof merged[fk] === 'number') {
+            merged[fk] = merged[fk] + fv; // cộng dồn delta, không overwrite
+        } else {
+            merged[fk] = fv;
+        }
+    }
+    _sqVocab[k] = merged;
     // Cập nhật fullLibrary local ngay để UI phản hồi tức thì
     fullLibrary = fullLibrary.map(i =>
         i.word.toLowerCase() === k ? { ...i, ...fields } : i
@@ -6980,11 +7003,11 @@ function closeSessionSummary(goToLibrary) {
     document.getElementById('sessionSummaryModal').classList.remove('open');
     document.getElementById('listeningArea').style.display='none'; document.getElementById('reviewStart').classList.remove('hidden');
     document.body.classList.remove('quiz-active');
-    // Ẩn tất cả area ôn tập
     ['reviewQuizArea','flashcardArea','typingArea','fillBlankArea'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = 'none';
     });
+    _sqReset(); // session đã kết thúc hoàn toàn
     if (goToLibrary) switchTab('library');
 }
 
@@ -7243,7 +7266,6 @@ Học sinh có hiểu đúng nghĩa không?`;
             const currentCorrect = item.correct_count || 0;
             const newCorrect = Math.max(0, currentCorrect - 1);
             _sqQueueVocab(target.word, { correct_count: newCorrect });
-            _saveCache(fullLibrary);
             skipWord = true;
         } else if (wrongCount >= 2) {
             skipWord = true;
