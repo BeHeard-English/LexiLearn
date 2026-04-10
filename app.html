@@ -163,9 +163,9 @@
         .level-C1{background:#fce7f3;color:#9d174d;}.level-C2{background:#fef3c7;color:#92400e;}
 
         /* DRAG DROP */
-        .drop-zone{border:2px dashed #475569;min-width:120px;display:inline-block;height:2em;vertical-align:middle;margin:0 4px;border-radius:8px;background:#1e293b;text-align:center;transition:.3s;padding:2px 10px;color:#94a3b8;}
+        .drop-zone{border:2px dashed var(--border);min-width:120px;display:inline-block;height:2em;vertical-align:middle;margin:0 4px;border-radius:8px;background:var(--primary-light);text-align:center;transition:.3s;padding:2px 10px;color:var(--muted);}
         .drop-zone.filled{background:var(--primary);border-color:transparent;color:#fff;}
-        .draggable-item{cursor:grab;padding:8px 16px;background:#1e293b;border:1px solid #334155;border-radius:10px;font-weight:700;font-size:.85rem;color:#e2e8f0;transition:.2s;user-select:none;-webkit-user-select:none;touch-action:manipulation;}
+        .draggable-item{cursor:grab;padding:8px 16px;background:var(--primary-light);border:1px solid var(--border);border-radius:10px;font-weight:700;font-size:.85rem;color:var(--primary);transition:.2s;user-select:none;-webkit-user-select:none;touch-action:manipulation;}
         .draggable-item:hover{background:var(--primary);border-color:var(--primary);color:#fff;}
         .draggable-item:active{cursor:grabbing;transform:scale(.96);}
 
@@ -984,25 +984,25 @@
                     <button id="showDragDropBtn" class="btn-primary btn-success wide">🎮 Tạo bài tập kéo thả</button>
                 </div>
             </div>
-            <div id="dragDropContainer" class="hidden" style="background:#0f172a;border-radius:20px;display:flex;flex-direction:column;overflow:visible;box-shadow:0 8px 40px rgba(0,0,0,.3);">
+            <div id="dragDropContainer" class="hidden" style="background:var(--card);border:1.5px solid var(--border);border-radius:20px;display:flex;flex-direction:column;overflow:visible;box-shadow:0 8px 32px rgba(0,0,0,.12);">
                 <!-- Header + Word bank = 1 khối sticky duy nhất -->
-                <div style="position:sticky;top:var(--nav-h);z-index:51;background:#0f172a;border-radius:20px 20px 0 0;box-shadow:0 4px 16px rgba(0,0,0,.4);">
+                <div style="position:sticky;top:var(--nav-h);z-index:51;background:var(--card);border-radius:20px 20px 0 0;box-shadow:0 4px 16px rgba(0,0,0,.06);">
                     <!-- Header bar -->
-                    <div style="padding:14px 20px;border-bottom:1px solid #1e293b;display:flex;justify-content:space-between;align-items:center;">
-                        <div><div style="color:#7eb8ff;font-weight:800;font-size:.9rem;letter-spacing:.06em;text-transform:uppercase;">🎯 Practice Mode</div><div style="color:#475569;font-size:.75rem;margin-top:2px;">Kéo từ vào đúng chỗ trống</div></div>
-                        <button onclick="closeDragDrop()" style="background:#1e293b;border:none;border-radius:8px;padding:6px 12px;color:#64748b;cursor:pointer;font-size:.8rem;" onmouseover="this.style.color='#e2e8f0'" onmouseout="this.style.color='#64748b'">✕ Đóng</button>
+                    <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+                        <div><div style="color:var(--primary);font-weight:800;font-size:.9rem;letter-spacing:.06em;text-transform:uppercase;">🎯 Practice Mode</div><div style="color:var(--muted);font-size:.75rem;margin-top:2px;">Kéo từ vào đúng chỗ trống</div></div>
+                        <button onclick="closeDragDrop()" style="background:var(--primary-light);border:none;border-radius:8px;padding:6px 12px;color:var(--muted);cursor:pointer;font-size:.8rem;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">✕ Đóng</button>
                     </div>
                     <!-- Word bank (luôn hiển thị, không bao giờ bị cắt) -->
-                    <div style="padding:12px 16px 14px;background:#1e293b;border-bottom:2px solid #0f172a;">
+                    <div style="padding:12px 16px 14px;background:var(--bg);border-bottom:2px solid var(--border);">
                         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-                            <div style="font-size:.7rem;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.07em;">📦 Ngân hàng từ</div>
+                            <div style="font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;">📦 Ngân hàng từ</div>
                             <div style="font-size:.65rem;color:#475569;display:none;" id="touchHint">👆 Chạm chọn → chạm ô trống</div>
                         </div>
                         <div id="draggableContainer" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
                     </div>
                 </div>
-                <div id="quizSentences" style="padding:20px;display:flex;flex-direction:column;gap:14px;background:#0f172a;"></div>
-                <div style="padding:14px 16px;background:#0f172a;border-top:1px solid #1e293b;border-radius:0 0 20px 20px;">
+                <div id="quizSentences" style="padding:20px;display:flex;flex-direction:column;gap:14px;background:var(--card);"></div>
+                <div style="padding:14px 16px;background:var(--card);border-top:1px solid var(--border);border-radius:0 0 20px 20px;">
                     <div id="dragDropScore" style="margin-bottom:10px;"></div>
                     <button id="checkDragDropBtn" class="btn-primary btn-success wide">Kiểm tra đáp án</button>
                 </div>
@@ -4366,12 +4366,12 @@ document.getElementById('showDragDropBtn').onclick = () => {
 
     document.getElementById('quizSentences').innerHTML = shuffledSentences.map((i,idx) => {
         const html=i.example.replace(new RegExp(i.word,'gi'),`<span class="drop-zone" data-answer="${i.word}"></span>`);
-        return `<div style="background:#1e293b;padding:14px 16px;border-radius:14px;border:1px solid #334155;color:#cbd5e1;font-size:.9rem;line-height:1.8;"><span style="color:#334155;font-weight:800;margin-right:8px;">${idx+1}.</span>${html}</div>`;
+        return `<div style="background:var(--bg);padding:14px 16px;border-radius:14px;border:1px solid var(--border);color:var(--text);font-size:.9rem;line-height:1.8;"><span style="color:var(--muted);font-weight:800;margin-right:8px;">${idx+1}.</span>${html}</div>`;
     }).join('');
 
     document.querySelectorAll('.drop-zone').forEach(z => {
         // Mouse drag events
-        z.ondragover = e => { e.preventDefault(); z.style.borderColor='#7eb8ff'; };
+        z.ondragover = e => { e.preventDefault(); z.style.borderColor='var(--primary-mid)'; };
         z.ondragleave = () => { if(!z.classList.contains('filled')) z.style.borderColor=''; };
         z.ondrop = e => {
             e.preventDefault();
@@ -4406,7 +4406,7 @@ function selectDragItem(el) {
         _selectedDragItem = null;
     } else {
         _selectedDragItem = el;
-        el.style.outline = '2px solid #7eb8ff';
+        el.style.outline = '2px solid var(--primary-mid)';
         el.style.opacity = '0.7';
     }
 }
@@ -4454,7 +4454,7 @@ document.getElementById('checkDragDropBtn').onclick = () => {
             z.appendChild(span);
         }
     });
-    document.getElementById('dragDropScore').innerHTML=`<div style="background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:12px;text-align:center;color:#10b981;font-weight:800;">KẾT QUẢ: ${ok}/${zones.length} — ${Math.round(ok/zones.length*100)}% ✨</div>`;
+    document.getElementById('dragDropScore').innerHTML=`<div style="background:var(--success-bg);border:1px solid var(--success);border-radius:12px;padding:12px;text-align:center;color:var(--success);font-weight:800;">KẾT QUẢ: ${ok}/${zones.length} — ${Math.round(ok/zones.length*100)}% ✨</div>`;
 };
 function closeDragDrop(){_selectedDragItem=null;document.getElementById('dragDropContainer').classList.add('hidden');document.getElementById('vocabContainer').classList.remove('hidden');}
 
