@@ -3729,7 +3729,7 @@ function applyNeonArcadeEffect() {
     };
 }
 
-// ── Sweet Pastel ── bong bóng 3D, bóng bẩy
+// ── Sweet Pastel ── bong bóng 3D, bóng bẩy, trong suốt, có đốm sáng nền ──
 function applySweetPastelEffect() {
     const layer = document.getElementById('themeEffectLayer');
     if (!layer) return;
@@ -3745,7 +3745,7 @@ function applySweetPastelEffect() {
     `;
     layer.appendChild(bgDiv);
 
-    // Canvas vẽ bong bóng
+    // Canvas chính cho bong bóng + đốm sáng
     const canvas = document.createElement('canvas');
     canvas.style.cssText = `
         position: absolute;
@@ -3758,25 +3758,21 @@ function applySweetPastelEffect() {
     layer.appendChild(canvas);
     const ctx = canvas.getContext('2d');
 
-    // Màu bong bóng – alpha thấp để trong suốt, tạo hiệu ứng thủy tinh
+    // Màu bong bóng – alpha thấp để trong suốt, tạo cảm giác thủy tinh
     const BUBBLE_COLORS = [
-        'rgba(169, 214, 229, 0.3)',   // xanh pastel trong suốt
-        'rgba(217, 167, 240, 0.3)',   // tím pastel trong suốt
-        'rgba(249, 168, 212, 0.3)',   // hồng pastel trong suốt
-        'rgba(252, 227, 138, 0.3)'    // vàng pastel trong suốt
+        'rgba(169, 214, 229, 0.3)',   // xanh pastel
+        'rgba(217, 167, 240, 0.3)',   // tím pastel
+        'rgba(249, 168, 212, 0.3)',   // hồng pastel
+        'rgba(252, 227, 138, 0.3)'    // vàng pastel
     ];
 
     let bubbles = [];
+    let backgroundSparkles = [];
     let animFrame = null;
 
-    function resizeCanvas() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        initBubbles();
-    }
-
+    // ── Khởi tạo bong bóng ──
     function initBubbles() {
-        const count = Math.min(50, Math.floor(window.innerWidth * window.innerHeight / 7000));
+        const count = Math.min(45, Math.floor(window.innerWidth * window.innerHeight / 7000));
         bubbles = [];
         for (let i = 0; i < count; i++) {
             bubbles.push({
@@ -3784,37 +3780,56 @@ function applySweetPastelEffect() {
                 y: Math.random() * canvas.height,
                 radius: 12 + Math.random() * 28,
                 speedY: 0.15 + Math.random() * 0.7,
-                alpha: 0.7 + Math.random() * 0.3,
                 color: BUBBLE_COLORS[Math.floor(Math.random() * BUBBLE_COLORS.length)],
-                glow: 14 + Math.random() * 20,
+                glow: 14 + Math.random() * 20,      // glow mạnh
                 sway: Math.random() * Math.PI * 2,
-                swaySpeed: 0.006 + Math.random() * 0.018,
-                sparkle: Math.random() * Math.PI * 2,
-                sparkleSpeed: 0.025 + Math.random() * 0.04,
-                // Thêm tham số cho hiệu ứng 3D
-                phase: Math.random() * Math.PI * 2,
-                phaseSpeed: 0.01 + Math.random() * 0.02,
+                swaySpeed: 0.006 + Math.random() * 0.015,
+                // Highlight cố định (tỉ lệ so với bán kính)
+                highlightX: -0.28,  // vị trí tương đối theo chiều ngang
+                highlightY: -0.28,  // vị trí tương đối theo chiều dọc
+                highlightSize: 0.22
             });
         }
     }
 
+    // ── Khởi tạo đốm sáng nền (không nhấp nháy lung tung, chỉ lấp lánh nhẹ) ──
+    function initBackgroundSparkles() {
+        const count = Math.min(120, Math.floor(window.innerWidth * window.innerHeight / 5000));
+        backgroundSparkles = [];
+        for (let i = 0; i < count; i++) {
+            backgroundSparkles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                radius: 1 + Math.random() * 2.5,
+                alpha: 0.2 + Math.random() * 0.4,
+                twinkle: Math.random() * Math.PI * 2,
+                twinkleSpeed: 0.005 + Math.random() * 0.015,
+                color: `rgba(255, 255, 255, ${0.3 + Math.random() * 0.5})`
+            });
+        }
+    }
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        initBubbles();
+        initBackgroundSparkles();
+    }
+
+    // Vẽ bong bóng (3D, bóng bẩy, chỉ 1 highlight cố định)
     function drawBubbles() {
-        if (!ctx) return;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
         for (let b of bubbles) {
             b.y -= b.speedY;
             b.sway += b.swaySpeed;
-            b.sparkle += b.sparkleSpeed;
-            b.phase += b.phaseSpeed;
-            const offsetX = Math.sin(b.sway) * 2.8;
+            const offsetX = Math.sin(b.sway) * 2.2;
             if (b.y + b.radius < 0) {
                 b.y = canvas.height + b.radius;
                 b.x = Math.random() * canvas.width;
             }
 
-            // Vẽ bóng đổ (glow) phía sau – tạo hiệu ứng phát sáng
+            // Bóng đổ (glow) phía sau
             ctx.save();
-            ctx.shadowColor = `rgba(255, 255, 255, 0.8)`;
+            ctx.shadowColor = `rgba(255, 255, 255, 0.85)`;
             ctx.shadowBlur = b.glow;
             ctx.beginPath();
             ctx.arc(b.x + offsetX, b.y, b.radius, 0, Math.PI * 2);
@@ -3823,56 +3838,54 @@ function applySweetPastelEffect() {
             ctx.shadowBlur = 0;
             ctx.restore();
 
-            // Viền sáng mờ bên ngoài (glow outline) dày hơn một chút
+            // Viền sáng mờ ngoài
             ctx.beginPath();
-            ctx.arc(b.x + offsetX, b.y, b.radius - 1, 0, Math.PI * 2);
-            ctx.strokeStyle = `rgba(255, 255, 255, 0.9)`;
-            ctx.lineWidth = 2;
+            ctx.arc(b.x + offsetX, b.y, b.radius - 0.8, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(255, 255, 255, 0.7)`;
+            ctx.lineWidth = 1.5;
             ctx.stroke();
 
-            // Hiệu ứng 3D: gradient xuyên tâm (radial gradient) tạo độ cong
-            const gradient = ctx.createRadialGradient(
-                b.x + offsetX - b.radius * 0.3, b.y - b.radius * 0.3, b.radius * 0.2,
-                b.x + offsetX, b.y, b.radius * 0.8
-            );
-            gradient.addColorStop(0, `rgba(255, 255, 255, 0.7)`);
-            gradient.addColorStop(0.5, `rgba(255, 255, 255, 0.1)`);
-            gradient.addColorStop(1, `rgba(255, 255, 255, 0)`);
+            // Highlight chính – duy nhất, cố định, tạo hiệu ứng 3D
+            const hx = b.x + offsetX + b.radius * b.highlightX;
+            const hy = b.y + b.radius * b.highlightY;
             ctx.beginPath();
-            ctx.arc(b.x + offsetX, b.y, b.radius, 0, Math.PI * 2);
-            ctx.fillStyle = gradient;
+            ctx.arc(hx, hy, b.radius * b.highlightSize, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255, 255, 255, 0.65)`;
             ctx.fill();
 
-            // Highlight duy nhất: chấm tròn lớn hơn, ở vị trí góc trên trái
-            const hlX = b.x + offsetX - b.radius * 0.28;
-            const hlY = b.y - b.radius * 0.28;
-            const hlRadius = b.radius * 0.22;
+            // Thêm một vệt sáng nhỏ ở rìa dưới để tăng độ bóng (tùy chọn, không bắt buộc)
             ctx.beginPath();
-            ctx.arc(hlX, hlY, hlRadius, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(255, 255, 255, 0.95)`;
+            ctx.ellipse(b.x + offsetX + b.radius * 0.2, b.y + b.radius * 0.3, b.radius * 0.12, b.radius * 0.06, 0, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255, 255, 255, 0.4)`;
             ctx.fill();
-            // Tạo hiệu ứng bóng đổ nhẹ cho highlight (tăng độ 3D)
-            ctx.shadowBlur = 4;
-            ctx.shadowColor = 'rgba(255,255,255,0.5)';
-            ctx.fill();
-            ctx.shadowBlur = 0;
-
-            // Sparkle lấp lánh – chấm sáng nhỏ di chuyển nhẹ trên bề mặt bong bóng
-            const sparkX = b.x + offsetX + Math.sin(b.sparkle) * (b.radius * 0.5);
-            const sparkY = b.y - Math.cos(b.sparkle * 1.3) * (b.radius * 0.4);
-            ctx.beginPath();
-            ctx.arc(sparkX, sparkY, b.radius * 0.12, 0, Math.PI * 2);
-            ctx.fillStyle = `rgba(255, 255, 255, 1)`;
-            ctx.fill();
-
-            // Không có highlight phụ, chỉ giữ 1 chấm chính + sparkle
         }
-        animFrame = requestAnimationFrame(drawBubbles);
     }
 
-    window.addEventListener('resize', () => { resizeCanvas(); initBubbles(); });
+    // Vẽ đốm sáng nền (lung linh nhẹ, không di chuyển nhiều)
+    function drawBackgroundSparkles() {
+        for (let s of backgroundSparkles) {
+            s.twinkle += s.twinkleSpeed;
+            const alpha = s.alpha + Math.sin(s.twinkle) * 0.15;
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(0.1, Math.min(0.7, alpha))})`;
+            ctx.fill();
+        }
+    }
+
+    function animate() {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawBackgroundSparkles();  // vẽ đốm sáng trước (nền)
+        drawBubbles();             // vẽ bong bóng lên trên
+        animFrame = requestAnimationFrame(animate);
+    }
+
+    window.addEventListener('resize', () => {
+        resizeCanvas();
+    });
     resizeCanvas();
-    drawBubbles();
+    animate();
 
     // Cleanup khi chuyển theme
     if (window._sweetCleanup) window._sweetCleanup();
