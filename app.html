@@ -7870,21 +7870,24 @@ Return ONLY a JSON object, no markdown:
 
     // 3. Tạo câu với chỗ trống (blank)
     const regex   = new RegExp('\\b(' + escapeRegExp(target.word) + '\\w*)\\b', 'i');
-    const hasBlanked = regex.test(exampleText);
+    const matchResult = exampleText.match(regex);
+    const actualForm  = matchResult ? matchResult[1] : target.word; // form thực tế trong câu (vd: "flexing")
+    _lisCurrentActualForm = actualForm;                              // lưu global để TTS và check dùng
+    const hasBlanked = !!matchResult;
 
     let sentenceHTML;
     if (hasBlanked) {
         sentenceHTML = exampleText.replace(regex,
-            `<span class="fb-blank empty" id="fbBlank" data-correct="${target.word.toLowerCase()}" onclick="clickBlank()"></span>`
+            `<span class="fb-blank empty" id="fbBlank" data-correct="${actualForm.toLowerCase()}" onclick="clickBlank()"></span>`
         );
     } else {
-        sentenceHTML = exampleText + ` <span class="fb-blank empty" id="fbBlank" data-correct="${target.word.toLowerCase()}" onclick="clickBlank()"></span>`;
+        sentenceHTML = exampleText + ` <span class="fb-blank empty" id="fbBlank" data-correct="${actualForm.toLowerCase()}" onclick="clickBlank()"></span>`;
     }
     sentenceDiv.innerHTML = sentenceHTML;
 
-    // 4. Tạo word bank: từ đúng + 3 từ nhiễu ngẫu nhiên
+    // 4. Tạo word bank: từ đúng (form thực tế) + 3 từ nhiễu ngẫu nhiên
     const distractors = shuffle(reviewPool.filter(i => i.word !== target.word)).slice(0, 3).map(i => i.word);
-    const allWords    = shuffle([target.word, ...distractors]);
+    const allWords    = shuffle([actualForm, ...distractors]);
 
     const chipsEl = document.getElementById('fbChips');
     chipsEl.innerHTML = allWords.map(w =>
@@ -8364,6 +8367,7 @@ async function syncAllTopicListWordIds() {
 // LISTENING MODE (phiên bản sửa lỗi)
 // ══════════════════════════════════════════
 let _lisCurrentSentence = '';
+let _lisCurrentActualForm = '';
 
 function updateListeningProgress() {
     const pct = Math.round((currentReviewIdx / totalReviewCount) * 100);
@@ -8505,7 +8509,7 @@ function lisPlayWord() {
     if (!target) return;
     if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
-    const utt = new SpeechSynthesisUtterance(target.word);
+    const utt = new SpeechSynthesisUtterance(_lisCurrentActualForm || target.word);
     utt.lang = 'en-US';
     utt.rate = 0.82;
     const voices = window.speechSynthesis.getVoices();
@@ -8525,7 +8529,7 @@ async function checkListeningAnswer() {
     const target = reviewPool[currentReviewIdx];
     if (!target) return;
     const userWord = document.getElementById('lisAnswerInput')?.value.trim().toLowerCase() || '';
-    const correctWord = target.word.toLowerCase();
+    const correctWord = (_lisCurrentActualForm || target.word).toLowerCase();
 
     if (!userWord) {
         showToast('⚠️ Vui lòng nhập từ còn thiếu!');
@@ -8539,7 +8543,7 @@ async function checkListeningAnswer() {
 
     if (isCorrect) {
         fbDiv.style.cssText = 'display:block;font-size:.8rem;font-weight:700;margin-top:5px;padding:6px 12px;border-radius:8px;background:#d1fae5;color:#065f46;';
-        fbDiv.innerHTML = `✅ Chính xác! Đáp án: <strong>${target.word}</strong>`;
+        fbDiv.innerHTML = `✅ Chính xác! Đáp án: <strong>${correctWord}</strong>`;
         playFeedback(true);
 
         // Cập nhật SRS và XP
@@ -8554,7 +8558,7 @@ async function checkListeningAnswer() {
         currentReviewIdx++;
     } else {
         fbDiv.style.cssText = 'display:block;font-size:.8rem;font-weight:700;margin-top:5px;padding:6px 12px;border-radius:8px;background:#fee2e2;color:#991b1b;';
-        fbDiv.innerHTML = `❌ Chưa đúng! Đáp án đúng: <strong>${target.word}</strong>`;
+        fbDiv.innerHTML = `❌ Chưa đúng! Đáp án đúng: <strong>${correctWord}</strong>`;
         playFeedback(false);
 
         const item = fullLibrary.find(i => i.word.toLowerCase() === target.word.toLowerCase()) || {};
@@ -8757,7 +8761,8 @@ QUY TẮC CHẤM:
 
 Feedback phải bằng tiếng Việt. Nếu câu thực chất đúng và tự nhiên, hãy khen ngợi thay vì gợi ý sửa không cần thiết.
 
-Trả về JSON với format: {"score":number, "meaning":number, "grammar":number, "spelling":number, "naturalness":number, "feedback":"string"}
+Trả về JSON với format: {"score":number, "meaning":number, "grammar":number, "spelling":number, "naturalness":number, "feedback":"string", "suggested":"string"}
+- "suggested": nếu score < 20, viết một câu tiếng Anh tự nhiên, ngắn gọn dựa trên câu tiếng Việt đã cho (có chứa từ bắt buộc). Nếu score = 20, để chuỗi rỗng "".
 Chỉ JSON, không giải thích thêm.`;
 
         const userPrompt = `Câu tiếng Việt: "${swCurrentPrompt}"
@@ -8821,6 +8826,7 @@ Câu học sinh: "${userSentence}"`;
                 </div>
             </div>
             <div style="color:#065f46;font-weight:600;font-size:.95rem;line-height:1.6;background:rgba(255,255,255,.4);border-radius:8px;padding:10px 12px;">${feedback}</div>
+            ${evaluation.suggested ? `<div style="margin-top:12px;background:rgba(255,255,255,.55);border-radius:8px;padding:10px 14px;border-left:3px solid #059669;"><div style="font-size:.78rem;font-weight:800;color:#065f46;margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em;">💡 Gợi ý câu hay hơn</div><div style="font-size:.95rem;font-weight:700;color:#047857;font-style:italic;">"${evaluation.suggested}"</div></div>` : ''}
         `;
         playFeedback(true);
         let xpGain = Math.floor(score);
@@ -8844,6 +8850,7 @@ Câu học sinh: "${userSentence}"`;
                 </div>
             </div>
             <div style="color:#991b1b;font-weight:600;font-size:.95rem;line-height:1.6;background:rgba(255,255,255,.4);border-radius:8px;padding:10px 12px;">${feedback}</div>
+            ${evaluation.suggested ? `<div style="margin-top:12px;background:rgba(255,255,255,.55);border-radius:8px;padding:10px 14px;border-left:3px solid #dc2626;"><div style="font-size:.78rem;font-weight:800;color:#991b1b;margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em;">✏️ Câu tham khảo</div><div style="font-size:.95rem;font-weight:700;color:#b91c1c;font-style:italic;">"${evaluation.suggested}"</div></div>` : ''}
         `;
         playFeedback(false);
     }
