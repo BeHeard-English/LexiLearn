@@ -2372,6 +2372,37 @@ const THEMES = [
         '--placeholder': '#6B8A8E'
     }
 },
+    {
+    id: 'sweetpastel',
+    name: 'Sweet Pastel',
+    emoji: '🍬',
+    price: 2000,
+    desc: 'Tone màu pastel dễ thương và mát mẻ',
+    preview: ['#F9A8D4', '#FFF5F9', '#FFFBFE'],
+    vars: {
+        '--primary': '#F9A8D4',
+        '--primary-hover': '#FBCFE8',
+        '--primary-light': '#FCE7F3',
+        '--primary-mid': '#FBCFE8',
+        '--bg': '#FFF5F9',
+        '--card': '#FFFFFF',
+        '--border': '#FBCFE8',
+        '--text': '#5D3A4A',
+        '--muted': '#A78B9A',
+        '--success': '#34D399',
+        '--success-bg': '#ECFDF5',
+        '--danger': '#F87171',
+        '--danger-bg': '#FEF2F2',
+        '--nav-bg': '#F9A8D4',
+        '--gold': '#FCD34D',
+        '--accent': '#F472B6',
+        '--accent-glow': 'rgba(249, 168, 212, 0.35)',
+        '--input-bg': '#FFFFFF',
+        '--input-bg-focus': '#FFF0F5',
+        '--input-text': '#5D3A4A',
+        '--placeholder': '#C4A5B2'
+    }
+},
 ];
 
 // ══════════════════════════════════════════
@@ -2544,6 +2575,7 @@ function applyThemeEffect(themeId) {
     else if (themeId === 'rosegold') applyRoseGoldEffect();
     else if (themeId === 'midnight') applyMidnightEffect();
     else if (themeId === 'neonarcade') applyNeonArcadeEffect();
+    else if (themeId === 'sweetpastel') applySweetPastelEffect();
 }
 
 // ── Ocean Deep ───────────────────────────────────────────────────────
@@ -3694,6 +3726,95 @@ function applyNeonArcadeEffect() {
     window._neonCleanup = () => {
         if (pixelFrame) cancelAnimationFrame(pixelFrame);
         window.removeEventListener('resize', resizePixels);
+    };
+}
+
+// ── Sweet Pastel ──────────────────────────────────────────
+function applySweetPastelEffect() {
+    const layer = document.getElementById('themeEffectLayer');
+    if (!layer) return;
+    layer.innerHTML = '';
+
+    // Nền pastel gradient nhẹ
+    const bgDiv = document.createElement('div');
+    bgDiv.style.cssText = `
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 70% 30%, #FFE4F0 0%, #FFF0F5 40%, #FFF5F9 100%);
+        z-index: 0;
+    `;
+    layer.appendChild(bgDiv);
+
+    // Bong bóng kẹo bay lơ lửng (canvas)
+    const canvas = document.createElement('canvas');
+    canvas.style.cssText = `
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 2;
+    `;
+    layer.appendChild(canvas);
+    const ctx = canvas.getContext('2d');
+
+    let bubbles = [];
+    let animFrame = null;
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        initBubbles();
+    }
+
+    function initBubbles() {
+        const count = Math.min(40, Math.floor(window.innerWidth * window.innerHeight / 8000));
+        bubbles = [];
+        for (let i = 0; i < count; i++) {
+            bubbles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                radius: 6 + Math.random() * 14,
+                speedY: 0.2 + Math.random() * 0.7,
+                alpha: 0.25 + Math.random() * 0.4,
+                color: `hsla(${320 + Math.random() * 30}, 80%, 75%, ${0.2 + Math.random() * 0.3})`,
+                sway: Math.random() * Math.PI * 2,
+                swaySpeed: 0.01 + Math.random() * 0.02,
+            });
+        }
+    }
+
+    function drawBubbles() {
+        if (!ctx) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (let b of bubbles) {
+            b.y -= b.speedY;
+            b.sway += b.swaySpeed;
+            const offsetX = Math.sin(b.sway) * 1.5;
+            if (b.y + b.radius < 0) {
+                b.y = canvas.height + b.radius;
+                b.x = Math.random() * canvas.width;
+            }
+            ctx.beginPath();
+            ctx.arc(b.x + offsetX, b.y, b.radius, 0, Math.PI * 2);
+            ctx.fillStyle = b.color;
+            ctx.fill();
+            ctx.strokeStyle = `rgba(255, 255, 255, ${b.alpha * 0.6})`;
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+        }
+        animFrame = requestAnimationFrame(drawBubbles);
+    }
+
+    window.addEventListener('resize', () => { resizeCanvas(); initBubbles(); });
+    resizeCanvas();
+    drawBubbles();
+
+    // Lưu cleanup
+    if (window._sweetCleanup) window._sweetCleanup();
+    window._sweetCleanup = () => {
+        if (animFrame) cancelAnimationFrame(animFrame);
+        window.removeEventListener('resize', resizeCanvas);
     };
 }
 // Also need sunsetCloudDrift keyframe (inline via CSS):
