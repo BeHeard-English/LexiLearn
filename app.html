@@ -7869,7 +7869,7 @@ Return ONLY a JSON object, no markdown:
     document.getElementById('fbCheckBtn').disabled = false;
 
     // 3. Tạo câu với chỗ trống (blank)
-    const regex   = new RegExp('\\b(' + escapeRegExp(target.word) + ')\\b', 'i');
+    const regex   = new RegExp('\\b(' + escapeRegExp(target.word) + '\\w*)\\b', 'i');
     const hasBlanked = regex.test(exampleText);
 
     let sentenceHTML;
@@ -8651,13 +8651,14 @@ async function showSentenceWriting() {
     }
 
     try {
-        const prompt = `Tạo một câu tiếng Việt tự nhiên, đơn giản sử dụng từ tiếng Anh "${targetWord.word}" (nghĩa: ${targetWord.vn}).
+        const prompt = `Bạn đang tạo bài tập viết câu tiếng Anh cho học sinh. Từ cần luyện: "${targetWord.word}" (nghĩa tiếng Việt: ${targetWord.vn}).
 
-Yêu cầu:
-- Câu tiếng Việt ngắn gọn, dễ hiểu (10-15 từ)
-- Sử dụng ngữ cảnh thực tế, tự nhiên
-- Không quá phức tạp
-- Từ "${targetWord.word}" phải xuất hiện rõ ràng trong câu tiếng Anh tương ứng
+Nhiệm vụ: Viết một câu tiếng Việt ngắn (10-15 từ) mô tả một tình huống/cảm xúc, để học sinh dựa vào đó viết câu tiếng Anh có chứa từ "${targetWord.word}".
+
+Quy tắc BẮT BUỘC:
+- Câu tiếng Việt phải hoàn toàn bằng tiếng Việt, KHÔNG được chứa bất kỳ từ/cụm tiếng Anh nào (kể cả từ "${targetWord.word}" hay bản dịch sát nghĩa của nó)
+- Mô tả ngữ cảnh/tình huống gợi ý, không dịch thẳng nghĩa của từ
+- Ngắn gọn, tự nhiên, dễ hiểu
 
 Chỉ trả về câu tiếng Việt, không thêm gì khác.`;
 
@@ -8737,15 +8738,24 @@ async function checkSentenceAnswer() {
         const systemPrompt = `Bạn là giáo viên tiếng Anh chuyên nghiệp. Nhiệm vụ của bạn là đánh giá câu tiếng Anh mà học sinh viết dựa trên câu tiếng Việt đã cho.
 
 TIÊU CHÍ CHẤM ĐIỂM (thang 20 điểm):
-1. Nghĩa đúng (0-8): Câu có truyền tải đúng ý nghĩa không? Có dùng đúng từ "${swCurrentTarget.word}" không?
-2. Ngữ pháp (0-6): Thì, cấu trúc, trật tự từ.
-3. Chính tả (0-3): Lỗi chính tả, dấu câu.
-4. Sự tự nhiên (0-3): Câu có tự nhiên như người bản ngữ không?
+1. Nghĩa đúng (0-8): Câu có truyền tải đúng ý nghĩa không? Có dùng đúng từ bắt buộc không?
+2. Ngữ pháp (0-6): Thì, cấu trúc, trật tự từ có hợp lệ về ngữ pháp không?
+3. Chính tả (0-3): Lỗi chính tả thực sự (sai ký tự, sai từ).
+4. Sự tự nhiên (0-3): Có cách diễn đạt nào hoàn toàn bất tự nhiên hoặc sai thành ngữ không?
+
+KHÔNG trừ điểm cho:
+- Dùng dạng đầy đủ thay vì rút gọn: "I will" = "I'll", "she will" = "she'll", "do not" = "don't", v.v.
+- Không có dấu câu cuối câu, viết hoa/thường đầu câu.
+- Khác dấu phẩy, dấu chấm phẩy nhỏ nhặt.
+- Câu đúng nhưng dài hơn/ngắn hơn đáp án mẫu.
+- Chọn từ đồng nghĩa, cách diễn đạt khác mà vẫn đúng nghĩa.
 
 QUY TẮC CHẤM:
-- Lỗi nhỏ: -0.5 → -1
-- Lỗi vừa: -1 → -3
-- Lỗi lớn (sai thì, sai nghĩa, thiếu từ bắt buộc): -3 → -6
+- Lỗi nhỏ (dùng sai giới từ nhỏ, thiếu mạo từ): -0.5 → -1
+- Lỗi vừa (cấu trúc câu lạ, dùng sai thành ngữ): -1 → -3
+- Lỗi lớn (sai thì, sai nghĩa hoàn toàn, thiếu từ bắt buộc): -3 → -6
+
+Feedback phải bằng tiếng Việt. Nếu câu thực chất đúng và tự nhiên, hãy khen ngợi thay vì gợi ý sửa không cần thiết.
 
 Trả về JSON với format: {"score":number, "meaning":number, "grammar":number, "spelling":number, "naturalness":number, "feedback":"string"}
 Chỉ JSON, không giải thích thêm.`;
