@@ -2372,7 +2372,7 @@ const THEMES = [
         '--placeholder': '#6B8A8E'
     }
 },
-    {
+{
     id: 'sweetpastel',
     name: 'Sweet Pastel',
     emoji: '🍬',
@@ -3728,7 +3728,7 @@ function applyNeonArcadeEffect() {
         window.removeEventListener('resize', resizePixels);
     };
 }
-
+    
 // ── Sweet Pastel ── bong bóng to, ít, trong suốt, bóng bẩy ──
 function applySweetPastelEffect() {
     const layer = document.getElementById('themeEffectLayer');
@@ -3971,19 +3971,35 @@ async function buyVocabPack(packId) {
         const words = packData.words || [];
         if (!words.length) throw new Error('File từ vựng trống');
 
-        // Import vào Firestore (merge — không ghi đè từ đã có)
-        await saveVocabToDb(words);
-
-        // Cập nhật fullLibrary local
+        // Chỉ import từ CHƯA có — bảo toàn SRS & tiến trình của từ đã học
         const existingKeys = new Set(fullLibrary.map(i => i.word.toLowerCase()));
-        const newWords = words.filter(w => !existingKeys.has(w.word.toLowerCase()));
-        fullLibrary = [...fullLibrary, ...newWords.map(w => ({
-            ...w,
-            correct_count: 0, incorrect_count: 0,
-            srs_interval: 1, srs_ease: 2.5, srs_reps: 0,
-            srs_next_review: null
-        }))];
-        _saveCache(fullLibrary);
+        const newWords     = words.filter(w => !existingKeys.has(w.word.toLowerCase()));
+        const dupWords     = words.filter(w =>  existingKeys.has(w.word.toLowerCase()));
+
+        if (newWords.length > 0) {
+            await saveVocabToDb(newWords); // chỉ ghi từ mới, không đụng từ cũ
+            fullLibrary = [...fullLibrary, ...newWords.map(w => ({
+                ...w,
+                correct_count: 0, incorrect_count: 0,
+                srs_interval: 1, srs_ease: 2.5, srs_reps: 0,
+                srs_next_review: null
+            }))];
+            _saveCache(fullLibrary);
+        }
+
+        // Topic list chứa TẤT CẢ từ của pack (kể cả trùng) để danh sách đầy đủ
+        const wordIds = words.map(w => w.word.toLowerCase());
+        const topicRef = db.collection('users').doc(currentUser.uid).collection('topicLists').doc();
+        const topicData = {
+            name: pack.name,
+            icon: pack.emoji,
+            wordIds,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        };
+        await topicRef.set(topicData);
+        topicLists.push({ id: topicRef.id, ...topicData });
+        renderTopicLists();
+        populateReviewVocabSelect();
 
         // Lưu purchasedPacks + trừ coin vào Firestore
         _purchasedPacks.add(packId);
@@ -3995,7 +4011,8 @@ async function buyVocabPack(packId) {
 
         renderVocabPacks();
         renderLibrary();
-        showToast(`🎉 Đã thêm ${words.length} từ vựng từ bộ "${pack.name}" vào thư viện!`);
+        const dupMsg = dupWords.length > 0 ? ` (${dupWords.length} từ trùng được giữ nguyên tiến trình)` : '';
+        showToast(`🎉 Thêm ${newWords.length} từ mới · Chủ đề "${pack.emoji} ${pack.name}" đã được tạo!${dupMsg}`);
         launchConfetti(2000);
     } catch(e) {
         console.error(e);
@@ -5000,7 +5017,10 @@ async function startReviewQuiz() {
             const masteredDue = fullLibrary
                 .filter(i => (i.correct_count||0) >= 10 && levels.includes(i.level) && ids.includes((i.word||'').toLowerCase()) && isDue(i))
                 .map(i=>({...i, _isMastered:true}));
-            pool = [...pool.filter(i => ids.includes((i.word||'').toLowerCase())), ...masteredDue];
+            const normalPool = pool.filter(i => ids.includes((i.word||'').toLowerCase()));
+            const normalKeys = new Set(normalPool.map(i => (i.word||'').toLowerCase()));
+            const uniqueMasteredDue = masteredDue.filter(i => !normalKeys.has((i.word||'').toLowerCase()));
+            pool = [...normalPool, ...uniqueMasteredDue];
         }
     } else {
         const masteredDue = fullLibrary
@@ -5010,6 +5030,15 @@ async function startReviewQuiz() {
     }
 
     if(pool.length<4){ showToast('⚠️ Cần tối thiểu 4 từ ở cấp đã chọn trong nguồn này!'); return; }
+
+    // Deduplicate pool (phòng trường hợp từ xuất hiện 2 lần từ các nguồn khác nhau)
+    const _seenPoolKeys = new Set();
+    pool = pool.filter(i => {
+        const k = (i.word||'').toLowerCase();
+        if (_seenPoolKeys.has(k)) return false;
+        _seenPoolKeys.add(k);
+        return true;
+    });
 
     // SRS: due words first
     const due    = shuffle(pool.filter(i=> isDue(i)));
