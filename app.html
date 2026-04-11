@@ -92,6 +92,28 @@
         .theme-active-badge{position:absolute;top:8px;right:8px;background:#f59e0b;color:#fff;font-size:.6rem;font-weight:800;padding:3px 8px;border-radius:99px;text-transform:uppercase;letter-spacing:.06em;}
         .theme-buy-btn{width:100%;margin-top:10px;padding:9px;border-radius:10px;border:none;font-family:inherit;font-weight:800;font-size:.82rem;cursor:pointer;transition:.2s;}
         .theme-buy-btn.free,.theme-buy-btn.activate{background:var(--primary);color:#fff;}
+        /* Vocab Pack Shop */
+        .vpack-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:20px;}
+        @media(max-width:600px){.vpack-grid{grid-template-columns:1fr;}}
+        .vpack-card{background:var(--card);border:1.5px solid var(--border);border-radius:18px;overflow:hidden;transition:.2s;position:relative;}
+        .vpack-card:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,.1);}
+        .vpack-card.owned{border-color:var(--success);opacity:.85;}
+        .vpack-header{padding:18px 20px 14px;display:flex;gap:14px;align-items:flex-start;}
+        .vpack-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.6rem;flex-shrink:0;}
+        .vpack-title{font-family:'Nunito',sans-serif;font-weight:800;font-size:1rem;color:var(--text);margin-bottom:4px;}
+        .vpack-meta{font-size:.75rem;color:var(--muted);font-weight:600;}
+        .vpack-desc{padding:0 20px 14px;font-size:.82rem;color:var(--muted);line-height:1.5;}
+        .vpack-tags{padding:0 20px 14px;display:flex;gap:6px;flex-wrap:wrap;}
+        .vpack-tag{font-size:.68rem;font-weight:700;padding:3px 9px;border-radius:8px;background:var(--primary-light);color:var(--primary);}
+        .vpack-footer{padding:14px 20px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;}
+        .vpack-price{font-family:'Nunito',sans-serif;font-weight:800;font-size:.95rem;color:#92400e;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:4px 10px;white-space:nowrap;}
+        .vpack-price.free{background:#d1fae5;border-color:#6ee7b7;color:#065f46;}
+        .vpack-buy-btn{flex:1;padding:9px;border-radius:10px;border:none;font-family:inherit;font-weight:800;font-size:.82rem;cursor:pointer;transition:.2s;}
+        .vpack-buy-btn.buy{background:var(--primary);color:#fff;}
+        .vpack-buy-btn.buy:hover{background:var(--primary-hover);}
+        .vpack-buy-btn.owned{background:var(--success-bg);color:var(--success);cursor:default;}
+        .vpack-buy-btn.no-coin{background:var(--bg);color:var(--muted);cursor:not-allowed;border:1px solid var(--border);}
+        .vpack-owned-badge{position:absolute;top:10px;right:10px;background:var(--success);color:#fff;font-size:.6rem;font-weight:800;padding:3px 8px;border-radius:99px;text-transform:uppercase;letter-spacing:.06em;}
         .theme-buy-btn.activate{background:linear-gradient(135deg,#f59e0b,#d97706);}
         .theme-buy-btn.current{background:var(--success-bg);color:var(--success);cursor:default;}
         .theme-buy-btn.buy{background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;}
@@ -1655,7 +1677,7 @@
         <div class="shop-header">
             <div style="position:relative;z-index:1;">
                 <div style="font-family:'Nunito',sans-serif;font-size:1.6rem;font-weight:900;margin-bottom:4px;">🛍 Cửa hàng</div>
-                <div style="font-size:.85rem;opacity:.8;margin-bottom:16px;">Dùng coin để mở khóa giao diện đặc biệt · 1 XP = 1 🪙</div>
+                <div style="font-size:.85rem;opacity:.8;margin-bottom:16px;">Dùng coin để mở khóa giao diện & bộ từ vựng · 1 XP = 1 🪙</div>
                 <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
                     <div class="shop-coin-display">
                         <span style="font-size:1.4rem;line-height:1;">🪙</span>
@@ -1664,12 +1686,19 @@
                             <div style="font-size:.65rem;opacity:.7;font-weight:700;text-transform:uppercase;letter-spacing:.06em;">Coins</div>
                         </div>
                     </div>
-                    <div style="font-size:.78rem;opacity:.65;line-height:1.5;">Coin kiếm được khi ôn tập.<br>Mua theme để trang trí giao diện!</div>
+                    <div style="font-size:.78rem;opacity:.65;line-height:1.5;">Coin kiếm được khi ôn tập.<br>Mua theme & bộ từ vựng đặc biệt!</div>
                 </div>
             </div>
         </div>
         <!-- Theme grid -->
         <div class="theme-grid" id="shopThemeGrid"></div>
+
+        <!-- Vocab Packs section -->
+        <div style="margin-top:28px;">
+            <div style="font-family:'Nunito',sans-serif;font-size:1.1rem;font-weight:900;color:var(--text);margin-bottom:4px;">📦 Bộ từ vựng</div>
+            <div style="font-size:.8rem;color:var(--muted);margin-bottom:4px;">Mua để thêm ngay vào thư viện của bạn · Từ đã có sẵn sẽ không bị ghi đè</div>
+            <div class="vpack-grid" id="shopPackGrid"></div>
+        </div>
     </div>
 
 </main>
@@ -2114,17 +2143,17 @@ let _waitingForNext = false;
 // ══════════════════════════════════════════
 // XP SYSTEM
 // ══════════════════════════════════════════
-const XP_THRESHOLDS = [0, 100, 500, 1000, 2500, 5000, 8000, 12000, 20000, 35000];
-const LEVEL_NAMES   = ['','Tập sự','Học viên','Người học','Tiến bộ','Thành thạo','Chuyên gia','Cao thủ','Bậc thầy','Huyền thoại','Siêu nhân'];
+const XP_THRESHOLDS = [0, 100, 500, 1000, 2500, 5000, 8000, 12000, 20000, 35000, 55000, 80000, 115000, 160000, 215000, 280000, 360000, 455000, 565000, 700000];
+const LEVEL_NAMES   = ['','Tập Sự','Học Viên','Người Học','Siêng Năng','Tiến Bộ','Thành Thạo','Chuyên Gia','Cao Thủ','Bậc Thầy','Huyền Thoại','Đại Sư','Thiên Tài','Vô Địch','Thần Đồng','Tiên Nhân','Thần Linh','Vũ Trụ','Huyền Bí','Bất Tử','Toàn Năng'];
 
 function lvFromXP(xp) {
     let lv = 1;
     for (let i = 1; i < XP_THRESHOLDS.length; i++) { if (xp >= XP_THRESHOLDS[i]) lv = i + 1; else break; }
-    return Math.min(lv, 10);
+    return Math.min(lv, 20);
 }
 function xpProgress(xp) {
     const lv = lvFromXP(xp);
-    if (lv >= 10) return { pct:100, remaining:0 };
+    if (lv >= 20) return { pct:100, remaining:0 };
     const base = XP_THRESHOLDS[lv-1], next = XP_THRESHOLDS[lv];
     return { pct: Math.round(((xp-base)/(next-base))*100), remaining: next-xp, nextLv: lv+1 };
 }
@@ -2159,7 +2188,7 @@ function updateXPUI(xp) {
     document.getElementById('xpNavPoints').innerText = xp + ' XP';
     document.getElementById('xpLevelName').innerText = `Lv.${lv} — ${LEVEL_NAMES[lv]}`;
     document.getElementById('xpTotal').innerText     = xp + ' XP';
-    document.getElementById('xpNextLabel').innerText = lv < 10 ? `Còn ${remaining} XP để lên cấp ${nextLv}` : '🏆 Cấp tối đa!';
+    document.getElementById('xpNextLabel').innerText = lv < 20 ? `Còn ${remaining} XP để lên cấp ${nextLv}` : '🏆 Cấp tối đa!';
     document.getElementById('xpBarInner').style.width = pct + '%';
 }
 function showXPPop(amount) {
@@ -2345,6 +2374,47 @@ const THEMES = [
 },
 ];
 
+// ══════════════════════════════════════════
+// VOCAB PACKS CATALOG
+// Thêm pack mới: tạo file JSON cùng thư mục, thêm entry vào đây
+// ══════════════════════════════════════════
+const VOCAB_PACKS = [
+    {
+        id:    'toeic_essential',
+        name:  'TOEIC Essential',
+        emoji: '📊',
+        desc:  'Bộ từ vựng thiết yếu cho kỳ thi TOEIC — business, office, travel',
+        price: 800,
+        wordCount: 20,
+        levels: ['B1','B2'],
+        color:  '#e0f2fe',
+        iconBg: '#0284c7',
+    },
+    {
+        id:    'daily_english',
+        name:  'Daily English',
+        emoji: '☀️',
+        desc:  'Tiếng Anh giao tiếp hàng ngày — tự nhiên, thực tế, dễ dùng ngay',
+        price: 600,
+        wordCount: 20,
+        levels: ['A2','B1'],
+        color:  '#fef9c3',
+        iconBg: '#ca8a04',
+    },
+];
+
+// Cache để tránh fetch vocab_packs.json nhiều lần
+let _vocabPacksCache = null;
+async function _loadVocabPacksFile() {
+    if (_vocabPacksCache) return _vocabPacksCache;
+    const res = await fetch('vocab_packs.json?v=' + Date.now());
+    if (!res.ok) throw new Error('Không tải được vocab_packs.json');
+    _vocabPacksCache = await res.json();
+    return _vocabPacksCache;
+}
+
+let _purchasedPacks = new Set();
+
 let _userCoins      = 0;
 let _purchasedThemes = new Set(['default']);
 let _activeTheme    = 'default';
@@ -2363,6 +2433,7 @@ async function loadUserShopData() {
     _userCoins       = data.coins || 0;
     _purchasedThemes = new Set(['default', ...(data.purchasedThemes || [])]);
     _activeTheme     = data.activeTheme || 'default';
+    _purchasedPacks  = new Set(data.purchasedPacks || []);
     updateCoinUI();
     applyTheme(_activeTheme);
 
@@ -3600,10 +3671,112 @@ if (!document.getElementById('sunsetCloudDriftStyle')) {
     document.head.appendChild(s);
 }
 
+// ══════════════════════════════════════════
+// VOCAB PACKS — RENDER & PURCHASE
+// ══════════════════════════════════════════
+function renderVocabPacks() {
+    const grid = document.getElementById('shopPackGrid');
+    if (!grid) return;
+    grid.innerHTML = VOCAB_PACKS.map(pack => {
+        const owned     = _purchasedPacks.has(pack.id);
+        const canAfford = _userCoins >= pack.price;
+        let btnClass, btnText;
+        if (owned)        { btnClass='owned';   btnText='✅ Đã có trong thư viện'; }
+        else if (canAfford){ btnClass='buy';    btnText=`🛒 Mua · 🪙 ${pack.price.toLocaleString('vi-VN')}`; }
+        else              { btnClass='no-coin'; btnText=`🔒 Cần 🪙 ${pack.price.toLocaleString('vi-VN')}`; }
+
+        return `<div class="vpack-card${owned?' owned':''}">
+            ${owned ? '<div class="vpack-owned-badge">Đã mua</div>' : ''}
+            <div class="vpack-header">
+                <div class="vpack-icon" style="background:${pack.iconBg};">${pack.emoji}</div>
+                <div>
+                    <div class="vpack-title">${pack.name}</div>
+                    <div class="vpack-meta">📖 ${pack.wordCount} từ vựng</div>
+                </div>
+            </div>
+            <div class="vpack-desc">${pack.desc}</div>
+            <div class="vpack-tags">${pack.levels.map(l=>`<span class="vpack-tag">${l}</span>`).join('')}</div>
+            <div class="vpack-footer">
+                ${pack.price > 0
+                    ? `<div class="vpack-price">🪙 ${pack.price.toLocaleString('vi-VN')} coins</div>`
+                    : `<div class="vpack-price free">✨ Miễn phí</div>`}
+                <button class="vpack-buy-btn ${btnClass}"
+                    onclick="buyVocabPack('${pack.id}')"
+                    ${owned || btnClass==='no-coin' ? 'disabled' : ''}>
+                    ${btnText}
+                </button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+async function buyVocabPack(packId) {
+    if (!currentUser) { showToast('⚠️ Vui lòng đăng nhập!'); return; }
+    const pack = VOCAB_PACKS.find(p => p.id === packId);
+    if (!pack) return;
+    if (_purchasedPacks.has(packId)) { showToast('📦 Bạn đã có bộ từ này rồi!'); return; }
+    if (_userCoins < pack.price) { showToast('🪙 Không đủ coin!'); return; }
+
+    const ok = confirm(`Mua bộ từ "${pack.emoji} ${pack.name}" với giá 🪙 ${pack.price.toLocaleString('vi-VN')} coins?`);
+    if (!ok) return;
+
+    // Trừ coin ngay (UI tức thì)
+    _userCoins -= pack.price;
+    _sqCoinDelta -= pack.price;
+    updateCoinUI();
+    renderVocabPacks();
+    showToast('⏳ Đang tải bộ từ vựng...');
+
+    try {
+        // Load từ vocab_packs.json (file duy nhất chứa tất cả packs)
+        const packsData = await _loadVocabPacksFile();
+        const packData  = (packsData.packs || []).find(p => p.id === packId);
+        if (!packData) throw new Error('Không tìm thấy bộ từ trong file');
+        const words = packData.words || [];
+        if (!words.length) throw new Error('File từ vựng trống');
+
+        // Import vào Firestore (merge — không ghi đè từ đã có)
+        await saveVocabToDb(words);
+
+        // Cập nhật fullLibrary local
+        const existingKeys = new Set(fullLibrary.map(i => i.word.toLowerCase()));
+        const newWords = words.filter(w => !existingKeys.has(w.word.toLowerCase()));
+        fullLibrary = [...fullLibrary, ...newWords.map(w => ({
+            ...w,
+            correct_count: 0, incorrect_count: 0,
+            srs_interval: 1, srs_ease: 2.5, srs_reps: 0,
+            srs_next_review: null
+        }))];
+        _saveCache(fullLibrary);
+
+        // Lưu purchasedPacks + trừ coin vào Firestore
+        _purchasedPacks.add(packId);
+        await db.collection('users').doc(currentUser.uid).set({
+            purchasedPacks: [..._purchasedPacks],
+            coins: firebase.firestore.FieldValue.increment(-pack.price)
+        }, { merge: true });
+        _sqCoinDelta += pack.price; // hoàn lại delta (đã ghi trực tiếp bên trên)
+
+        renderVocabPacks();
+        renderLibrary();
+        showToast(`🎉 Đã thêm ${words.length} từ vựng từ bộ "${pack.name}" vào thư viện!`);
+        launchConfetti(2000);
+    } catch(e) {
+        console.error(e);
+        // Hoàn lại coin nếu thất bại
+        _userCoins += pack.price;
+        _sqCoinDelta += pack.price;
+        updateCoinUI();
+        renderVocabPacks();
+        showToast('❌ Mua thất bại: ' + e.message);
+    }
+}
+
 function renderShop() {
     const grid = document.getElementById('shopThemeGrid');
     if (!grid) return;
     updateCoinUI();
+    renderVocabPacks();
     grid.innerHTML = THEMES.map(theme => {
         const owned    = _purchasedThemes.has(theme.id);
         const isCurrent = _activeTheme === theme.id;
