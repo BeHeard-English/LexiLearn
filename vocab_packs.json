@@ -1,0 +1,70 @@
+{
+  "packs": [
+    {
+      "id": "toeic_essential",
+      "name": "TOEIC Essential",
+      "emoji": "📊",
+      "desc": "Bộ từ vựng thiết yếu cho kỳ thi TOEIC — business, office, travel",
+      "price": 800,
+      "wordCount": 20,
+      "levels": ["B1","B2"],
+      "color": "#e0f2fe",
+      "iconBg": "#0284c7",
+      "words": [
+        {"word":"accomplish","ipa":"/əˈkʌmplɪʃ/","vn":"hoàn thành, đạt được","level":"B1","example":"She accomplished all her goals this year."},
+        {"word":"allocate","ipa":"/ˈæləkeɪt/","vn":"phân bổ, phân chia","level":"B2","example":"The manager allocated resources to each team."},
+        {"word":"amendment","ipa":"/əˈmendmənt/","vn":"sự sửa đổi, điều chỉnh","level":"B2","example":"The contract required an amendment."},
+        {"word":"analyze","ipa":"/ˈænəlaɪz/","vn":"phân tích","level":"B1","example":"We need to analyze the data carefully."},
+        {"word":"anticipate","ipa":"/ænˈtɪsɪpeɪt/","vn":"dự đoán, mong đợi","level":"B2","example":"We anticipate strong sales this quarter."},
+        {"word":"application","ipa":"/ˌæplɪˈkeɪʃən/","vn":"đơn xin việc, ứng dụng","level":"A2","example":"Please submit your application by Friday."},
+        {"word":"approve","ipa":"/əˈpruːv/","vn":"phê duyệt, chấp thuận","level":"B1","example":"The board approved the new budget."},
+        {"word":"assess","ipa":"/əˈses/","vn":"đánh giá, ước tính","level":"B2","example":"We need to assess the risks first."},
+        {"word":"assign","ipa":"/əˈsaɪn/","vn":"giao việc, phân công","level":"B1","example":"She was assigned to lead the project."},
+        {"word":"authorize","ipa":"/ˈɔːθəraɪz/","vn":"cho phép, ủy quyền","level":"B2","example":"Only managers can authorize purchases."},
+        {"word":"beneficial","ipa":"/ˌbenɪˈfɪʃəl/","vn":"có lợi, có ích","level":"B1","example":"Exercise is beneficial to your health."},
+        {"word":"budget","ipa":"/ˈbʌdʒɪt/","vn":"ngân sách","level":"A2","example":"We need to stay within the budget."},
+        {"word":"candidate","ipa":"/ˈkændɪdət/","vn":"ứng viên, ứng cử viên","level":"B1","example":"There are ten candidates for the position."},
+        {"word":"capacity","ipa":"/kəˈpæsɪti/","vn":"năng lực, công suất","level":"B2","example":"The factory is running at full capacity."},
+        {"word":"collaborate","ipa":"/kəˈlæbəreɪt/","vn":"hợp tác, cộng tác","level":"B2","example":"The two companies collaborated on the project."},
+        {"word":"commitment","ipa":"/kəˈmɪtmənt/","vn":"cam kết, sự cống hiến","level":"B1","example":"We appreciate your commitment to quality."},
+        {"word":"compensation","ipa":"/ˌkɒmpənˈseɪʃən/","vn":"bồi thường, tiền lương","level":"B2","example":"The compensation package includes bonuses."},
+        {"word":"comprehensive","ipa":"/ˌkɒmprɪˈhensɪv/","vn":"toàn diện, đầy đủ","level":"B2","example":"We need a comprehensive report."},
+        {"word":"confidential","ipa":"/ˌkɒnfɪˈdenʃəl/","vn":"bí mật, mật","level":"B1","example":"This document is strictly confidential."},
+        {"word":"confirm","ipa":"/kənˈfɜːm/","vn":"xác nhận","level":"A2","example":"Please confirm your attendance by email."}
+      ]
+    },
+    {
+      "id": "daily_english",
+      "name": "Daily English",
+      "emoji": "☀️",
+      "desc": "Tiếng Anh giao tiếp hàng ngày — tự nhiên, thực tế, dễ dùng ngay",
+      "price": 600,
+      "wordCount": 20,
+      "levels": ["A2","B1"],
+      "color": "#fef9c3",
+      "iconBg": "#ca8a04",
+      "words": [
+        {"word":"appointment","ipa":"/əˈpɔɪntmənt/","vn":"cuộc hẹn, lịch hẹn","level":"A2","example":"I have a doctor's appointment at 3pm."},
+        {"word":"bargain","ipa":"/ˈbɑːɡɪn/","vn":"món hời, mặc cả","level":"B1","example":"That jacket was a real bargain."},
+        {"word":"bother","ipa":"/ˈbɒðər/","vn":"làm phiền, lo lắng","level":"A2","example":"Sorry to bother you, do you have a minute?"},
+        {"word":"casual","ipa":"/ˈkæʒuəl/","vn":"thông thường, không trang trọng","level":"A2","example":"It's a casual dinner, no need to dress up."},
+        {"word":"catch up","ipa":"/kætʃ ʌp/","vn":"bắt kịp, nói chuyện sau thời gian dài","level":"A2","example":"Let's catch up over coffee sometime."},
+        {"word":"circumstance","ipa":"/ˈsɜːkəmstæns/","vn":"hoàn cảnh, tình huống","level":"B2","example":"Under the circumstances, we made the best decision."},
+        {"word":"convenient","ipa":"/kənˈviːniənt/","vn":"tiện lợi, thuận tiện","level":"A2","example":"Is this time convenient for you?"},
+        {"word":"cope","ipa":"/kəʊp/","vn":"đương đầu, vượt qua","level":"B1","example":"She learned to cope with stress."},
+        {"word":"crucial","ipa":"/ˈkruːʃəl/","vn":"quan trọng, thiết yếu","level":"B1","example":"Sleep is crucial for good health."},
+        {"word":"current","ipa":"/ˈkʌrənt/","vn":"hiện tại, hiện nay","level":"A1","example":"What is your current address?"},
+        {"word":"deal with","ipa":"/diːl wɪð/","vn":"giải quyết, xử lý","level":"B1","example":"How do you deal with difficult customers?"},
+        {"word":"definitely","ipa":"/ˈdefɪnətli/","vn":"chắc chắn, dứt khoát","level":"A2","example":"I will definitely be there on time."},
+        {"word":"demanding","ipa":"/dɪˈmɑːndɪŋ/","vn":"đòi hỏi nhiều, khắt khe","level":"B1","example":"Teaching is a demanding job."},
+        {"word":"disappointed","ipa":"/ˌdɪsəˈpɔɪntɪd/","vn":"thất vọng","level":"A2","example":"I was disappointed with the results."},
+        {"word":"effective","ipa":"/ɪˈfektɪv/","vn":"hiệu quả","level":"B1","example":"This is the most effective method."},
+        {"word":"embarrassed","ipa":"/ɪmˈbærəst/","vn":"xấu hổ, ngại ngùng","level":"A2","example":"I was embarrassed by my mistake."},
+        {"word":"enthusiastic","ipa":"/ɪnˌθjuːziˈæstɪk/","vn":"nhiệt tình, hăng hái","level":"B1","example":"She is enthusiastic about her new role."},
+        {"word":"familiar","ipa":"/fəˈmɪliər/","vn":"quen thuộc, thân quen","level":"A2","example":"Are you familiar with this software?"},
+        {"word":"figure out","ipa":"/ˈfɪɡər aʊt/","vn":"tìm ra, giải quyết","level":"A2","example":"I need to figure out how to fix this."},
+        {"word":"flexible","ipa":"/ˈfleksɪbəl/","vn":"linh hoạt, mềm dẻo","level":"B1","example":"Our schedule is quite flexible."}
+      ]
+    }
+  ]
+}
