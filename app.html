@@ -719,7 +719,8 @@
         .badge-item.locked .badge-icon{filter:grayscale(1) opacity(.3);}
         .badge-icon{font-size:2rem;line-height:1;}
         .badge-name{font-size:.72rem;font-weight:800;color:var(--text);}
-        .badge-item.locked .badge-name{color:var(--muted);}
+        .badge-item.unlocked .badge-name{color:#78350f !important;}
+        .badge-item.locked .badge-name{color:#94a3b8 !important;}
         .badge-desc{font-size:.65rem;color:var(--muted);line-height:1.4;}
         .badge-new{position:absolute;top:-6px;right:-6px;background:var(--danger);color:#fff;font-size:.58rem;font-weight:800;padding:2px 6px;border-radius:99px;}
 
@@ -2505,7 +2506,7 @@ async function loadUserShopData() {
     const saved = data.badges || [];
     const extra = data.badgeExtra || {};
     _unlockedBadges = new Set(saved);
-    _extraBadgeData = { perfectStreak:0, perfectSession:false, importedDocx:false, speedReview:false, ...extra };
+    _extraBadgeData = { perfectStreak:0, perfectSession:false, importedDocx:false, speedReview:false, sentenceCorrect:0, listeningCorrect:0, ...extra };
     await checkAndAwardBadges(_cachedXP);
     renderBadges();
 }
@@ -6979,10 +6980,36 @@ const BADGES = [
     { id:'speed_review', icon:'⏩', name:'Tốc độ ánh sáng',       desc:'Hoàn thành phiên 20 câu trong dưới 3 phút',         check:(_,__,ex)=>ex?.speedReview||false,
       motivation:'Tốc độ ánh sáng! Hoàn thành 20 câu trong 3 phút chứng tỏ từ vựng đã ngấm sâu vào phản xạ của bạn.',
       hint:'Chọn 20 câu trong phiên ôn và hoàn thành trong vòng 3 phút. Hãy luyện những từ đã quen để phản xạ nhanh hơn.' },
+
+    /* ── THÁCH THỨC CẤP CAO ── */
+    { id:'words_1000',    icon:'📕', name:'Bộ Từ Điển Sống',      desc:'Đạt 1000 từ trong thư viện',
+      check:(lib)=>lib.length>=1000,
+      motivation:'1000 từ! Bạn đã sở hữu một bộ từ điển thực sự. Ở cột mốc này bạn có thể đọc và nghe hầu hết nội dung tiếng Anh hàng ngày mà không bị vấp.',
+      hint:'Thêm đủ 1000 từ vào thư viện — hành trình dài nhưng mỗi từ là một viên gạch xây nên sự thành thạo.' },
+    { id:'mastered_200',  icon:'🎖️', name:'Huyền Thoại',          desc:'Thuộc hoàn toàn 200 từ',
+      check:(lib)=>lib.filter(i=>(i.correct_count||0)>=10).length>=200,
+      motivation:'200 từ thuộc lòng — bạn đã đạt đến cảnh giới huyền thoại! Đây là bằng chứng của kỷ luật sắt đá và tình yêu ngôn ngữ thực sự.',
+      hint:'Cần 200 từ được học thuộc hoàn toàn (ôn đúng 10 lần). Kiên trì ôn SRS mỗi ngày là con đường duy nhất.' },
+    { id:'xp_50000',      icon:'💥', name:'Siêu Nova',             desc:'Tích lũy 50,000 XP',
+      check:(_,xp)=>xp>=50000,
+      motivation:'50,000 XP! Bạn đã bùng nổ như một siêu tân tinh. Đây là thành tích của hàng trăm giờ học tập nghiêm túc mà rất ít người dám mơ tới.',
+      hint:'Cần 50,000 XP — hành trình của năm tháng. Đừng bỏ ngày nào và tập trung vào chế độ Viết Câu để kiếm XP cao nhất.' },
+    { id:'c2_master',     icon:'🔬', name:'Học Giả',               desc:'Sở hữu 20 từ cấp C2',
+      check:(lib)=>lib.filter(i=>i.level==='C2').length>=20,
+      motivation:'20 từ C2! Đây là từ vựng của học giả, nhà nghiên cứu và nhà văn. Bạn đang chạm đến ngôn ngữ ở mức độ tinh tế nhất.',
+      hint:'Cần 20 từ cấp C2. Hãy đọc luận văn học thuật, tiểu thuyết văn học kinh điển hoặc tạp chí khoa học để tìm từ C2.' },
+    { id:'sentence_50',   icon:'✍️', name:'Nhà Văn',               desc:'Viết 50 câu tiếng Anh xuất sắc',
+      check:(_,__,ex)=>(ex?.sentenceCorrect||0)>=50,
+      motivation:'50 câu viết xuất sắc! Bạn không chỉ học từ — bạn biết cách dùng từ. Đây là kỹ năng mà ngay cả người học lâu năm vẫn bỏ qua.',
+      hint:'Hoàn thành 50 bài tập Viết Câu đạt điểm từ 14/20 trở lên. Hãy tập trung vào ngữ cảnh và sự tự nhiên.' },
+    { id:'listening_100', icon:'🎧', name:'Thính Giác Vàng',       desc:'Trả lời đúng 100 câu Nghe Điền Từ',
+      check:(_,__,ex)=>(ex?.listeningCorrect||0)>=100,
+      motivation:'100 câu nghe đúng! Tai bạn đã được tôi luyện thành thép. Kỹ năng nghe là cánh cửa mở vào giao tiếp thực sự.',
+      hint:'Trả lời đúng 100 câu trong chế độ Nghe Điền Từ. Kiên trì luyện mỗi ngày — kỹ năng nghe cần thời gian tích lũy.' },
 ];
 
 let _unlockedBadges = new Set();
-let _extraBadgeData = { perfectStreak:0, perfectSession:false, importedDocx:false, speedReview:false };
+let _extraBadgeData = { perfectStreak:0, perfectSession:false, importedDocx:false, speedReview:false, sentenceCorrect:0, listeningCorrect:0 };
 let _currentAnswerStreak = 0;
 let _sessionStartTime = 0;
 let _sessionCorrect = 0;
@@ -8555,6 +8582,8 @@ async function checkListeningAnswer() {
         await recordWordReview(target.word, true);
         trackAnswerStreak(true);
         trackSessionResult(true);
+        _extraBadgeData.listeningCorrect = (_extraBadgeData.listeningCorrect || 0) + 1;
+        if (currentUser) db.collection('users').doc(currentUser.uid).set({ badgeExtra:{ listeningCorrect: firebase.firestore.FieldValue.increment(1) } }, {merge:true});
         currentReviewIdx++;
     } else {
         fbDiv.style.cssText = 'display:block;font-size:.8rem;font-weight:700;margin-top:5px;padding:6px 12px;border-radius:8px;background:#fee2e2;color:#991b1b;';
@@ -8831,6 +8860,10 @@ Câu học sinh: "${userSentence}"`;
         playFeedback(true);
         let xpGain = Math.floor(score);
         if (xpGain > 0) await addXP(xpGain);
+        if (isCorrect) {
+            _extraBadgeData.sentenceCorrect = (_extraBadgeData.sentenceCorrect || 0) + 1;
+            if (currentUser) db.collection('users').doc(currentUser.uid).set({ badgeExtra:{ sentenceCorrect: firebase.firestore.FieldValue.increment(1) } }, {merge:true});
+        }
     } else {
         feedbackDiv.style.cssText = 'display:block;padding:18px 22px;margin-top:20px;background:linear-gradient(135deg,#fee2e2,#fecaca);border-radius:14px;text-align:left;';
         feedbackDiv.innerHTML = `
