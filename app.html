@@ -8778,10 +8778,6 @@ Chỉ trả về câu tiếng Việt, không thêm gì khác.`;
         document.getElementById('swGenerating').style.display = 'none';
         document.getElementById('swContent').style.display = 'block';
         document.getElementById('swInput').focus();
-        // Gắn sự kiện Enter cho textarea viết câu
-const swInput = document.getElementById('swInput');
-swInput.removeEventListener('keypress', swEnterHandler); // tránh trùng lặp
-swInput.addEventListener('keypress', swEnterHandler);
     } catch (err) {
         console.error(err);
         showToast('❌ Lỗi khi tạo câu mẫu. Vui lòng thử lại!');
@@ -8793,6 +8789,12 @@ swInput.addEventListener('keypress', swEnterHandler);
 // Hàm phụ để hiển thị UI câu (tách ra để dùng chung)
 function displaySentenceUI(targetWord, viSentence) {
     document.getElementById('swVietnameseSentence').innerText = viSentence;
+    // Gắn Enter handler mỗi lần hiển thị câu mới
+    const swInput = document.getElementById('swInput');
+    if (swInput) {
+        swInput.removeEventListener('keypress', swEnterHandler);
+        swInput.addEventListener('keypress', swEnterHandler);
+    }
     document.getElementById('swTargetWord').innerHTML = `
         <span style="font-size:1.05rem;font-weight:800;">${targetWord.word}</span>
         <span style="color:var(--muted);font-weight:600;font-size:.9rem;">(${targetWord.vn})</span>
