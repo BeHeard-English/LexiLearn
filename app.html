@@ -2019,10 +2019,10 @@
             <button class="bg-filter-btn" data-f="locked" onclick="filterBadgeGallery('locked',this)">🔒 Chưa đạt</button>
         </div>
         <!-- Grid — flex:1 + overflow:hidden để không scroll -->
-        <div id="badgeGalleryGrid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;padding:12px 16px;flex:1;align-content:start;"></div>
+        <div id="badgeGalleryGrid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;padding:12px 16px;flex:1;overflow-y:auto;align-content:start;-webkit-overflow-scrolling:touch;"></div>
     </div>
 </div>
-<div id="badgeDetailModal" class="badge-modal" onclick="closeBadgeDetail()">
+<div id="badgeDetailModal" class="badge-modal" style="z-index:9100;" onclick="closeBadgeDetail()">
     <div class="badge-modal-box" onclick="event.stopPropagation()" style="max-width:360px;">
         <!-- Icon + trạng thái -->
         <div style="position:relative;display:inline-block;margin-bottom:4px;">
@@ -7265,7 +7265,7 @@ function renderBadgeGallery() {
 
     document.getElementById('badgeGalleryGrid').innerHTML = filtered.map(badge => {
         const ok = _unlockedBadges.has(badge.id);
-        return `<div class="bg-badge-item ${ok?'unlocked':'locked'}" onclick="closeBadgeGallery();openBadgeDetail('${badge.id}')">
+        return `<div class="bg-badge-item ${ok?'unlocked':'locked'}" onclick="openBadgeDetail('${badge.id}')">
             <span class="bg-icon">${badge.icon}</span>
             <div class="bg-name">${badge.name}</div>
             <div class="bg-status" style="color:${ok?'#d97706':'#94a3b8'}">${ok?'✅ Đã đạt':'🔒 Chưa đạt'}</div>
@@ -8116,7 +8116,7 @@ async function checkFillBlank() {
 
     const target    = reviewPool[currentReviewIdx];
     const userWord  = blank.dataset.filled.trim().toLowerCase();
-    const correct   = target.word.toLowerCase();
+    const correct   = (blank.dataset.correct || target.word).toLowerCase(); // dùng form thực tế trong câu
     const isCorrect = userWord === correct || smartMatch(userWord, correct);
 
     const fb = document.getElementById('fbFeedback');
@@ -8126,7 +8126,7 @@ async function checkFillBlank() {
         blank.classList.add('correct-slot');
         blank.classList.remove('empty');
         fb.style.cssText = 'display:block;padding:12px 16px;font-weight:800;font-size:.88rem;text-align:center;border-radius:12px;margin-top:16px;background:linear-gradient(135deg,#d1fae5,#a7f3d0);color:#065f46;';
-        fb.innerHTML = `✅ Chính xác! <span style="font-weight:600;font-size:.82rem;">${target.word}</span>`;
+        fb.innerHTML = `✅ Chính xác! <span style="font-weight:600;font-size:.82rem;">${correct}</span>`;
         playFeedback(true);
 
         const item = fullLibrary.find(i => i.word.toLowerCase() === target.word.toLowerCase()) || {};
@@ -8139,7 +8139,7 @@ async function checkFillBlank() {
     } else {
         blank.classList.add('wrong-slot');
         fb.style.cssText = 'display:block;padding:12px 16px;font-weight:800;font-size:.88rem;text-align:center;border-radius:12px;margin-top:16px;background:linear-gradient(135deg,#fee2e2,#fecaca);color:#991b1b;letter-spacing:.03em;';
-        fb.innerHTML = `❌ Chưa đúng!<div style="margin-top:5px;font-size:.82rem;font-weight:600;color:#7f1d1d;text-transform:none;letter-spacing:0;">Đáp án: <strong>${target.word}</strong></div>`;
+        fb.innerHTML = `❌ Chưa đúng!<div style="margin-top:5px;font-size:.82rem;font-weight:600;color:#7f1d1d;text-transform:none;letter-spacing:0;">Đáp án: <strong>${correct}</strong></div>`;
         playFeedback(false);
 
         // Highlight đáp án đúng trong wordbank
@@ -8684,14 +8684,17 @@ async function showSentenceWriting() {
     }
 
     try {
-        const prompt = `Bạn đang tạo bài tập viết câu tiếng Anh cho học sinh. Từ cần luyện: "${targetWord.word}" (nghĩa tiếng Việt: ${targetWord.vn}).
+        const prompt = `Tạo một câu tiếng Việt hoàn chỉnh, tự nhiên để làm đề bài cho bài tập viết câu tiếng Anh.
 
-Nhiệm vụ: Viết một câu tiếng Việt ngắn (10-15 từ) mô tả một tình huống/cảm xúc, để học sinh dựa vào đó viết câu tiếng Anh có chứa từ "${targetWord.word}".
+Từ tiếng Anh cần luyện: "${targetWord.word}"
+Nghĩa tiếng Việt: ${targetWord.vn}
 
-Quy tắc BẮT BUỘC:
-- Câu tiếng Việt phải hoàn toàn bằng tiếng Việt, KHÔNG được chứa bất kỳ từ/cụm tiếng Anh nào (kể cả từ "${targetWord.word}" hay bản dịch sát nghĩa của nó)
-- Mô tả ngữ cảnh/tình huống gợi ý, không dịch thẳng nghĩa của từ
-- Ngắn gọn, tự nhiên, dễ hiểu
+Yêu cầu:
+- Câu tiếng Việt phải dùng ĐÚNG nghĩa "${targetWord.vn}" một cách tự nhiên trong ngữ cảnh thực tế
+- Câu phải đủ nghĩa, hoàn chỉnh, tự nhiên như người Việt nói hàng ngày (10-15 từ)
+- Người đọc câu tiếng Việt phải biết chính xác cần dùng từ "${targetWord.word}" để dịch
+- KHÔNG chứa từ tiếng Anh nào trong câu
+- KHÔNG giải thích, KHÔNG thêm ghi chú
 
 Chỉ trả về câu tiếng Việt, không thêm gì khác.`;
 
