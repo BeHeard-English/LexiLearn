@@ -8434,9 +8434,8 @@ function updateListeningProgress() {
 
 // Hàm tạo câu ví dụ bằng AI (hoặc dùng câu mặc định)
 async function _lisGenerateSentence(target) {
-    const wordLower = target.word.toLowerCase();
-    const wordEsc = target.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const flexRe = new RegExp(`\\b${wordEsc}\\w*\\b`, 'i');
+    const wordEsc = escapeRegExp(target.word);
+    const flexRe = new RegExp('\\b' + wordEsc + '\\w*\\b', 'i');
 
     // Dùng example có sẵn chỉ khi nó thực sự chứa từ gốc (hoặc biến thể)
     if (target.example && target.example.trim().length > 8 && flexRe.test(target.example)) {
@@ -8529,8 +8528,8 @@ async function showListeningQuestion() {
     // Tạo câu ví dụ — luôn gọi lại nếu chưa có hoặc câu không khớp từ gốc
     let sentence = target._lisSentence;
     // Regex khớp từ gốc VÀ mọi biến thể chia động từ/danh từ
-    const wordEscaped = target.word.replace(/[.*+?^${}()|[\]\]/g, '\$&');
-    const flexRegex = new RegExp(`\b${wordEscaped}\w*\b`, 'gi');
+    const wordEscLis = escapeRegExp(target.word);
+    const flexRegex = new RegExp('\\b' + wordEscLis + '\\w*\\b', 'i');
     if (!sentence || !flexRegex.test(sentence)) {
         // Không có cache hợp lệ → gọi AI
         delete target._lisSentence;
@@ -8545,15 +8544,15 @@ async function showListeningQuestion() {
     _lisCurrentSentence = sentence;
 
     // Capture actual form trong câu (vd "finished" khi từ gốc là "finish")
-    const matchResult = sentence ? sentence.match(new RegExp(`\b(${wordEscaped}\w*)\b`, 'i')) : null;
+    const matchResult = sentence ? sentence.match(new RegExp('\\b(' + wordEscLis + '\\w*)\\b', 'i')) : null;
     const actualForm = matchResult ? matchResult[1] : target.word;
     _lisCurrentActualForm = actualForm; // dùng cho TTS và chấm điểm
 
     // Tạo câu hiển thị với blank — che đúng form xuất hiện trong câu
-    const blankHtml = `<span style="display:inline-block;min-width:80px;border-bottom:2.5px solid var(--primary-mid);border-radius:2px;color:transparent;user-select:none;background:rgba(3,19,131,.07);font-weight:800;">______</span>`;
+    const blankHtml = '<span style="display:inline-block;min-width:80px;border-bottom:2.5px solid var(--primary-mid);border-radius:2px;color:transparent;user-select:none;background:rgba(3,19,131,.07);font-weight:800;">______</span>';
     // Che TẤT CẢ lần xuất hiện của bất kỳ biến thể nào của từ gốc
     const displaySentence = sentence
-        ? sentence.replace(new RegExp(`\b(${wordEscaped}\w*)\b`, 'gi'), blankHtml)
+        ? sentence.replace(new RegExp('\\b(' + wordEscLis + '\\w*)\\b', 'gi'), blankHtml)
         : '';
     const sentenceDisplay = document.getElementById('lisSentenceDisplay');
     if (sentenceDisplay) sentenceDisplay.innerHTML = displaySentence || '<em style="color:var(--muted)">Đang tải câu...</em>';
