@@ -1645,33 +1645,35 @@
                     </button>
                 </div>
             </div>
-            <!-- Game 3: Slasher -->
+
+            <!-- Game 3: Word Slasher -->
             <div class="game-card">
-                <div class="game-card-thumb" style="background:linear-gradient(135deg,#2c0f0a 0%,#7a2e1a 50%,#2c0f0a 100%);">
+                <div class="game-card-thumb" style="background:linear-gradient(135deg,#1c0a00 0%,#7c1d0a 50%,#1c0a00 100%);">
                     <div class="game-card-thumb-fallback">
-                        <div style="font-size:4.5rem;filter:drop-shadow(0 0 20px rgba(255,100,50,.7));">⚔️</div>
-                        <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:.9rem;color:#ff9f7c;letter-spacing:.12em;text-transform:uppercase;">Slasher</div>
+                        <div style="font-size:4.5rem;filter:drop-shadow(0 0 24px rgba(239,68,68,.8));">⚔️</div>
+                        <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:.9rem;color:#fca5a5;letter-spacing:.12em;text-transform:uppercase;">Word Slasher</div>
                         <div style="display:flex;gap:6px;margin-top:4px;">
-                            <span style="width:6px;height:6px;border-radius:50%;background:#ff9f7c;opacity:.6;animation:pulseDot 1.2s infinite;"></span>
-                            <span style="width:6px;height:6px;border-radius:50%;background:#ff9f7c;opacity:.6;animation:pulseDot 1.2s .2s infinite;"></span>
-                            <span style="width:6px;height:6px;border-radius:50%;background:#ff9f7c;opacity:.6;animation:pulseDot 1.2s .4s infinite;"></span>
+                            <span style="width:6px;height:6px;border-radius:50%;background:#ef4444;opacity:.7;animation:pulseDot 1.2s infinite;"></span>
+                            <span style="width:6px;height:6px;border-radius:50%;background:#ef4444;opacity:.7;animation:pulseDot 1.2s .2s infinite;"></span>
+                            <span style="width:6px;height:6px;border-radius:50%;background:#ef4444;opacity:.7;animation:pulseDot 1.2s .4s infinite;"></span>
                         </div>
                     </div>
                 </div>
                 <div class="game-card-body">
-                    <div class="game-card-title">⚔️ Slasher</div>
-                    <div class="game-card-desc">Chém chính xác vào từ vựng đúng trước khi thời gian kết thúc! Dùng cảm ứng tay hoặc theo dõi chuyển động mặt&tay qua camera. Tốc độ nhanh, rèn luyện phản xạ và ghi nhớ từ tức thì.</div>
+                    <div class="game-card-title">⚔️ Word Slasher</div>
+                    <div class="game-card-desc">Chém bong bóng chứa đáp án đúng trước khi chúng bay mất! Hỗ trợ 1-2 người chơi, điều khiển bằng cảm ứng hoặc nhận diện khuôn mặt & tay qua camera. Phù hợp luyện từ vựng theo phản xạ nhanh.</div>
                     <div class="game-card-meta">
                         <span class="game-tag">⚔️ Hành động</span>
-                        <span class="game-tag">👤 1-2 người</span>
-                        <span class="game-tag">⚡ Phản xạ</span>
+                        <span class="game-tag">👥 1-2 người</span>
+                        <span class="game-tag">📷 Face Tracking</span>
                     </div>
-                    <button class="game-play-btn" onclick="openGame('https://beheard-english.github.io/Slasher/','⚔️ Slasher')">
+                    <button class="game-play-btn" style="background:linear-gradient(135deg,#b91c1c,#ef4444);" onclick="openGame('https://beheard-english.github.io/Slasher/','⚔️ Word Slasher')">
                         <svg xmlns="http://www.w3.org/2000/svg" style="width:18px;height:18px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         Chơi ngay
                     </button>
                 </div>
             </div>
+
         </div>
 
         <!-- Instruction card -->
@@ -8432,17 +8434,22 @@ function updateListeningProgress() {
 
 // Hàm tạo câu ví dụ bằng AI (hoặc dùng câu mặc định)
 async function _lisGenerateSentence(target) {
-    // Nếu từ đã có câu ví dụ hợp lệ thì dùng luôn
-    if (target.example && target.example.trim().length > 5 && target.example.toLowerCase().includes(target.word.toLowerCase())) {
+    const wordLower = target.word.toLowerCase();
+    const wordEsc = target.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const flexRe = new RegExp(`\\b${wordEsc}\\w*\\b`, 'i');
+
+    // Dùng example có sẵn chỉ khi nó thực sự chứa từ gốc (hoặc biến thể)
+    if (target.example && target.example.trim().length > 8 && flexRe.test(target.example)) {
         return target.example.trim();
     }
+
     const key = document.getElementById('apiKey')?.value.trim() || document.getElementById('apiKeyMobile')?.value.trim();
-    if (!key) {
-        return `This is a ${target.word} example.`;
-    }
-    // Kiểm tra cache trước
+    if (!key) return `She ${target.word}s every day.`;
+
+    // Kiểm tra cache — chỉ dùng nếu cache thực sự chứa từ
     const _lisCached = _getCachedSentence(target.word);
-    if (_lisCached) return _lisCached;
+    if (_lisCached && flexRe.test(_lisCached)) return _lisCached;
+
     try {
         const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method: 'POST',
@@ -8450,19 +8457,26 @@ async function _lisGenerateSentence(target) {
             body: JSON.stringify({
                 model: 'llama-3.3-70b-versatile',
                 messages: [{
+                    role: 'system',
+                    content: 'You are a language teacher creating fill-in-the-blank exercises. Return ONLY the sentence, no quotes, no explanation.'
+                }, {
                     role: 'user',
-                    content: `Write ONE natural English sentence using the word "${target.word}" (level ${target.level || 'B1'}). The sentence must contain the EXACT word "${target.word}". Return ONLY the sentence, no quotes, no explanation.`
+                    content: `Write ONE short, natural English sentence (max 12 words) that uses the word "${target.word}" or one of its common inflected forms (e.g. ${target.word}s, ${target.word}ed, ${target.word}ing). The sentence MUST visibly contain the word or its inflection. Do NOT use synonyms or related words — only "${target.word}" or its direct forms.`
                 }],
-                temperature: 0.7,
-                max_tokens: 80
+                temperature: 0.5,
+                max_tokens: 60
             })
         });
         const data = await res.json();
-        const sentence = data.choices?.[0]?.message?.content?.trim() || `She ${target.word} every day.`;
-        _cacheSentence(target.word, sentence); // lưu cache
-        return sentence;
+        const sentence = (data.choices?.[0]?.message?.content?.trim() || '').replace(/^["']|["']$/g, '');
+        if (sentence && flexRe.test(sentence)) {
+            _cacheSentence(target.word, sentence);
+            return sentence;
+        }
+        // AI trả câu không chứa từ → fallback từ example hoặc chuỗi đơn giản
+        return target.example?.trim() || `She ${target.word}s every day.`;
     } catch(e) {
-        return target.example?.trim() || `She ${target.word} every day.`;
+        return target.example?.trim() || `She ${target.word}s every day.`;
     }
 }
 
@@ -8512,20 +8526,37 @@ async function showListeningQuestion() {
     const nextBtn = document.getElementById('lisNextBtn');
     if (nextBtn) nextBtn.style.display = 'none';
 
-    // Tạo câu ví dụ (nếu chưa có)
+    // Tạo câu ví dụ — luôn gọi lại nếu chưa có hoặc câu không khớp từ gốc
     let sentence = target._lisSentence;
-    if (!sentence) {
+    // Regex khớp từ gốc VÀ mọi biến thể chia động từ/danh từ
+    const wordEscaped = target.word.replace(/[.*+?^${}()|[\]\]/g, '\$&');
+    const flexRegex = new RegExp(`\b${wordEscaped}\w*\b`, 'gi');
+    if (!sentence || !flexRegex.test(sentence)) {
+        // Không có cache hợp lệ → gọi AI
+        delete target._lisSentence;
         sentence = await _lisGenerateSentence(target);
+        // Nếu AI vẫn không trả về câu chứa từ gốc, thử lại 1 lần
+        if (sentence && !flexRegex.test(sentence)) {
+            delete target._lisSentence;
+            sentence = await _lisGenerateSentence(target);
+        }
         target._lisSentence = sentence;
     }
     _lisCurrentSentence = sentence;
 
-    // Tạo câu hiển thị với blank
-    const blankHtml = `<span class="fb-blank empty" style="display:inline-block; min-width:100px; border-bottom:2px solid var(--primary-mid); color:var(--primary); font-weight:800; text-align:center;">__________</span>`;
-    const regex = new RegExp(`\\b(${target.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})\\b`, 'gi');
-    const displaySentence = sentence.replace(regex, blankHtml);
+    // Capture actual form trong câu (vd "finished" khi từ gốc là "finish")
+    const matchResult = sentence ? sentence.match(new RegExp(`\b(${wordEscaped}\w*)\b`, 'i')) : null;
+    const actualForm = matchResult ? matchResult[1] : target.word;
+    _lisCurrentActualForm = actualForm; // dùng cho TTS và chấm điểm
+
+    // Tạo câu hiển thị với blank — che đúng form xuất hiện trong câu
+    const blankHtml = `<span style="display:inline-block;min-width:80px;border-bottom:2.5px solid var(--primary-mid);border-radius:2px;color:transparent;user-select:none;background:rgba(3,19,131,.07);font-weight:800;">______</span>`;
+    // Che TẤT CẢ lần xuất hiện của bất kỳ biến thể nào của từ gốc
+    const displaySentence = sentence
+        ? sentence.replace(new RegExp(`\b(${wordEscaped}\w*)\b`, 'gi'), blankHtml)
+        : '';
     const sentenceDisplay = document.getElementById('lisSentenceDisplay');
-    if (sentenceDisplay) sentenceDisplay.innerHTML = displaySentence;
+    if (sentenceDisplay) sentenceDisplay.innerHTML = displaySentence || '<em style="color:var(--muted)">Đang tải câu...</em>';
 
     if (genDiv) genDiv.style.display = 'none';
     if (contentDiv) contentDiv.style.display = 'block';
