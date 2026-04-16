@@ -92,6 +92,38 @@
         .theme-active-badge{position:absolute;top:8px;right:8px;background:#f59e0b;color:#fff;font-size:.6rem;font-weight:800;padding:3px 8px;border-radius:99px;text-transform:uppercase;letter-spacing:.06em;}
         .theme-buy-btn{width:100%;margin-top:10px;padding:9px;border-radius:10px;border:none;font-family:inherit;font-weight:800;font-size:.82rem;cursor:pointer;transition:.2s;}
         .theme-buy-btn.free,.theme-buy-btn.activate{background:var(--primary);color:#fff;}
+
+        /* ── STREAK FREEZE & PET SHOP ── */
+        .item-shop-section{margin-top:28px;}
+        .item-shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-top:14px;}
+        @media(max-width:500px){.item-shop-grid{grid-template-columns:1fr 1fr;}}
+        .item-card{background:var(--card);border:1.5px solid var(--border);border-radius:16px;padding:16px 14px;display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;transition:.2s;position:relative;}
+        .item-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.1);}
+        .item-icon-big{font-size:2.6rem;line-height:1;}
+        .item-name{font-family:'Nunito',sans-serif;font-weight:800;font-size:.88rem;color:var(--text);}
+        .item-desc{font-size:.73rem;color:var(--muted);line-height:1.5;}
+        .item-price{display:inline-flex;align-items:center;gap:4px;font-size:.78rem;font-weight:800;color:#92400e;background:#fef3c7;border:1px solid #fde68a;border-radius:8px;padding:3px 9px;}
+        .item-qty-badge{position:absolute;top:8px;right:8px;background:var(--primary);color:#fff;font-size:.65rem;font-weight:800;padding:2px 7px;border-radius:99px;}
+        .item-buy-btn{width:100%;padding:8px;border-radius:10px;border:none;font-family:inherit;font-weight:800;font-size:.8rem;cursor:pointer;transition:.2s;background:linear-gradient(135deg,var(--primary),var(--primary-mid));color:#fff;}
+        .item-buy-btn:hover{filter:brightness(1.1);}
+        .item-buy-btn.no-coin{background:#f1f5f9;color:#94a3b8;cursor:not-allowed;}
+
+        /* ── PET HOUSE MODAL ── */
+        .pet-modal{display:none;position:fixed;inset:0;z-index:9200;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);align-items:center;justify-content:center;}
+        .pet-modal.open{display:flex;}
+        .pet-modal-box{background:var(--card);border-radius:24px;width:92%;max-width:440px;max-height:88vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.3);animation:badgeModalPop .4s cubic-bezier(.4,0,.2,1) both;}
+        .pet-house-bg{background:linear-gradient(135deg,#fef3c7,#fde68a,#fbbf24);border-radius:20px 20px 0 0;padding:28px 24px 20px;text-align:center;position:relative;overflow:hidden;}
+        .pet-house-bg::before{content:'🌿';position:absolute;bottom:-4px;left:8px;font-size:2rem;opacity:.4;}
+        .pet-house-bg::after{content:'🌸';position:absolute;top:8px;right:12px;font-size:1.6rem;opacity:.4;}
+        .pet-chibi{font-size:5rem;display:block;animation:petBounce 2s ease-in-out infinite;cursor:pointer;user-select:none;}
+        @keyframes petBounce{0%,100%{transform:translateY(0) scale(1);}50%{transform:translateY(-10px) scale(1.05);}}
+        .pet-chibi.happy{animation:petHappy .6s ease both;}
+        @keyframes petHappy{0%{transform:scale(1);}25%{transform:scale(1.3) rotate(-10deg);}50%{transform:scale(1.2) rotate(10deg);}75%{transform:scale(1.25) rotate(-5deg);}100%{transform:scale(1);animation:petBounce 2s ease-in-out infinite;}}
+        .pet-stat-bar{height:10px;border-radius:99px;background:#e2e8f0;overflow:hidden;flex:1;}
+        .pet-stat-fill{height:100%;border-radius:99px;transition:width .5s ease;}
+        .pet-egg-wrap{font-size:4rem;display:flex;align-items:center;justify-content:center;cursor:pointer;animation:eggWiggle 1.5s ease-in-out infinite;}
+        @keyframes eggWiggle{0%,100%{transform:rotate(0);}20%{transform:rotate(-8deg);}40%{transform:rotate(8deg);}60%{transform:rotate(-5deg);}80%{transform:rotate(5deg);}}
+
         /* Vocab Pack Shop */
         .vpack-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;margin-top:20px;}
         @media(max-width:600px){.vpack-grid{grid-template-columns:1fr;}}
@@ -707,6 +739,7 @@
         .streak-dot{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;transition:.15s;}
         .streak-dot.studied{background:#059669;color:#fff;box-shadow:0 2px 8px rgba(5,150,105,.35);}
         .streak-dot.missed{background:#e2e8f0;color:#94a3b8;}
+        .streak-dot.frozen{background:linear-gradient(135deg,#dbeafe,#bfdbfe);color:#1d4ed8;box-shadow:0 2px 8px rgba(59,130,246,.3);}
         .streak-dot.future{background:transparent;color:#cbd5e1;border:1.5px dashed #e2e8f0;}
         .streak-dot.empty{background:transparent;pointer-events:none;}
         .streak-dot.today-ring{box-shadow:0 0 0 2.5px var(--primary),0 2px 8px rgba(5,150,105,.35);}
@@ -1722,6 +1755,20 @@
         <!-- Theme grid -->
         <div class="theme-grid" id="shopThemeGrid"></div>
 
+        <!-- Vật phẩm đặc biệt -->
+        <div class="item-shop-section">
+            <div style="font-family:'Nunito',sans-serif;font-size:1.1rem;font-weight:900;color:var(--text);margin-bottom:4px;">🛡️ Vật phẩm đặc biệt</div>
+            <div style="font-size:.8rem;color:var(--muted);margin-bottom:4px;">Bảo vệ streak, nuôi thú cưng và nhiều hơn nữa!</div>
+            <div class="item-shop-grid" id="shopItemGrid"></div>
+        </div>
+
+        <!-- Pet House button -->
+        <div id="petHouseBannerWrap" style="display:none;margin-top:16px;">
+            <button onclick="openPetHouse()" style="width:100%;padding:14px;border-radius:14px;border:none;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-family:'Be Vietnam Pro',sans-serif;font-weight:800;font-size:.95rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:.2s;" onmouseover="this.style.filter='brightness(1.08)'" onmouseout="this.style.filter=''">
+                <span id="petHouseBtnIcon">🐣</span> Mở Pet House
+            </button>
+        </div>
+
         <!-- Vocab Packs section -->
         <div style="margin-top:28px;">
             <div style="font-family:'Nunito',sans-serif;font-size:1.1rem;font-weight:900;color:var(--text);margin-bottom:4px;">📦 Bộ từ vựng</div>
@@ -1731,6 +1778,27 @@
     </div>
 
 </main>
+
+<!-- ══ PET HOUSE MODAL ══ -->
+<div id="petHouseModal" class="pet-modal" onclick="if(event.target===this)closePetHouse()">
+  <div class="pet-modal-box" onclick="event.stopPropagation()">
+    <!-- Header: back to shop or close -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);">
+      <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:1rem;color:var(--text);">🏠 Pet House</div>
+      <button onclick="closePetHouse()" style="background:var(--primary-light);border:none;border-radius:10px;padding:6px 12px;font-size:.78rem;font-weight:700;color:var(--primary);cursor:pointer;">✕ Đóng</button>
+    </div>
+
+    <!-- Pet area -->
+    <div id="petHouseBody" style="padding:0 0 20px;"></div>
+  </div>
+</div>
+
+<!-- Hatch animation overlay -->
+<div id="hatchOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.7);align-items:center;justify-content:center;flex-direction:column;gap:16px;" onclick="document.getElementById('hatchOverlay').style.display='none'">
+  <div id="hatchEggAnim" style="font-size:6rem;animation:eggWiggle 0.5s ease-in-out infinite;">🥚</div>
+  <div id="hatchMsg" style="font-family:'Nunito',sans-serif;font-weight:900;font-size:1.4rem;color:#fff;text-align:center;padding:0 24px;"></div>
+  <div style="font-size:.8rem;color:rgba(255,255,255,.6);">Chạm để đóng</div>
+</div>
 
 <!-- MOBILE BOTTOM NAV -->
 <div id="mobileBottomNav" class="mobile-bottom-nav hidden">
@@ -2510,6 +2578,11 @@ let _purchasedPacks = new Set();
 
 let _userCoins      = 0;
 let _purchasedThemes = new Set(['default']);
+let _streakFreezes  = 0;   // shields owned
+let _streakFrozenDays = []; // ['YYYY-MM-DD', ...] protected days
+let _petEggs        = 0;   // unhatched eggs
+let _petData        = null; // { type,emoji,name,level,hunger,happiness,lastFed(ms),hatchDate(ms) }
+let _petFood        = { apple:0, fish:0, carrot:0, grain:0 };
 let _activeTheme    = 'default';
 
 async function loadUserShopData() {
@@ -2527,6 +2600,11 @@ async function loadUserShopData() {
     _purchasedThemes = new Set(['default', ...(data.purchasedThemes || [])]);
     _activeTheme     = data.activeTheme || 'default';
     _purchasedPacks  = new Set(data.purchasedPacks || []);
+    _streakFreezes   = data.streakFreezes  || 0;
+    _streakFrozenDays = data.streakFrozenDays || [];
+    _petEggs         = data.petEggs || 0;
+    _petData         = data.pet    || null;
+    _petFood         = { apple:0, fish:0, carrot:0, grain:0, ...(data.petFood||{}) };
     updateCoinUI();
     applyTheme(_activeTheme);
 
@@ -4059,6 +4137,7 @@ function renderShop() {
     if (!grid) return;
     updateCoinUI();
     renderVocabPacks();
+    renderItemShop();
     grid.innerHTML = THEMES.map(theme => {
         const owned    = _purchasedThemes.has(theme.id);
         const isCurrent = _activeTheme === theme.id;
@@ -6781,6 +6860,7 @@ async function fetchAllStreakData() {
             if ((d.data().reviewed || 0) > 0) _streakStudiedSet.add(d.id);
         });
         _streakDataLoaded = true;
+        maybeAutoApplyStreakFreeze();
     } catch(e) { console.error('Streak fetch error', e); }
 }
 
@@ -6809,23 +6889,26 @@ async function changeStreakMonth(dir) {
 
 function calcCurrentStreak() {
     const today = new Date();
+    const todayKey2 = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+    // Tạo effective set = studied + frozen days
+    const effective = new Set([..._streakStudiedSet, ...(_streakFrozenDays||[])]);
+    // Nếu hôm nay chưa học, tính streak từ hôm qua
+    if (!effective.has(todayKey2)) {
+        let streak = 0;
+        for (let i = 1; i <= 400; i++) {
+            const d = new Date(today); d.setDate(d.getDate() - i);
+            const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            if (effective.has(key)) streak++;
+            else break;
+        }
+        return streak;
+    }
     let streak = 0;
     for (let i = 0; i <= 400; i++) {
         const d = new Date(today); d.setDate(d.getDate() - i);
         const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-        if (_streakStudiedSet.has(key)) { streak++; }
-        else if (i > 0) break; // hôm nay chưa học thì vẫn tính streak từ hôm qua
-    }
-    // Nếu hôm nay chưa học, tính streak từ hôm qua
-    const todayKey2 = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
-    if (!_streakStudiedSet.has(todayKey2)) {
-        streak = 0;
-        for (let i = 1; i <= 400; i++) {
-            const d = new Date(today); d.setDate(d.getDate() - i);
-            const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-            if (_streakStudiedSet.has(key)) streak++;
-            else break;
-        }
+        if (effective.has(key)) streak++;
+        else break;
     }
     return streak;
 }
@@ -6884,13 +6967,16 @@ function renderStreakCalendar() {
         const isFuture  = key > todayStr;
         const isStudied = _streakStudiedSet.has(key);
 
+        const isFrozen  = !isStudied && !isFuture && (_streakFrozenDays||[]).includes(key);
         let dotClass = 'streak-dot ';
         if (isFuture)       dotClass += 'future';
         else if (isStudied) dotClass += 'studied' + (isToday ? ' today-ring' : '');
+        else if (isFrozen)  dotClass += 'frozen';
         else                dotClass += 'missed'  + (isToday ? ' today-ring' : '');
+        const dotLabel = isFrozen ? '🛡' : d;
 
         cells.push(`<div class="streak-day">
-            <div class="${dotClass}" title="${key}">${d}</div>
+            <div class="${dotClass}" title="${key}">${dotLabel}</div>
         </div>`);
     }
 
@@ -7044,6 +7130,291 @@ let _sessionCorrect = 0;
 let _sessionTotal = 0;
 let _sessionXpEarned = 0;
 let _sessionWrongWords = [];
+
+
+// ══════════════════════════════════════════
+// ITEM SHOP + STREAK FREEZE + PET SYSTEM
+// ══════════════════════════════════════════
+
+const SHOP_ITEMS = [
+    { id:'shield',  icon:'🛡️', name:'Khiên Streak',   desc:'Bảo vệ streak 1 ngày nếu bỏ lỡ hôm đó', price:2000, unit:'khiên' },
+    { id:'egg',     icon:'🥚', name:'Trứng bí ẩn',    desc:'Ấp ra thú cưng chibi ngẫu nhiên! Mỗi trứng một bất ngờ', price:3000, unit:'trứng' },
+    { id:'apple',   icon:'🍎', name:'Táo',             desc:'Thức ăn cơ bản cho thú cưng. +10 no bụng', price:300, unit:'quả' },
+    { id:'fish',    icon:'🐟', name:'Cá tươi',         desc:'Thức ăn yêu thích! +20 no bụng & +10 vui vẻ', price:600, unit:'con' },
+    { id:'carrot',  icon:'🥕', name:'Cà rốt',          desc:'Tốt cho sức khỏe. +15 no bụng & +5 vui vẻ', price:400, unit:'củ' },
+    { id:'grain',   icon:'🌾', name:'Hạt tổng hợp',   desc:'Kinh tế nhất! +8 no bụng', price:200, unit:'gói' },
+];
+
+const PET_TYPES = [
+    { type:'cat',    emoji:'🐱', name:'Mèo chibi',  favFood:'fish' },
+    { type:'dog',    emoji:'🐶', name:'Chó chibi',  favFood:'carrot' },
+    { type:'rabbit', emoji:'🐰', name:'Thỏ chibi',  favFood:'carrot' },
+    { type:'bird',   emoji:'🐤', name:'Chim chibi', favFood:'grain' },
+    { type:'hamster',emoji:'🐹', name:'Chuột túi',  favFood:'grain' },
+    { type:'fox',    emoji:'🦊', name:'Cáo chibi',  favFood:'apple' },
+];
+
+function renderItemShop() {
+    const grid = document.getElementById('shopItemGrid');
+    if (!grid) return;
+
+    grid.innerHTML = SHOP_ITEMS.map(item => {
+        const canAfford = _userCoins >= item.price;
+        let qty = '';
+        if (item.id === 'shield') qty = _streakFreezes;
+        else if (item.id === 'egg') qty = _petEggs;
+        else qty = (_petFood[item.id] || 0);
+
+        return `<div class="item-card">
+            ${qty > 0 ? `<div class="item-qty-badge">x${qty}</div>` : ''}
+            <div class="item-icon-big">${item.icon}</div>
+            <div class="item-name">${item.name}</div>
+            <div class="item-desc">${item.desc}</div>
+            <div class="item-price">🪙 ${item.price.toLocaleString('vi-VN')}</div>
+            <button class="item-buy-btn ${canAfford?'':'no-coin'}"
+                onclick="buyShopItem('${item.id}')"
+                ${canAfford?'':' disabled'}>
+                ${canAfford ? '🛒 Mua' : '🪙 Không đủ coin'}
+            </button>
+        </div>`;
+    }).join('');
+
+    // Show/hide Pet House button
+    const wrap = document.getElementById('petHouseBannerWrap');
+    if (wrap) {
+        const hasPet = _petData || _petEggs > 0;
+        wrap.style.display = hasPet ? 'block' : 'none';
+        const btnIcon = document.getElementById('petHouseBtnIcon');
+        if (btnIcon) btnIcon.textContent = _petData ? (_petData.emoji || '🐣') : '🥚';
+    }
+}
+
+async function buyShopItem(itemId) {
+    const item = SHOP_ITEMS.find(i => i.id === itemId);
+    if (!item || _userCoins < item.price) { showToast('🪙 Không đủ coin!'); return; }
+
+    _userCoins -= item.price;
+    updateCoinUI();
+
+    if (itemId === 'shield')    _streakFreezes++;
+    else if (itemId === 'egg')  _petEggs++;
+    else                        _petFood[itemId] = (_petFood[itemId]||0) + 1;
+
+    showToast(`✅ Đã mua ${item.icon} ${item.name}!`);
+    await _savePetAndFreeze();
+    renderItemShop();
+}
+
+async function _savePetAndFreeze() {
+    if (!currentUser) return;
+    await db.collection('users').doc(currentUser.uid).set({
+        coins: _userCoins,
+        streakFreezes: _streakFreezes,
+        streakFrozenDays: _streakFrozenDays,
+        petEggs: _petEggs,
+        pet: _petData,
+        petFood: _petFood,
+    }, { merge: true });
+}
+
+// ─── Auto-apply streak freeze when a day is missed ───────────
+function maybeAutoApplyStreakFreeze() {
+    if (_streakFreezes <= 0 || !currentUser) return;
+    const today = new Date();
+    const yd = new Date(today); yd.setDate(yd.getDate()-1);
+    const ydKey = `${yd.getFullYear()}-${String(yd.getMonth()+1).padStart(2,'0')}-${String(yd.getDate()).padStart(2,'0')}`;
+    const todayKey = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+    // Yesterday was missed AND today we're active AND yesterday not already frozen
+    if (!_streakStudiedSet.has(ydKey) && !_streakFrozenDays.includes(ydKey)) {
+        // Only if streak before yesterday > 0
+        const ydBefore = new Date(yd); ydBefore.setDate(ydBefore.getDate()-1);
+        const dbKey = `${ydBefore.getFullYear()}-${String(ydBefore.getMonth()+1).padStart(2,'0')}-${String(ydBefore.getDate()).padStart(2,'0')}`;
+        if (_streakStudiedSet.has(dbKey) || _streakFrozenDays.includes(dbKey)) {
+            _streakFreezes--;
+            _streakFrozenDays.push(ydKey);
+            _savePetAndFreeze();
+            showToast('🛡️ Khiên Streak đã tự động bảo vệ chuỗi của bạn!');
+        }
+    }
+}
+
+// ─── PET HOUSE ───────────────────────────────────────────────
+function openPetHouse() {
+    renderPetHouseBody();
+    document.getElementById('petHouseModal').classList.add('open');
+}
+function closePetHouse() {
+    document.getElementById('petHouseModal').classList.remove('open');
+}
+
+function renderPetHouseBody() {
+    const body = document.getElementById('petHouseBody');
+    if (!body) return;
+
+    if (_petData) {
+        // ── Show live pet ──
+        const now = Date.now();
+        const hoursSinceFed = _petData.lastFed ? (now - _petData.lastFed) / 3600000 : 24;
+        // Decay hunger over time (lose 5 per hour, min 0)
+        let hunger = Math.max(0, Math.min(100, (_petData.hunger||50) - Math.floor(hoursSinceFed * 5)));
+        let happiness = Math.max(0, Math.min(100, (_petData.happiness||80)));
+        const level = _petData.level || 1;
+        const favFood = PET_TYPES.find(p=>p.type===_petData.type)?.favFood || 'apple';
+
+        const hungerColor = hunger > 60 ? '#10b981' : hunger > 30 ? '#f59e0b' : '#ef4444';
+        const happyColor  = happiness > 60 ? '#6366f1' : happiness > 30 ? '#f59e0b' : '#ef4444';
+        const petMood = hunger < 20 ? '😿' : happiness < 30 ? '😔' : happiness > 80 ? '😻' : '😊';
+
+        const foodItems = Object.entries(_petFood).filter(([k,v])=>v>0);
+
+        body.innerHTML = `
+          <div class="pet-house-bg">
+            <div style="position:relative;z-index:1;">
+              <div style="font-size:2.8rem;line-height:1;margin-bottom:4px;">${_petData.emoji}${petMood}</div>
+              <div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:1.1rem;color:#92400e;">${_petData.name}</div>
+              <div style="font-size:.72rem;color:#92400e;opacity:.7;">Cấp ${level} · ${_petData.typeName || 'Thú cưng'}</div>
+            </div>
+          </div>
+          <div style="padding:18px 20px;display:flex;flex-direction:column;gap:14px;">
+            <!-- Stats -->
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span style="font-size:.8rem;font-weight:700;width:60px;color:var(--text);">🍽️ No bụng</span>
+                <div class="pet-stat-bar"><div class="pet-stat-fill" style="width:${hunger}%;background:${hungerColor};"></div></div>
+                <span style="font-size:.75rem;font-weight:700;color:${hungerColor};width:30px;">${hunger}%</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span style="font-size:.8rem;font-weight:700;width:60px;color:var(--text);">😊 Vui vẻ</span>
+                <div class="pet-stat-bar"><div class="pet-stat-fill" style="width:${happiness}%;background:${happyColor};"></div></div>
+                <span style="font-size:.75rem;font-weight:700;color:${happyColor};width:30px;">${happiness}%</span>
+              </div>
+            </div>
+            <!-- Pet chibi clickable -->
+            <div style="text-align:center;">
+              <div class="pet-chibi" id="petChibi" onclick="petPat()" title="Vỗ về thú cưng">${_petData.emoji}</div>
+              <div style="font-size:.72rem;color:var(--muted);margin-top:4px;">Chạm để vỗ về 💕</div>
+            </div>
+            <!-- Feed buttons -->
+            <div>
+              <div style="font-weight:800;font-size:.82rem;color:var(--text);margin-bottom:8px;">🍱 Cho ăn</div>
+              ${foodItems.length ? `<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
+                ${foodItems.map(([foodId, qty]) => {
+                    const fi = SHOP_ITEMS.find(i=>i.id===foodId);
+                    const isFav = foodId === favFood;
+                    return `<button onclick="feedPet('${foodId}')"
+                        style="padding:9px 10px;border-radius:10px;border:${isFav?'2px solid #f59e0b':'1.5px solid var(--border)'};background:${isFav?'#fef3c7':'var(--card)'};cursor:pointer;font-size:.8rem;font-weight:700;color:var(--text);transition:.15s;"
+                        onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform=''">
+                        ${fi?.icon||'🍱'} ${fi?.name||foodId} <span style="color:var(--muted);font-weight:600;">(x${qty})</span>
+                        ${isFav?'<span style="color:#f59e0b;font-size:.65rem;"> ⭐Fav</span>':''}
+                    </button>`;
+                }).join('')}
+              </div>` : `<div style="font-size:.8rem;color:var(--muted);padding:10px;text-align:center;background:var(--primary-light);border-radius:10px;">Hết thức ăn rồi! 🛒 Mua thêm trong shop.</div>`}
+            </div>
+          </div>`;
+    } else if (_petEggs > 0) {
+        // ── Show eggs to hatch ──
+        body.innerHTML = `
+          <div class="pet-house-bg" style="background:linear-gradient(135deg,#f0fdf4,#d1fae5,#a7f3d0);">
+            <div style="font-size:.9rem;font-weight:800;color:#065f46;margin-bottom:8px;">🥚 Trứng chưa ấp (x${_petEggs})</div>
+            <div class="pet-egg-wrap" onclick="hatchEgg()" title="Ấp trứng!">🥚</div>
+            <div style="font-size:.75rem;color:#065f46;margin-top:8px;">Nhấn vào trứng để ấp!</div>
+          </div>
+          <div style="padding:18px 20px;">
+            <div style="font-size:.83rem;color:var(--muted);text-align:center;line-height:1.6;">
+              Bên trong có thể là 🐱 mèo, 🐶 chó, 🐰 thỏ, 🐤 chim, 🐹 chuột túi hoặc 🦊 cáo!<br>
+              <em>Mỗi trứng một bất ngờ khác nhau.</em>
+            </div>
+          </div>`;
+    } else {
+        body.innerHTML = `
+          <div style="padding:32px 20px;text-align:center;">
+            <div style="font-size:3rem;margin-bottom:12px;">🥚</div>
+            <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:1rem;color:var(--text);margin-bottom:8px;">Chưa có thú cưng nào!</div>
+            <div style="font-size:.82rem;color:var(--muted);line-height:1.6;margin-bottom:16px;">Mua trứng bí ẩn trong shop rồi quay lại đây để ấp nhé 🐣</div>
+            <button onclick="closePetHouse();switchTab('shop')" style="padding:10px 20px;border-radius:10px;border:none;background:var(--primary);color:#fff;font-weight:800;font-size:.85rem;cursor:pointer;">🛒 Đến Shop</button>
+          </div>`;
+    }
+}
+
+async function hatchEgg() {
+    if (_petEggs <= 0) return;
+    _petEggs--;
+
+    const overlay = document.getElementById('hatchOverlay');
+    const eggAnim = document.getElementById('hatchEggAnim');
+    const msg     = document.getElementById('hatchMsg');
+    overlay.style.display = 'flex';
+    eggAnim.textContent = '🥚';
+    msg.textContent = 'Đang ấp trứng...';
+
+    // Wiggle → crack → reveal
+    await new Promise(r => setTimeout(r, 1000));
+    eggAnim.textContent = '💥';
+    await new Promise(r => setTimeout(r, 600));
+
+    const pet = PET_TYPES[Math.floor(Math.random() * PET_TYPES.length)];
+    _petData = {
+        type: pet.type,
+        emoji: pet.emoji,
+        typeName: pet.name,
+        name: pet.name,
+        level: 1,
+        hunger: 60,
+        happiness: 80,
+        lastFed: Date.now(),
+        hatchDate: Date.now(),
+    };
+
+    eggAnim.textContent = pet.emoji;
+    msg.innerHTML = `✨ Bạn có <strong>${pet.name}</strong> ${pet.emoji}!<br><span style="font-size:.85rem;opacity:.8;">Nhấn để tiếp tục</span>`;
+
+    await _savePetAndFreeze();
+    renderItemShop();
+    // On dismiss
+    overlay.onclick = () => {
+        overlay.style.display = 'none';
+        renderPetHouseBody();
+    };
+}
+
+async function feedPet(foodId) {
+    if (!_petData || (_petFood[foodId]||0) <= 0) return;
+    _petFood[foodId]--;
+
+    const effects = { apple:{hunger:10,happy:2}, fish:{hunger:20,happy:10}, carrot:{hunger:15,happy:5}, grain:{hunger:8,happy:1} };
+    const fx = effects[foodId] || {hunger:8,happy:1};
+    const favFood = PET_TYPES.find(p=>p.type===_petData.type)?.favFood;
+    const bonus = foodId === favFood ? 1.5 : 1;
+
+    _petData.hunger    = Math.min(100, (_petData.hunger||50)    + Math.round(fx.hunger * bonus));
+    _petData.happiness = Math.min(100, (_petData.happiness||50) + Math.round(fx.happy  * bonus));
+    _petData.lastFed   = Date.now();
+
+    // Level up every 10 feedings tracked via happiness milestones
+    if (_petData.happiness >= 100 && (_petData.level||1) < 10) {
+        _petData.level = (_petData.level||1) + 1;
+        _petData.happiness = 70;
+        showToast(`🎉 ${_petData.name} lên cấp ${_petData.level}!`);
+    }
+
+    const fi = SHOP_ITEMS.find(i=>i.id===foodId);
+    showToast(`${fi?.icon||'🍱'} ${_petData.name} thích lắm! +${Math.round(fx.hunger*bonus)} no bụng`);
+    await _savePetAndFreeze();
+    renderPetHouseBody();
+}
+
+function petPat() {
+    if (!_petData) return;
+    const chibi = document.getElementById('petChibi');
+    if (chibi) { chibi.classList.remove('happy'); void chibi.offsetWidth; chibi.classList.add('happy'); }
+    _petData.happiness = Math.min(100, (_petData.happiness||50) + 3);
+    showToast(`💕 ${_petData.name} vui vẻ hơn rồi!`);
+    _savePetAndFreeze();
+}
+
+// ── Call auto-freeze check after streak data loaded ───
+const _origFetchAllStreakData = fetchAllStreakData;
+// Wrap after load
 
 // ── SESSION WRITE QUEUE ─────────────────────────────────────
 // Tích lũy tất cả writes trong session, flush 1 batch khi kết thúc
