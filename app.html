@@ -2580,8 +2580,10 @@ let _userCoins      = 0;
 let _purchasedThemes = new Set(['default']);
 let _streakFreezes  = 0;   // shields owned
 let _streakFrozenDays = []; // ['YYYY-MM-DD', ...] protected days
-let _petEggs        = 0;   // unhatched eggs
-let _petData        = null; // { type,emoji,name,level,hunger,happiness,lastFed(ms),hatchDate(ms) }
+let _petEggs        = 0;          // unhatched eggs
+let _petData        = null;       // DEPRECATED — kept for migration only
+let _pets           = [];         // array of pet objects (multi-pet collection)
+let _activePetIdx   = 0;          // index into _pets of the "on display" pet
 let _petFood        = { apple:0, fish:0, carrot:0, grain:0 };
 let _activeTheme    = 'default';
 
@@ -2603,8 +2605,17 @@ async function loadUserShopData() {
     _streakFreezes   = data.streakFreezes  || 0;
     _streakFrozenDays = data.streakFrozenDays || [];
     _petEggs         = data.petEggs || 0;
-    _petData         = data.pet    || null;
+    _petData         = data.pet    || null; // legacy
     _petFood         = { apple:0, fish:0, carrot:0, grain:0, ...(data.petFood||{}) };
+    // Multi-pet: migrate legacy single pet if needed
+    if (data.pets && Array.isArray(data.pets)) {
+        _pets = data.pets;
+    } else if (_petData) {
+        _pets = [_petData]; // migrate old single pet
+    } else {
+        _pets = [];
+    }
+    _activePetIdx = Math.min(data.activePetIdx || 0, Math.max(0, _pets.length - 1));
     updateCoinUI();
     applyTheme(_activeTheme);
 
@@ -7182,10 +7193,11 @@ function renderItemShop() {
     // Show/hide Pet House button
     const wrap = document.getElementById('petHouseBannerWrap');
     if (wrap) {
-        const hasPet = _petData || _petEggs > 0;
+        const hasPet = _pets.length > 0 || _petEggs > 0;
         wrap.style.display = hasPet ? 'block' : 'none';
         const btnIcon = document.getElementById('petHouseBtnIcon');
-        if (btnIcon) btnIcon.textContent = _petData ? (_petData.emoji || '🐣') : '🥚';
+        const activePetForBtn = _pets[_activePetIdx];
+        if (btnIcon) btnIcon.textContent = activePetForBtn ? activePetForBtn.emoji : '🥚';
     }
 }
 
@@ -7212,7 +7224,8 @@ async function _savePetAndFreeze() {
         streakFreezes: _streakFreezes,
         streakFrozenDays: _streakFrozenDays,
         petEggs: _petEggs,
-        pet: _petData,
+        pets: _pets,
+        activePetIdx: _activePetIdx,
         petFood: _petFood,
     }, { merge: true });
 }
@@ -7251,32 +7264,47 @@ function renderPetHouseBody() {
     const body = document.getElementById('petHouseBody');
     if (!body) return;
 
-    if (_petData) {
-        // ── Show live pet ──
-        const now = Date.now();
-        const hoursSinceFed = _petData.lastFed ? (now - _petData.lastFed) / 3600000 : 24;
-        // Decay hunger over time (lose 5 per hour, min 0)
-        let hunger = Math.max(0, Math.min(100, (_petData.hunger||50) - Math.floor(hoursSinceFed * 5)));
-        let happiness = Math.max(0, Math.min(100, (_petData.happiness||80)));
-        const level = _petData.level || 1;
-        const favFood = PET_TYPES.find(p=>p.type===_petData.type)?.favFood || 'apple';
+    const activePet = _pets[_activePetIdx] || null;
 
+    // ── Collection row ──
+    let collectionHtml = '';
+    if (_pets.length > 1) {
+        collectionHtml = `<div style="padding:12px 18px 0;border-bottom:1px solid var(--border);">
+            <div style="font-size:.75rem;font-weight:800;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;">🐾 Bộ sưu tập (${_pets.length})</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                ${_pets.map((p,i) => {
+                    const isActive = i === _activePetIdx;
+                    return `<button onclick="setActivePet(${i})"
+                        style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 12px;border-radius:12px;border:${isActive?'2.5px solid var(--primary)':'1.5px solid var(--border)'};background:${isActive?'var(--primary-light)':'var(--card)'};cursor:pointer;min-width:54px;transition:.15s;">
+                        <span style="font-size:1.8rem;">${p.emoji}</span>
+                        <span style="font-size:.6rem;font-weight:700;color:${isActive?'var(--primary)':'var(--muted)'};white-space:nowrap;">Lv.${p.level||1}</span>
+                    </button>`;
+                }).join('')}
+            </div>
+        </div>`;
+    }
+
+    if (activePet) {
+        const now = Date.now();
+        const hoursSinceFed = activePet.lastFed ? (now - activePet.lastFed) / 3600000 : 24;
+        let hunger = Math.max(0, Math.min(100, (activePet.hunger||50) - Math.floor(hoursSinceFed * 5)));
+        let happiness = Math.max(0, Math.min(100, activePet.happiness||80));
+        const level = activePet.level || 1;
+        const favFood = PET_TYPES.find(p=>p.type===activePet.type)?.favFood || 'apple';
         const hungerColor = hunger > 60 ? '#10b981' : hunger > 30 ? '#f59e0b' : '#ef4444';
         const happyColor  = happiness > 60 ? '#6366f1' : happiness > 30 ? '#f59e0b' : '#ef4444';
         const petMood = hunger < 20 ? '😿' : happiness < 30 ? '😔' : happiness > 80 ? '😻' : '😊';
-
         const foodItems = Object.entries(_petFood).filter(([k,v])=>v>0);
 
-        body.innerHTML = `
+        body.innerHTML = collectionHtml + `
           <div class="pet-house-bg">
             <div style="position:relative;z-index:1;">
-              <div style="font-size:2.8rem;line-height:1;margin-bottom:4px;">${_petData.emoji}${petMood}</div>
-              <div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:1.1rem;color:#92400e;">${_petData.name}</div>
-              <div style="font-size:.72rem;color:#92400e;opacity:.7;">Cấp ${level} · ${_petData.typeName || 'Thú cưng'}</div>
+              <div style="font-size:2.8rem;line-height:1;margin-bottom:4px;">${activePet.emoji}${petMood}</div>
+              <div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:1.1rem;color:#92400e;">${activePet.name}</div>
+              <div style="font-size:.72rem;color:#92400e;opacity:.7;">Cấp ${level} · ${activePet.typeName||'Thú cưng'}</div>
             </div>
           </div>
           <div style="padding:18px 20px;display:flex;flex-direction:column;gap:14px;">
-            <!-- Stats -->
             <div style="display:flex;flex-direction:column;gap:8px;">
               <div style="display:flex;align-items:center;gap:10px;">
                 <span style="font-size:.8rem;font-weight:700;width:60px;color:var(--text);">🍽️ No bụng</span>
@@ -7289,18 +7317,16 @@ function renderPetHouseBody() {
                 <span style="font-size:.75rem;font-weight:700;color:${happyColor};width:30px;">${happiness}%</span>
               </div>
             </div>
-            <!-- Pet chibi clickable -->
             <div style="text-align:center;">
-              <div class="pet-chibi" id="petChibi" onclick="petPat()" title="Vỗ về thú cưng">${_petData.emoji}</div>
+              <div class="pet-chibi" id="petChibi" onclick="petPat()" title="Vỗ về thú cưng">${activePet.emoji}</div>
               <div style="font-size:.72rem;color:var(--muted);margin-top:4px;">Chạm để vỗ về 💕</div>
             </div>
-            <!-- Feed buttons -->
             <div>
               <div style="font-weight:800;font-size:.82rem;color:var(--text);margin-bottom:8px;">🍱 Cho ăn</div>
               ${foodItems.length ? `<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
-                ${foodItems.map(([foodId, qty]) => {
-                    const fi = SHOP_ITEMS.find(i=>i.id===foodId);
-                    const isFav = foodId === favFood;
+                ${foodItems.map(([foodId,qty])=>{
+                    const fi=SHOP_ITEMS.find(i=>i.id===foodId);
+                    const isFav=foodId===favFood;
                     return `<button onclick="feedPet('${foodId}')"
                         style="padding:9px 10px;border-radius:10px;border:${isFav?'2px solid #f59e0b':'1.5px solid var(--border)'};background:${isFav?'#fef3c7':'var(--card)'};cursor:pointer;font-size:.8rem;font-weight:700;color:var(--text);transition:.15s;"
                         onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform=''">
@@ -7310,10 +7336,14 @@ function renderPetHouseBody() {
                 }).join('')}
               </div>` : `<div style="font-size:.8rem;color:var(--muted);padding:10px;text-align:center;background:var(--primary-light);border-radius:10px;">Hết thức ăn rồi! 🛒 Mua thêm trong shop.</div>`}
             </div>
+            ${_petEggs > 0 ? `<div style="margin-top:4px;padding:10px 12px;background:linear-gradient(135deg,#f0fdf4,#d1fae5);border-radius:10px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+              <span style="font-size:.8rem;font-weight:700;color:#065f46;">🥚 Còn ${_petEggs} trứng chưa ấp</span>
+              <button onclick="hatchEgg()" style="padding:6px 14px;border-radius:8px;border:none;background:#059669;color:#fff;font-weight:800;font-size:.78rem;cursor:pointer;">Ấp ngay!</button>
+            </div>` : ''}
           </div>`;
+
     } else if (_petEggs > 0) {
-        // ── Show eggs to hatch ──
-        body.innerHTML = `
+        body.innerHTML = collectionHtml + `
           <div class="pet-house-bg" style="background:linear-gradient(135deg,#f0fdf4,#d1fae5,#a7f3d0);">
             <div style="font-size:.9rem;font-weight:800;color:#065f46;margin-bottom:8px;">🥚 Trứng chưa ấp (x${_petEggs})</div>
             <div class="pet-egg-wrap" onclick="hatchEgg()" title="Ấp trứng!">🥚</div>
@@ -7336,6 +7366,12 @@ function renderPetHouseBody() {
     }
 }
 
+function setActivePet(idx) {
+    _activePetIdx = idx;
+    renderPetHouseBody();
+}
+
+
 async function hatchEgg() {
     if (_petEggs <= 0) return;
     _petEggs--;
@@ -7353,7 +7389,7 @@ async function hatchEgg() {
     await new Promise(r => setTimeout(r, 600));
 
     const pet = PET_TYPES[Math.floor(Math.random() * PET_TYPES.length)];
-    _petData = {
+    const newPet = {
         type: pet.type,
         emoji: pet.emoji,
         typeName: pet.name,
@@ -7363,10 +7399,14 @@ async function hatchEgg() {
         happiness: 80,
         lastFed: Date.now(),
         hatchDate: Date.now(),
+        id: Date.now(),
     };
+    _pets.push(newPet);
+    _activePetIdx = _pets.length - 1; // focus the newly hatched pet
 
     eggAnim.textContent = pet.emoji;
-    msg.innerHTML = `✨ Bạn có <strong>${pet.name}</strong> ${pet.emoji}!<br><span style="font-size:.85rem;opacity:.8;">Nhấn để tiếp tục</span>`;
+    const isFirst = _pets.length === 1;
+    msg.innerHTML = `✨ Bạn có <strong>${pet.name}</strong> ${pet.emoji}!${!isFirst ? `<br><span style="font-size:.78rem;opacity:.75;">Thú cưng thứ ${_pets.length} đang chờ bạn 🏠</span>` : ''}<br><span style="font-size:.85rem;opacity:.8;">Nhấn để tiếp tục</span>`;
 
     await _savePetAndFreeze();
     renderItemShop();
@@ -7378,37 +7418,38 @@ async function hatchEgg() {
 }
 
 async function feedPet(foodId) {
-    if (!_petData || (_petFood[foodId]||0) <= 0) return;
+    const pet = _pets[_activePetIdx];
+    if (!pet || (_petFood[foodId]||0) <= 0) return;
     _petFood[foodId]--;
 
     const effects = { apple:{hunger:10,happy:2}, fish:{hunger:20,happy:10}, carrot:{hunger:15,happy:5}, grain:{hunger:8,happy:1} };
     const fx = effects[foodId] || {hunger:8,happy:1};
-    const favFood = PET_TYPES.find(p=>p.type===_petData.type)?.favFood;
+    const favFood = PET_TYPES.find(p=>p.type===pet.type)?.favFood;
     const bonus = foodId === favFood ? 1.5 : 1;
 
-    _petData.hunger    = Math.min(100, (_petData.hunger||50)    + Math.round(fx.hunger * bonus));
-    _petData.happiness = Math.min(100, (_petData.happiness||50) + Math.round(fx.happy  * bonus));
-    _petData.lastFed   = Date.now();
+    pet.hunger    = Math.min(100, (pet.hunger||50)    + Math.round(fx.hunger * bonus));
+    pet.happiness = Math.min(100, (pet.happiness||50) + Math.round(fx.happy  * bonus));
+    pet.lastFed   = Date.now();
 
-    // Level up every 10 feedings tracked via happiness milestones
-    if (_petData.happiness >= 100 && (_petData.level||1) < 10) {
-        _petData.level = (_petData.level||1) + 1;
-        _petData.happiness = 70;
-        showToast(`🎉 ${_petData.name} lên cấp ${_petData.level}!`);
+    if (pet.happiness >= 100 && (pet.level||1) < 10) {
+        pet.level = (pet.level||1) + 1;
+        pet.happiness = 70;
+        showToast(`🎉 ${pet.name} lên cấp ${pet.level}!`);
     }
 
     const fi = SHOP_ITEMS.find(i=>i.id===foodId);
-    showToast(`${fi?.icon||'🍱'} ${_petData.name} thích lắm! +${Math.round(fx.hunger*bonus)} no bụng`);
+    showToast(`${fi?.icon||'🍱'} ${pet.name} thích lắm! +${Math.round(fx.hunger*bonus)} no bụng`);
     await _savePetAndFreeze();
     renderPetHouseBody();
 }
 
 function petPat() {
-    if (!_petData) return;
+    const pet = _pets[_activePetIdx];
+    if (!pet) return;
     const chibi = document.getElementById('petChibi');
     if (chibi) { chibi.classList.remove('happy'); void chibi.offsetWidth; chibi.classList.add('happy'); }
-    _petData.happiness = Math.min(100, (_petData.happiness||50) + 3);
-    showToast(`💕 ${_petData.name} vui vẻ hơn rồi!`);
+    pet.happiness = Math.min(100, (pet.happiness||50) + 3);
+    showToast(`💕 ${pet.name} vui vẻ hơn rồi!`);
     _savePetAndFreeze();
 }
 
