@@ -115,7 +115,12 @@
         .pet-house-bg{background:linear-gradient(135deg,#fef3c7,#fde68a,#fbbf24);border-radius:20px 20px 0 0;padding:28px 24px 20px;text-align:center;position:relative;overflow:hidden;}
         .pet-house-bg::before{content:'🌿';position:absolute;bottom:-4px;left:8px;font-size:2rem;opacity:.4;}
         .pet-house-bg::after{content:'🌸';position:absolute;top:8px;right:12px;font-size:1.6rem;opacity:.4;}
-        .pet-chibi{width:160px;height:160px;display:block;margin:0 auto;animation:petBounce 2s ease-in-out infinite;cursor:pointer;user-select:none;object-fit:contain;object-position:center;image-rendering:auto;}
+        .pet-chibi{width:160px;height:160px;display:block;margin:0 auto;animation:petBounce 2s ease-in-out infinite;cursor:pointer;user-select:none;object-fit:contain;object-position:center;image-rendering:auto;border-radius:50%;box-shadow:0 0 0 3px rgba(255,255,255,.7),0 0 18px 4px rgba(251,191,36,.55),0 0 36px 8px rgba(251,191,36,.25);transition:box-shadow .4s ease;}
+        .pet-chibi.happy{animation:petHappy .6s ease both;}
+        .pet-chibi.mood-happy{box-shadow:0 0 0 3px rgba(255,255,255,.8),0 0 20px 6px rgba(99,102,241,.5),0 0 40px 12px rgba(99,102,241,.25);}
+        .pet-chibi.mood-content{box-shadow:0 0 0 3px rgba(255,255,255,.7),0 0 18px 4px rgba(16,185,129,.5),0 0 36px 8px rgba(16,185,129,.22);}
+        .pet-chibi.mood-sad{box-shadow:0 0 0 3px rgba(255,255,255,.5),0 0 14px 4px rgba(148,163,184,.4),0 0 28px 6px rgba(148,163,184,.18);}
+        .pet-chibi.mood-hungry{box-shadow:0 0 0 3px rgba(255,255,255,.5),0 0 16px 5px rgba(239,68,68,.5),0 0 32px 8px rgba(239,68,68,.22);}
         @keyframes petBounce{0%,100%{transform:translateY(0) scale(1);}50%{transform:translateY(-10px) scale(1.05);}}
         .pet-chibi.happy{animation:petHappy .6s ease both;}
         @keyframes petHappy{0%{transform:scale(1);}25%{transform:scale(1.3) rotate(-10deg);}50%{transform:scale(1.2) rotate(10deg);}75%{transform:scale(1.25) rotate(-5deg);}100%{transform:scale(1);animation:petBounce 2s ease-in-out infinite;}}
@@ -7349,19 +7354,19 @@ function renderPetHouseBody() {
             <div style="display:flex;flex-direction:column;gap:8px;">
               <div style="display:flex;align-items:center;gap:10px;">
                 <span style="font-size:.8rem;font-weight:700;width:60px;color:var(--text);">🍽️ No bụng</span>
-                <div class="pet-stat-bar"><div class="pet-stat-fill" style="width:${hunger}%;background:${hungerColor};"></div></div>
-                <span style="font-size:.75rem;font-weight:700;color:${hungerColor};width:30px;">${hunger}%</span>
+                <div class="pet-stat-bar"><div class="pet-stat-fill" style="width:${Math.round(hunger)}%;background:${hungerColor};"></div></div>
+                <span style="font-size:.75rem;font-weight:700;color:${hungerColor};width:30px;">${Math.round(hunger)}%</span>
               </div>
               <div style="display:flex;align-items:center;gap:10px;">
                 <span style="font-size:.8rem;font-weight:700;width:60px;color:var(--text);">😊 Vui vẻ</span>
-                <div class="pet-stat-bar"><div class="pet-stat-fill" style="width:${happiness}%;background:${happyColor};"></div></div>
-                <span style="font-size:.75rem;font-weight:700;color:${happyColor};width:30px;">${happiness}%</span>
+                <div class="pet-stat-bar"><div class="pet-stat-fill" style="width:${Math.round(happiness)}%;background:${happyColor};"></div></div>
+                <span style="font-size:.75rem;font-weight:700;color:${happyColor};width:30px;">${Math.round(happiness)}%</span>
               </div>
             </div>
             <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;">
               <img src="pets/${activePet.type}_${getPetMood(hunger,happiness)}.png"
                   alt="${activePet.name}" id="petChibi"
-                  class="pet-chibi" onclick="petPat()" title="Vỗ về thú cưng 💕"
+                  class="pet-chibi mood-${getPetMood(hunger,happiness)}" onclick="petPat()" title="Vỗ về thú cưng 💕"
                   style="opacity:0;transition:opacity .3s;"
                   onload="this.style.opacity='1'"
                   onerror="this.onerror=null;this.style.display='none';document.getElementById('petChibiFallback').style.display='block'">
@@ -7491,7 +7496,10 @@ async function feedPet(foodId) {
     // Refresh chibi image for new mood
     const chibiEl = document.getElementById('petChibi');
     const newMoodFeed = getPetMood(pet.hunger, pet.happiness);
-    if (chibiEl && chibiEl.tagName === 'IMG') chibiEl.src = `pets/${pet.type}_${newMoodFeed}.png`;
+    if (chibiEl && chibiEl.tagName === 'IMG') {
+        chibiEl.src = `pets/${pet.type}_${newMoodFeed}.png`;
+        chibiEl.className = `pet-chibi mood-${newMoodFeed}`;
+    }
     await _savePetAndFreeze();
     renderPetHouseBody();
 }
@@ -7504,7 +7512,8 @@ function petPat() {
     const newMood = getPetMood(pet.hunger||50, pet.happiness);
     if (chibi && chibi.tagName === 'IMG') {
         chibi.src = `pets/${pet.type}_${newMood}.png`;
-        chibi.classList.remove('happy'); void chibi.offsetWidth; chibi.classList.add('happy');
+        chibi.className = `pet-chibi mood-${newMood}`;
+        void chibi.offsetWidth; chibi.classList.add('happy');
     } else if (chibi) {
         chibi.classList.remove('happy'); void chibi.offsetWidth; chibi.classList.add('happy');
     }
