@@ -115,7 +115,7 @@
         .pet-house-bg{background:linear-gradient(135deg,#fef3c7,#fde68a,#fbbf24);border-radius:20px 20px 0 0;padding:28px 24px 20px;text-align:center;position:relative;overflow:hidden;}
         .pet-house-bg::before{content:'🌿';position:absolute;bottom:-4px;left:8px;font-size:2rem;opacity:.4;}
         .pet-house-bg::after{content:'🌸';position:absolute;top:8px;right:12px;font-size:1.6rem;opacity:.4;}
-        .pet-chibi{font-size:5rem;display:block;animation:petBounce 2s ease-in-out infinite;cursor:pointer;user-select:none;}
+        .pet-chibi{width:140px;height:140px;display:block;animation:petBounce 2s ease-in-out infinite;cursor:pointer;user-select:none;object-fit:contain;image-rendering:pixelated;}
         @keyframes petBounce{0%,100%{transform:translateY(0) scale(1);}50%{transform:translateY(-10px) scale(1.05);}}
         .pet-chibi.happy{animation:petHappy .6s ease both;}
         @keyframes petHappy{0%{transform:scale(1);}25%{transform:scale(1.3) rotate(-10deg);}50%{transform:scale(1.2) rotate(10deg);}75%{transform:scale(1.25) rotate(-5deg);}100%{transform:scale(1);animation:petBounce 2s ease-in-out infinite;}}
@@ -7147,13 +7147,33 @@ let _sessionWrongWords = [];
 // ITEM SHOP + STREAK FREEZE + PET SYSTEM
 // ══════════════════════════════════════════
 
+// ── Pet image helpers ──────────────────────────────────────
+function getPetMood(hunger, happiness) {
+    if (hunger <= 20) return 'hungry';
+    if (hunger > 60 && happiness > 60) return 'happy';
+    if (hunger > 30 && happiness > 30) return 'content';
+    return 'sad';
+}
+
+function petImgHtml(petObj, mood, cssClass, extraStyle) {
+    if (!petObj) return '';
+    const src = `pets/${petObj.type}_${mood}.png`;
+    const fallback = petObj.emoji || '🐾';
+    const cls = cssClass || 'pet-chibi';
+    const sty = extraStyle || '';
+    return `<img src="${src}" alt="${petObj.name}" class="${cls}" style="${sty}"
+        onerror="this.onerror=null;this.style.fontSize='5rem';this.style.width='auto';this.style.height='auto';this.src='';this.textContent='${fallback}';"
+        onload="this.style.opacity='1'"
+        style="opacity:0;transition:opacity .3s;${sty}">`;
+}
+
 const SHOP_ITEMS = [
-    { id:'shield',  icon:'🛡️', name:'Khiên Streak',   desc:'Bảo vệ streak 1 ngày nếu bỏ lỡ hôm đó', price:2000, unit:'khiên' },
-    { id:'egg',     icon:'🥚', name:'Trứng bí ẩn',    desc:'Ấp ra thú cưng chibi ngẫu nhiên! Mỗi trứng một bất ngờ', price:3000, unit:'trứng' },
-    { id:'apple',   icon:'🍎', name:'Táo',             desc:'Thức ăn cơ bản cho thú cưng. +10 no bụng', price:300, unit:'quả' },
-    { id:'fish',    icon:'🐟', name:'Cá tươi',         desc:'Thức ăn yêu thích! +20 no bụng & +10 vui vẻ', price:600, unit:'con' },
-    { id:'carrot',  icon:'🥕', name:'Cà rốt',          desc:'Tốt cho sức khỏe. +15 no bụng & +5 vui vẻ', price:400, unit:'củ' },
-    { id:'grain',   icon:'🌾', name:'Hạt tổng hợp',   desc:'Kinh tế nhất! +8 no bụng', price:200, unit:'gói' },
+    { id:'shield',  icon:'🛡️', name:'Khiên Streak',   desc:'Bảo vệ streak 1 ngày nếu bỏ lỡ hôm đó', price:1000, unit:'khiên' },
+    { id:'egg',     icon:'🥚', name:'Trứng bí ẩn',    desc:'Ấp ra thú cưng chibi ngẫu nhiên! Mỗi trứng một bất ngờ', price:2000, unit:'trứng' },
+    { id:'apple',   icon:'🍎', name:'Táo',             desc:'Thức ăn cơ bản cho thú cưng. +10 no bụng', price:150, unit:'quả' },
+    { id:'fish',    icon:'🐟', name:'Cá tươi',         desc:'Thức ăn yêu thích! +20 no bụng & +10 vui vẻ', price:300, unit:'con' },
+    { id:'carrot',  icon:'🥕', name:'Cà rốt',          desc:'Tốt cho sức khỏe. +15 no bụng & +5 vui vẻ', price:200, unit:'củ' },
+    { id:'grain',   icon:'🌾', name:'Hạt tổng hợp',   desc:'Kinh tế nhất! +8 no bụng', price:100, unit:'gói' },
 ];
 
 const PET_TYPES = [
@@ -7195,9 +7215,16 @@ function renderItemShop() {
     if (wrap) {
         const hasPet = _pets.length > 0 || _petEggs > 0;
         wrap.style.display = hasPet ? 'block' : 'none';
-        const btnIcon = document.getElementById('petHouseBtnIcon');
+        const petHouseBtn = document.getElementById('petHouseBannerWrap');
         const activePetForBtn = _pets[_activePetIdx];
-        if (btnIcon) btnIcon.textContent = activePetForBtn ? activePetForBtn.emoji : '🥚';
+        const btnIcon = document.getElementById('petHouseBtnIcon');
+        if (btnIcon) {
+            if (activePetForBtn) {
+                btnIcon.innerHTML = `<img src="pets/${activePetForBtn.type}_content.png" alt="${activePetForBtn.name}" style="width:22px;height:22px;object-fit:contain;vertical-align:middle;image-rendering:pixelated;" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'"><span style="display:none">${activePetForBtn.emoji}</span>`;
+            } else {
+                btnIcon.textContent = '🥚';
+            }
+        }
     }
 }
 
@@ -7276,7 +7303,10 @@ function renderPetHouseBody() {
                     const isActive = i === _activePetIdx;
                     return `<button onclick="setActivePet(${i})"
                         style="display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 12px;border-radius:12px;border:${isActive?'2.5px solid var(--primary)':'1.5px solid var(--border)'};background:${isActive?'var(--primary-light)':'var(--card)'};cursor:pointer;min-width:54px;transition:.15s;">
-                        <span style="font-size:1.8rem;">${p.emoji}</span>
+                        <img src="pets/${p.type}_content.png" alt="${p.name}"
+                            style="width:36px;height:36px;object-fit:contain;image-rendering:pixelated;"
+                            onerror="this.style.display='none';this.nextElementSibling.style.display='inline'">
+                        <span style="font-size:1.8rem;display:none;">${p.emoji}</span>
                         <span style="font-size:.6rem;font-weight:700;color:${isActive?'var(--primary)':'var(--muted)'};white-space:nowrap;">Lv.${p.level||1}</span>
                     </button>`;
                 }).join('')}
@@ -7299,8 +7329,16 @@ function renderPetHouseBody() {
         body.innerHTML = collectionHtml + `
           <div class="pet-house-bg">
             <div style="position:relative;z-index:1;">
-              <div style="font-size:2.8rem;line-height:1;margin-bottom:4px;">${activePet.emoji}${petMood}</div>
-              <div style="font-family:'Nunito',sans-serif;font-weight:900;font-size:1.1rem;color:#92400e;">${activePet.name}</div>
+              <div style="margin-bottom:4px;">
+                <img src="pets/${activePet.type}_${getPetMood(hunger,happiness)}.png" alt="${activePet.name}"
+                    style="width:56px;height:56px;object-fit:contain;image-rendering:pixelated;opacity:0;transition:opacity .3s;"
+                    onload="this.style.opacity='1'"
+                    onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+                <span style="font-size:2.8rem;display:none;">${activePet.emoji}${petMood}</span>
+              </div>
+              <div id="petNameDisplay" style="font-family:'Nunito',sans-serif;font-weight:900;font-size:1.1rem;color:#92400e;cursor:pointer;display:inline-flex;align-items:center;gap:5px;" onclick="startRenamePet()" title="Đổi tên">
+                ${activePet.name} <span style="font-size:.75rem;opacity:.6;">✏️</span>
+              </div>
               <div style="font-size:.72rem;color:#92400e;opacity:.7;">Cấp ${level} · ${activePet.typeName||'Thú cưng'}</div>
             </div>
           </div>
@@ -7318,7 +7356,13 @@ function renderPetHouseBody() {
               </div>
             </div>
             <div style="text-align:center;">
-              <div class="pet-chibi" id="petChibi" onclick="petPat()" title="Vỗ về thú cưng">${activePet.emoji}</div>
+              <img src="pets/${activePet.type}_${getPetMood(hunger,happiness)}.png"
+                  alt="${activePet.name}" id="petChibi"
+                  class="pet-chibi" onclick="petPat()" title="Vỗ về thú cưng 💕"
+                  style="opacity:0;transition:opacity .3s;"
+                  onload="this.style.opacity='1'"
+                  onerror="this.onerror=null;this.style.display='none';document.getElementById('petChibiFallback').style.display='block'">
+              <div id="petChibiFallback" style="display:none;font-size:5rem;cursor:pointer;animation:petBounce 2s ease-in-out infinite;" onclick="petPat()">${activePet.emoji}</div>
               <div style="font-size:.72rem;color:var(--muted);margin-top:4px;">Chạm để vỗ về 💕</div>
             </div>
             <div>
@@ -7404,7 +7448,7 @@ async function hatchEgg() {
     _pets.push(newPet);
     _activePetIdx = _pets.length - 1; // focus the newly hatched pet
 
-    eggAnim.textContent = pet.emoji;
+    eggAnim.innerHTML = `<img src="pets/${pet.type}_happy.png" alt="${pet.name}" style="width:100px;height:100px;object-fit:contain;image-rendering:pixelated;" onerror="this.style.display='none';this.parentElement.textContent='${pet.emoji}'">`;
     const isFirst = _pets.length === 1;
     msg.innerHTML = `✨ Bạn có <strong>${pet.name}</strong> ${pet.emoji}!${!isFirst ? `<br><span style="font-size:.78rem;opacity:.75;">Thú cưng thứ ${_pets.length} đang chờ bạn 🏠</span>` : ''}<br><span style="font-size:.85rem;opacity:.8;">Nhấn để tiếp tục</span>`;
 
@@ -7439,6 +7483,10 @@ async function feedPet(foodId) {
 
     const fi = SHOP_ITEMS.find(i=>i.id===foodId);
     showToast(`${fi?.icon||'🍱'} ${pet.name} thích lắm! +${Math.round(fx.hunger*bonus)} no bụng`);
+    // Refresh chibi image for new mood
+    const chibiEl = document.getElementById('petChibi');
+    const newMoodFeed = getPetMood(pet.hunger, pet.happiness);
+    if (chibiEl && chibiEl.tagName === 'IMG') chibiEl.src = `pets/${pet.type}_${newMoodFeed}.png`;
     await _savePetAndFreeze();
     renderPetHouseBody();
 }
@@ -7447,10 +7495,45 @@ function petPat() {
     const pet = _pets[_activePetIdx];
     if (!pet) return;
     const chibi = document.getElementById('petChibi');
-    if (chibi) { chibi.classList.remove('happy'); void chibi.offsetWidth; chibi.classList.add('happy'); }
-    pet.happiness = Math.min(100, (pet.happiness||50) + 3);
+    pet.happiness = Math.min(100, (pet.happiness||50) + 5);
+    const newMood = getPetMood(pet.hunger||50, pet.happiness);
+    if (chibi && chibi.tagName === 'IMG') {
+        chibi.src = `pets/${pet.type}_${newMood}.png`;
+        chibi.classList.remove('happy'); void chibi.offsetWidth; chibi.classList.add('happy');
+    } else if (chibi) {
+        chibi.classList.remove('happy'); void chibi.offsetWidth; chibi.classList.add('happy');
+    }
     showToast(`💕 ${pet.name} vui vẻ hơn rồi!`);
+    // Update stat bar immediately without full re-render (keeps animation)
+    const fill = document.querySelector('.pet-stat-fill:last-child');
+    const happyColor = pet.happiness > 60 ? '#6366f1' : pet.happiness > 30 ? '#f59e0b' : '#ef4444';
+    document.querySelectorAll('.pet-stat-fill').forEach((el,i) => {
+        if (i === 1) { el.style.width = pet.happiness + '%'; el.style.background = happyColor; }
+    });
+    const spans = document.querySelectorAll('#petHouseBody .pet-stat-bar + span');
+    if (spans[1]) { spans[1].textContent = pet.happiness + '%'; spans[1].style.color = happyColor; }
     _savePetAndFreeze();
+}
+
+function startRenamePet() {
+    const pet = _pets[_activePetIdx];
+    if (!pet) return;
+    const nameEl = document.getElementById('petNameDisplay');
+    if (!nameEl) return;
+    const inp = document.createElement('input');
+    inp.value = pet.name;
+    inp.style.cssText = 'font-family:Nunito,sans-serif;font-weight:900;font-size:1rem;color:#92400e;background:rgba(255,255,255,.6);border:2px solid #d97706;border-radius:8px;padding:2px 8px;width:140px;outline:none;';
+    inp.maxLength = 20;
+    nameEl.replaceWith(inp);
+    inp.focus(); inp.select();
+    const commit = async () => {
+        const newName = inp.value.trim() || pet.name;
+        pet.name = newName;
+        await _savePetAndFreeze();
+        renderPetHouseBody();
+    };
+    inp.addEventListener('blur', commit);
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') inp.blur(); if (e.key === 'Escape') { inp.value = pet.name; inp.blur(); } });
 }
 
 // ── Call auto-freeze check after streak data loaded ───
