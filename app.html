@@ -4282,13 +4282,7 @@ function renderPetWidget() {
 
     const now = Date.now();
     _activeToys = _activeToys.filter(t => t.expiresAt > now);
-    const toySlowHappy  = _activeToys.reduce((a,t)=>a*t.slowHappy, 1.0);
-    const toySlowHunger = _activeToys.reduce((a,t)=>a*t.slowHunger,1.0);
-    const hrsFed   = pet.lastFed        ? (now - pet.lastFed)        / 3600000 : 24;
-    const hrsPlay  = pet.lastInteracted ? (now - pet.lastInteracted) / 3600000 : 24;
-    const hunger    = Math.max(0, Math.min(100, Math.round((pet.hunger||50) - (hrsFed * 100/24) * toySlowHunger)));
-    const happiness = Math.max(0, Math.min(100, Math.round((pet.happiness||80) - (hrsPlay * 6) * toySlowHappy)));
-    const mood = getPetMood(hunger, happiness);
+    const { hunger, happiness, mood } = calcPetStats(pet);
 
     // Colors
     const hColor = hunger    > 60 ? '#10b981' : hunger    > 30 ? '#f59e0b' : '#ef4444';
@@ -7351,11 +7345,25 @@ let _sessionWrongWords = [];
 // ══════════════════════════════════════════
 
 // ── Pet image helpers ──────────────────────────────────────
+// ── Shared stat calculator (used by Pet House + Library widget) ──
+function calcPetStats(pet) {
+    if (!pet) return { hunger: 0, happiness: 0, mood: 'sad' };
+    const now = Date.now();
+    const validToys  = _activeToys.filter(t => t.expiresAt > now);
+    const slowHappy  = validToys.reduce((a,t) => a * t.slowHappy,  1.0);
+    const slowHunger = validToys.reduce((a,t) => a * t.slowHunger, 1.0);
+    const hrsFed  = pet.lastFed        ? (now - pet.lastFed)        / 3600000 : 24;
+    const hrsPlay = pet.lastInteracted ? (now - pet.lastInteracted) / 3600000 : 24;
+    const hunger    = Math.max(0, Math.min(100, Math.round((pet.hunger||50)    - (hrsFed  * 100/24) * slowHunger)));
+    const happiness = Math.max(0, Math.min(100, Math.round((pet.happiness||80) - (hrsPlay * 6)      * slowHappy)));
+    return { hunger, happiness, mood: getPetMood(hunger, happiness) };
+}
+
 function getPetMood(hunger, happiness) {
-    if (hunger <= 20) return 'hungry';
-    if (hunger > 60 && happiness > 60) return 'happy';
-    if (hunger > 30 && happiness > 30) return 'content';
-    return 'sad';
+    if (hunger <= 30)    return 'hungry';  // no bụng thấp → ưu tiên hungry
+    if (happiness <= 30) return 'sad';     // vui vẻ thấp  → ưu tiên sad
+    if (hunger > 80 && happiness > 80) return 'happy';   // cả hai cao → happy
+    return 'content';                      // còn lại      → hài lòng
 }
 
 function petImgHtml(petObj, mood, cssClass, extraStyle) {
@@ -7556,24 +7564,12 @@ function renderPetHouseBody() {
 
     if (activePet) {
         const now = Date.now();
-        // Active toys: prune expired, compute slowdown multipliers
         _activeToys = _activeToys.filter(t => t.expiresAt > now);
-        // Multiplicative stacking: mua 2 ⚽ (×0.5 each) → ×0.25 tổng
-        const toySlowHappy  = _activeToys.reduce((acc, t) => acc * t.slowHappy,  1.0);
-        const toySlowHunger = _activeToys.reduce((acc, t) => acc * t.slowHunger, 1.0);
-
-        // Hunger: hết 100 điểm trong 24h = 100/24/h, nhân hệ số đồ chơi
-        const hoursSinceFed = activePet.lastFed ? (now - activePet.lastFed) / 3600000 : 24;
-        let hunger = Math.max(0, Math.min(100, (activePet.hunger||50) - (hoursSinceFed * 100 / 24) * toySlowHunger));
-
-        // Happiness: 1% / 10 phút = 6%/h, nhân hệ số đồ chơi
-        const hoursSincePlay = activePet.lastInteracted ? (now - activePet.lastInteracted) / 3600000 : 24;
-        let happiness = Math.max(0, Math.min(100, (activePet.happiness||80) - (hoursSincePlay * 6) * toySlowHappy));
+        const { hunger, happiness } = calcPetStats(activePet);
         const level = activePet.level || 1;
         const favFood = PET_TYPES.find(p=>p.type===activePet.type)?.favFood || 'apple';
-        const hungerColor = hunger > 60 ? '#10b981' : hunger > 30 ? '#f59e0b' : '#ef4444';
+        const hungerColor = hunger    > 60 ? '#10b981' : hunger    > 30 ? '#f59e0b' : '#ef4444';
         const happyColor  = happiness > 60 ? '#6366f1' : happiness > 30 ? '#f59e0b' : '#ef4444';
-        const petMood = hunger < 20 ? '😿' : happiness < 30 ? '😔' : happiness > 80 ? '😻' : '😊';
         const foodItems = Object.entries(_petFood).filter(([k,v])=>v>0);
 
         body.innerHTML = collectionHtml + `
@@ -7744,8 +7740,8 @@ async function feedPet(foodId) {
 
     pet.hunger    = Math.min(100, (pet.hunger||50)    + Math.round(fx.hunger * bonus));
     pet.happiness = Math.min(100, (pet.happiness||50) + Math.round(fx.happy  * bonus));
-    pet.lastFed   = Date.now();
-    if (!pet.lastInteracted) pet.lastInteracted = Date.now();
+    pet.lastFed         = Date.now();
+    pet.lastInteracted  = Date.now();  // reset happiness decay timer on feeding
 
     if (pet.happiness >= 100 && (pet.level||1) < 10) {
         pet.level = (pet.level||1) + 1;
@@ -7764,6 +7760,7 @@ async function feedPet(foodId) {
     }
     await _savePetAndFreeze();
     renderPetHouseBody();
+    renderPetWidget();   // sync library widget
 }
 
 function petPat() {
@@ -7790,6 +7787,7 @@ function petPat() {
     const spans = document.querySelectorAll('#petHouseBody .pet-stat-bar + span');
     if (spans[1]) { spans[1].textContent = pet.happiness + '%'; spans[1].style.color = happyColor; }
     _savePetAndFreeze();
+    renderPetWidget();   // sync library widget
 }
 
 function startRenamePet() {
