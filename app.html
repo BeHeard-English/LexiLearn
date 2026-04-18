@@ -153,6 +153,13 @@
         .pet-house-bg::after{content:'🌸';position:absolute;top:8px;right:12px;font-size:1.6rem;opacity:.4;}
         .pet-chibi{width:160px;height:160px;display:block;margin:0 auto;animation:petBounce 2s ease-in-out infinite;cursor:pointer;user-select:none;object-fit:contain;object-position:center;image-rendering:auto;filter:drop-shadow(0 0 6px rgba(251,191,36,.8)) drop-shadow(0 0 14px rgba(251,191,36,.4));transition:filter .4s ease;}
         .pet-chibi.happy{animation:petHappy .6s ease both;}
+        /* ── toy orbit icons ── */
+        .pet-toy-orbit{position:absolute;font-size:1.4rem;animation:toyOrbit var(--d,4s) linear infinite;pointer-events:none;filter:drop-shadow(0 2px 4px rgba(0,0,0,.25));}
+        @keyframes toyOrbit{
+            0%  {transform:rotate(0deg)   translateX(var(--r,72px)) rotate(0deg);}
+            100%{transform:rotate(360deg) translateX(var(--r,72px)) rotate(-360deg);}
+        }
+        .pet-chibi-wrap{position:relative;display:flex;align-items:center;justify-content:center;width:200px;height:200px;margin:0 auto;}
         .pet-chibi.mood-happy{filter:drop-shadow(0 0 5px rgba(255,255,255,.9)) drop-shadow(0 0 10px rgba(99,102,241,.85)) drop-shadow(0 0 22px rgba(99,102,241,.5));}
         .pet-chibi.mood-content{filter:drop-shadow(0 0 5px rgba(255,255,255,.9)) drop-shadow(0 0 10px rgba(16,185,129,.85)) drop-shadow(0 0 22px rgba(16,185,129,.5));}
         .pet-chibi.mood-sad{filter:drop-shadow(0 0 4px rgba(255,255,255,.7)) drop-shadow(0 0 8px rgba(148,163,184,.6)) drop-shadow(0 0 16px rgba(148,163,184,.3));}
@@ -2647,7 +2654,8 @@ let _petEggs        = 0;          // unhatched eggs
 let _petData        = null;       // DEPRECATED — kept for migration only
 let _pets           = [];         // array of pet objects (multi-pet collection)
 let _activePetIdx   = 0;          // index into _pets of the "on display" pet
-let _petFood        = { apple:0, fish:0, carrot:0, grain:0 };
+let _petFood        = { apple:0, fish:0, carrot:0, grain:0, bread:0, cake:0, sushi:0 };
+let _activeToys     = []; // [{ id, expiresAt(ms), slowHappy, slowHunger }]
 let _activeTheme    = 'default';
 
 async function loadUserShopData() {
@@ -2669,7 +2677,8 @@ async function loadUserShopData() {
     _streakFrozenDays = data.streakFrozenDays || [];
     _petEggs         = data.petEggs || 0;
     _petData         = data.pet    || null; // legacy
-    _petFood         = { apple:0, fish:0, carrot:0, grain:0, ...(data.petFood||{}) };
+    _petFood         = { apple:0, fish:0, carrot:0, grain:0, bread:0, cake:0, sushi:0, ...(data.petFood||{}) };
+    _activeToys      = (data.activeToys || []).filter(t => t.expiresAt > Date.now());
     // Multi-pet: migrate legacy single pet if needed
     if (data.pets && Array.isArray(data.pets)) {
         _pets = data.pets;
@@ -7245,12 +7254,22 @@ function petImgHtml(petObj, mood, cssClass, extraStyle) {
 }
 
 const SHOP_ITEMS = [
-    { id:'shield',  icon:'🛡️', name:'Khiên Streak',   desc:'Bảo vệ streak 1 ngày nếu bỏ lỡ hôm đó', price:1000, unit:'khiên' },
-    { id:'egg',     icon:'🥚', name:'Trứng bí ẩn',    desc:'Ấp ra thú cưng chibi ngẫu nhiên! Mỗi trứng một bất ngờ', price:2000, unit:'trứng' },
-    { id:'apple',   icon:'🍎', name:'Táo',             desc:'Thức ăn cơ bản cho thú cưng. +10 no bụng', price:150, unit:'quả' },
-    { id:'fish',    icon:'🐟', name:'Cá tươi',         desc:'Thức ăn yêu thích! +20 no bụng & +10 vui vẻ', price:300, unit:'con' },
-    { id:'carrot',  icon:'🥕', name:'Cà rốt',          desc:'Tốt cho sức khỏe. +15 no bụng & +5 vui vẻ', price:200, unit:'củ' },
-    { id:'grain',   icon:'🌾', name:'Hạt tổng hợp',   desc:'Kinh tế nhất! +8 no bụng', price:100, unit:'gói' },
+    // ── Đặc biệt ──
+    { id:'shield',   icon:'🛡️', name:'Khiên Streak',    desc:'Bảo vệ streak 1 ngày nếu bỏ lỡ hôm đó', price:1000, unit:'khiên', group:'special' },
+    { id:'egg',      icon:'🥚', name:'Trứng bí ẩn',     desc:'Ấp ra thú cưng chibi ngẫu nhiên! Mỗi trứng một bất ngờ', price:2000, unit:'trứng', group:'special' },
+    // ── Thức ăn ──
+    { id:'grain',    icon:'🌾', name:'Hạt tổng hợp',    desc:'+8 no bụng. Rẻ nhất, dùng hàng ngày', price:100, unit:'gói',   group:'food', hunger:8,  happy:0 },
+    { id:'apple',    icon:'🍎', name:'Táo',              desc:'+12 no bụng. Thức ăn cơ bản phổ biến', price:150, unit:'quả',   group:'food', hunger:12, happy:2 },
+    { id:'carrot',   icon:'🥕', name:'Cà rốt',           desc:'+15 no bụng & +5 vui vẻ. Tốt cho sức khoẻ', price:200, unit:'củ',    group:'food', hunger:15, happy:5 },
+    { id:'bread',    icon:'🍞', name:'Bánh mì',          desc:'+18 no bụng & +3 vui vẻ. No lâu hơn táo', price:250, unit:'ổ',    group:'food', hunger:18, happy:3 },
+    { id:'fish',     icon:'🐟', name:'Cá tươi',          desc:'+22 no bụng & +12 vui vẻ. Được cá yêu thích!', price:300, unit:'con',   group:'food', hunger:22, happy:12 },
+    { id:'cake',     icon:'🎂', name:'Bánh kem',         desc:'+10 no bụng & +25 vui vẻ. Vui đột biến!', price:400, unit:'miếng', group:'food', hunger:10, happy:25 },
+    { id:'sushi',    icon:'🍱', name:'Sushi cao cấp',    desc:'+30 no bụng & +20 vui vẻ. Bữa ăn sang chảnh nhất', price:600, unit:'hộp',  group:'food', hunger:30, happy:20 },
+    // ── Đồ chơi ──
+    { id:'toy_ball',   icon:'⚽', name:'Bóng đá',        desc:'6h · Vui vẻ giảm chậm hơn 50%. Thú cưng thích lăn bóng!', price:300, unit:'cái', group:'toy', durationH:6,  slowHappy:0.5, slowHunger:1.0 },
+    { id:'toy_rope',   icon:'🪢', name:'Dây kéo',        desc:'12h · Vui vẻ giảm chậm hơn 50%. Tốt cho cả hai!', price:500, unit:'cái', group:'toy', durationH:12, slowHappy:0.5, slowHunger:0.85 },
+    { id:'toy_feeder', icon:'🍡', name:'Máng ăn tự động',desc:'18h · No bụng giảm chậm hơn 40%. Không cần cho ăn liên tục', price:800, unit:'cái', group:'toy', durationH:18, slowHappy:0.9, slowHunger:0.6 },
+    { id:'toy_palace', icon:'🏯', name:'Cung điện mini',  desc:'24h · Cả hai giảm chậm hơn 40%. Thú cưng tự do vui chơi!', price:1200, unit:'cái', group:'toy', durationH:24, slowHappy:0.6, slowHunger:0.6 },
 ];
 
 const PET_TYPES = [
@@ -7271,10 +7290,17 @@ function renderItemShop() {
         let qty = 0;
         if (item.id === 'shield') qty = _streakFreezes;
         else if (item.id === 'egg') qty = _petEggs;
+        else if (item.group === 'toy') qty = _activeToys.filter(t => t.id === item.id && t.expiresAt > Date.now()).length;
         else qty = (_petFood[item.id] || 0);
 
-        return `<div class="sc-chip${qty > 0 ? ' owned' : ''}">
-            ${qty > 0 ? `<div class="item-qty-badge">x${qty}</div>` : ''}
+        const activeToy = item.group === 'toy' ? _activeToys.find(t => t.id === item.id && t.expiresAt > Date.now()) : null;
+        const toyRemain = activeToy ? Math.ceil((activeToy.expiresAt - Date.now()) / 3600000) : 0;
+        const badgeHtml = activeToy
+            ? `<div class="item-qty-badge" style="background:#10b981;">⏱ ${toyRemain}h</div>`
+            : qty > 0 ? `<div class="item-qty-badge">x${qty}</div>` : '';
+
+        return `<div class="sc-chip${qty > 0 || activeToy ? ' owned' : ''}">
+            ${badgeHtml}
             <div class="sc-chip-header">
                 <span class="sc-chip-icon">${item.icon}</span>
                 <div class="sc-chip-name">${item.name}</div>
@@ -7319,9 +7345,21 @@ async function buyShopItem(itemId) {
     _userCoins -= item.price;
     updateCoinUI();
 
-    if (itemId === 'shield')    _streakFreezes++;
-    else if (itemId === 'egg')  _petEggs++;
-    else                        _petFood[itemId] = (_petFood[itemId]||0) + 1;
+    const itemDef = SHOP_ITEMS.find(i => i.id === itemId);
+    if (itemId === 'shield')           _streakFreezes++;
+    else if (itemId === 'egg')         _petEggs++;
+    else if (itemDef?.group === 'toy') {
+        // Add toy with expiry
+        _activeToys.push({
+            id: itemId,
+            expiresAt: Date.now() + itemDef.durationH * 3600000,
+            slowHappy: itemDef.slowHappy,
+            slowHunger: itemDef.slowHunger,
+        });
+        showToast(`${itemDef.icon} Đồ chơi kích hoạt ${itemDef.durationH}h!`);
+    } else if (itemDef?.group === 'food') {
+        _petFood[itemId] = (_petFood[itemId]||0) + 1;
+    }
 
     showToast(`✅ Đã mua ${item.icon} ${item.name}!`);
     await _savePetAndFreeze();
@@ -7338,6 +7376,7 @@ async function _savePetAndFreeze() {
         pets: _pets,
         activePetIdx: _activePetIdx,
         petFood: _petFood,
+        activeToys: _activeToys.filter(t => t.expiresAt > Date.now()),
     }, { merge: true });
 }
 
@@ -7400,12 +7439,19 @@ function renderPetHouseBody() {
 
     if (activePet) {
         const now = Date.now();
-        // Hunger: giảm tuyến tính — hết 100 điểm trong 24h = 100/24 ≈ 4.17/h
+        // Active toys: prune expired, compute slowdown multipliers
+        _activeToys = _activeToys.filter(t => t.expiresAt > now);
+        // Multiplicative stacking: mua 2 ⚽ (×0.5 each) → ×0.25 tổng
+        const toySlowHappy  = _activeToys.reduce((acc, t) => acc * t.slowHappy,  1.0);
+        const toySlowHunger = _activeToys.reduce((acc, t) => acc * t.slowHunger, 1.0);
+
+        // Hunger: hết 100 điểm trong 24h = 100/24/h, nhân hệ số đồ chơi
         const hoursSinceFed = activePet.lastFed ? (now - activePet.lastFed) / 3600000 : 24;
-        let hunger = Math.max(0, Math.min(100, (activePet.hunger||50) - (hoursSinceFed * 100 / 24)));
-        // Happiness: giảm tuyến tính — hết 100 điểm trong 24h
+        let hunger = Math.max(0, Math.min(100, (activePet.hunger||50) - (hoursSinceFed * 100 / 24) * toySlowHunger));
+
+        // Happiness: 1% / 10 phút = 6%/h, nhân hệ số đồ chơi
         const hoursSincePlay = activePet.lastInteracted ? (now - activePet.lastInteracted) / 3600000 : 24;
-        let happiness = Math.max(0, Math.min(100, (activePet.happiness||80) - (hoursSincePlay * 100 / 24)));
+        let happiness = Math.max(0, Math.min(100, (activePet.happiness||80) - (hoursSincePlay * 6) * toySlowHappy));
         const level = activePet.level || 1;
         const favFood = PET_TYPES.find(p=>p.type===activePet.type)?.favFood || 'apple';
         const hungerColor = hunger > 60 ? '#10b981' : hunger > 30 ? '#f59e0b' : '#ef4444';
@@ -7442,14 +7488,34 @@ function renderPetHouseBody() {
                 <span style="font-size:.75rem;font-weight:700;color:${happyColor};width:30px;">${Math.round(happiness)}%</span>
               </div>
             </div>
+            ${_activeToys.filter(t=>t.expiresAt>now).length > 0 ? `
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px;">
+                ${_activeToys.filter(t=>t.expiresAt>now).map(t=>{
+                    const td = SHOP_ITEMS.find(i=>i.id===t.id);
+                    const hLeft = Math.ceil((t.expiresAt-now)/3600000);
+                    return `<div style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:8px;background:#d1fae5;border:1px solid #6ee7b7;font-size:.7rem;font-weight:700;color:#065f46;">${td?.icon||'🧸'} ${td?.name||t.id} <span style="opacity:.7;">⏱${hLeft}h</span></div>`;
+                }).join('')}
+            </div>` : ''}
             <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;">
-              <img src="pets/${activePet.type}_${getPetMood(hunger,happiness)}.png"
-                  alt="${activePet.name}" id="petChibi"
-                  class="pet-chibi mood-${getPetMood(hunger,happiness)}" onclick="petPat()" title="Vỗ về thú cưng 💕"
-                  style="opacity:0;transition:opacity .3s;"
-                  onload="this.style.opacity='1'"
-                  onerror="this.onerror=null;this.style.display='none';document.getElementById('petChibiFallback').style.display='block'">
-              <div id="petChibiFallback" style="display:none;font-size:5rem;cursor:pointer;animation:petBounce 2s ease-in-out infinite;" onclick="petPat()">${activePet.emoji}</div>
+              <div class="pet-chibi-wrap">
+                <img src="pets/${activePet.type}_${getPetMood(hunger,happiness)}.png"
+                    alt="${activePet.name}" id="petChibi"
+                    class="pet-chibi mood-${getPetMood(hunger,happiness)}" onclick="petPat()" title="Vỗ về thú cưng 💕"
+                    style="opacity:0;transition:opacity .3s;position:relative;z-index:1;"
+                    onload="this.style.opacity='1'"
+                    onerror="this.onerror=null;this.style.display='none';document.getElementById('petChibiFallback').style.display='block'">
+                <div id="petChibiFallback" style="display:none;font-size:5rem;cursor:pointer;animation:petBounce 2s ease-in-out infinite;position:relative;z-index:1;" onclick="petPat()">${activePet.emoji}</div>
+                ${_activeToys.filter(t=>t.expiresAt>now).map((t,idx)=>{
+                    const td = SHOP_ITEMS.find(i=>i.id===t.id);
+                    const speeds = [4,5.5,7,9];
+                    const radii  = [76,86,96,106];
+                    const delays = [0,1.2,2.5,3.8];
+                    const spd = speeds[idx % speeds.length];
+                    const rad = radii[idx % radii.length];
+                    const dly = delays[idx % delays.length];
+                    return `<span class="pet-toy-orbit" style="--d:${spd}s;--r:${rad}px;animation-delay:-${dly}s;">${td?.icon||'🧸'}</span>`;
+                }).join('')}
+              </div>
               <div style="font-size:.72rem;color:var(--muted);margin-top:4px;">Chạm để vỗ về 💕</div>
             </div>
             <div>
@@ -7554,8 +7620,8 @@ async function feedPet(foodId) {
     if (!pet || (_petFood[foodId]||0) <= 0) return;
     _petFood[foodId]--;
 
-    const effects = { apple:{hunger:10,happy:2}, fish:{hunger:20,happy:10}, carrot:{hunger:15,happy:5}, grain:{hunger:8,happy:1} };
-    const fx = effects[foodId] || {hunger:8,happy:1};
+    const foodDef = SHOP_ITEMS.find(i => i.id === foodId);
+    const fx = { hunger: foodDef?.hunger || 8, happy: foodDef?.happy || 1 };
     const favFood = PET_TYPES.find(p=>p.type===pet.type)?.favFood;
     const bonus = foodId === favFood ? 1.5 : 1;
 
@@ -7587,7 +7653,7 @@ function petPat() {
     const pet = _pets[_activePetIdx];
     if (!pet) return;
     const chibi = document.getElementById('petChibi');
-    pet.happiness = Math.min(100, (pet.happiness||50) + 5);
+    pet.happiness = Math.min(100, (pet.happiness||50) + 2);
     const newMood = getPetMood(pet.hunger||50, pet.happiness);
     if (chibi && chibi.tagName === 'IMG') {
         chibi.src = `pets/${pet.type}_${newMood}.png`;
