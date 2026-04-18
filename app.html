@@ -93,6 +93,30 @@
         .theme-buy-btn{width:100%;margin-top:10px;padding:9px;border-radius:10px;border:none;font-family:inherit;font-weight:800;font-size:.82rem;cursor:pointer;transition:.2s;}
         .theme-buy-btn.free,.theme-buy-btn.activate{background:var(--primary);color:#fff;}
 
+        /* ── PET LIBRARY WIDGET ── */
+        .pet-widget{display:none;border-radius:18px;padding:14px 16px;margin-bottom:16px;background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1.5px solid #fde68a;position:relative;overflow:hidden;}
+        .pet-widget::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 80% 50%,rgba(251,191,36,.18) 0%,transparent 65%);pointer-events:none;}
+        .pet-widget-inner{display:flex;align-items:center;gap:14px;position:relative;z-index:1;}
+        .pet-widget-img-wrap{position:relative;flex-shrink:0;width:72px;height:72px;display:flex;align-items:center;justify-content:center;}
+        .pet-widget-img{width:68px;height:68px;object-fit:contain;object-position:center;animation:petBounce 2.5s ease-in-out infinite;cursor:pointer;filter:drop-shadow(0 0 6px rgba(251,191,36,.7));}
+        .pet-widget-img.mood-happy   {filter:drop-shadow(0 0 5px rgba(255,255,255,.9)) drop-shadow(0 0 10px rgba(99,102,241,.8));}
+        .pet-widget-img.mood-content {filter:drop-shadow(0 0 5px rgba(255,255,255,.9)) drop-shadow(0 0 10px rgba(16,185,129,.8));}
+        .pet-widget-img.mood-sad     {filter:drop-shadow(0 0 4px rgba(255,255,255,.7)) drop-shadow(0 0 8px rgba(148,163,184,.6));}
+        .pet-widget-img.mood-hungry  {filter:drop-shadow(0 0 5px rgba(255,255,255,.9)) drop-shadow(0 0 10px rgba(239,68,68,.9));}
+        .pet-widget-toy{position:absolute;font-size:.95rem;animation:toyOrbit var(--d,4s) linear infinite;pointer-events:none;}
+        .pet-widget-body{flex:1;min-width:0;}
+        .pet-widget-name{font-family:'Nunito',sans-serif;font-weight:900;font-size:.85rem;color:#78350f;margin-bottom:3px;}
+        .pet-widget-bubble{position:relative;background:#fff;border:1.5px solid #fde68a;border-radius:12px 12px 12px 4px;padding:7px 12px;font-size:.8rem;font-weight:600;color:#44403c;line-height:1.5;display:inline-block;max-width:100%;box-shadow:0 2px 8px rgba(0,0,0,.07);}
+        .pet-widget-bubble::before{content:'';position:absolute;bottom:-8px;left:10px;border:4px solid transparent;border-top-color:#fde68a;}
+        .pet-widget-bubble::after{content:'';position:absolute;bottom:-6px;left:11px;border:3px solid transparent;border-top-color:#fff;}
+        .pet-widget-stats{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;}
+        .pet-widget-stat{display:flex;align-items:center;gap:4px;font-size:.68rem;font-weight:700;color:#92400e;}
+        .pet-widget-mini-bar{width:50px;height:5px;border-radius:99px;background:#fde68a;overflow:hidden;flex-shrink:0;}
+        .pet-widget-mini-fill{height:100%;border-radius:99px;transition:width .5s;}
+        .pet-widget-action{flex-shrink:0;}
+        .pet-widget-btn{padding:7px 12px;border-radius:10px;border:none;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-family:inherit;font-weight:800;font-size:.75rem;cursor:pointer;transition:.15s;white-space:nowrap;}
+        .pet-widget-btn:hover{filter:brightness(1.1);}
+
         /* ── SHOP ROWS (carousel layout) ── */
         .shop-row{background:var(--card);border:1px solid var(--border);border-radius:18px;overflow:hidden;margin-bottom:14px;}
         .shop-row-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;cursor:pointer;user-select:none;transition:.15s;gap:12px;}
@@ -1116,6 +1140,33 @@
 
     <!-- ═══════════════ TAB: LIBRARY ═══════════════ -->
     <div id="tab-library" class="hidden fade-in">
+        <!-- ── Pet widget (shown only if user has a pet) ── -->
+        <div class="pet-widget" id="libPetWidget">
+            <div class="pet-widget-inner">
+                <div class="pet-widget-img-wrap" id="libPetImgWrap">
+                    <!-- img injected by JS -->
+                </div>
+                <div class="pet-widget-body">
+                    <div class="pet-widget-name" id="libPetName"></div>
+                    <div class="pet-widget-bubble" id="libPetBubble"></div>
+                    <div class="pet-widget-stats">
+                        <div class="pet-widget-stat">
+                            🍽️
+                            <div class="pet-widget-mini-bar"><div class="pet-widget-mini-fill" id="libHungerFill"></div></div>
+                            <span id="libHungerPct"></span>
+                        </div>
+                        <div class="pet-widget-stat">
+                            😊
+                            <div class="pet-widget-mini-bar"><div class="pet-widget-mini-fill" id="libHappyFill"></div></div>
+                            <span id="libHappyPct"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="pet-widget-action">
+                    <button class="pet-widget-btn" onclick="openPetHouse()">🏠 Pet House</button>
+                </div>
+            </div>
+        </div>
         <div class="card" style="overflow:hidden;">
             <div class="card-header" style="padding:24px 28px;">
                 <div>
@@ -2698,6 +2749,7 @@ async function loadUserShopData() {
     _extraBadgeData = { perfectStreak:0, perfectSession:false, importedDocx:false, speedReview:false, sentenceCorrect:0, listeningCorrect:0, ...extra };
     await checkAndAwardBadges(_cachedXP);
     renderBadges();
+    renderPetWidget();
 }
 
 function updateCoinUI() {
@@ -4213,6 +4265,71 @@ async function buyVocabPack(packId) {
     }
 }
 
+// ── Pet widget on library tab ─────────────────────────────
+const PET_MESSAGES = {
+    happy:   'Chào mừng bạn quay trở lại! Hãy học thật năng suất nhé 💪',
+    content: 'Ngày hôm nay của bạn thế nào? 😊',
+    sad:     'Hãy chơi với mình đi, mình nhớ bạn lắm 🥺',
+    hungry:  'Mình đói bụng quá, tới giờ ăn chưa nhỉ? 🍽️',
+};
+
+function renderPetWidget() {
+    const widget = document.getElementById('libPetWidget');
+    if (!widget) return;
+    const pet = _pets[_activePetIdx] || null;
+    if (!pet) { widget.style.display = 'none'; return; }
+    widget.style.display = 'block';
+
+    const now = Date.now();
+    _activeToys = _activeToys.filter(t => t.expiresAt > now);
+    const toySlowHappy  = _activeToys.reduce((a,t)=>a*t.slowHappy, 1.0);
+    const toySlowHunger = _activeToys.reduce((a,t)=>a*t.slowHunger,1.0);
+    const hrsFed   = pet.lastFed        ? (now - pet.lastFed)        / 3600000 : 24;
+    const hrsPlay  = pet.lastInteracted ? (now - pet.lastInteracted) / 3600000 : 24;
+    const hunger    = Math.max(0, Math.min(100, Math.round((pet.hunger||50) - (hrsFed * 100/24) * toySlowHunger)));
+    const happiness = Math.max(0, Math.min(100, Math.round((pet.happiness||80) - (hrsPlay * 6) * toySlowHappy)));
+    const mood = getPetMood(hunger, happiness);
+
+    // Colors
+    const hColor = hunger    > 60 ? '#10b981' : hunger    > 30 ? '#f59e0b' : '#ef4444';
+    const pColor = happiness > 60 ? '#6366f1' : happiness > 30 ? '#f59e0b' : '#ef4444';
+
+    // Image wrap: pet + orbiting toys
+    const imgWrap = document.getElementById('libPetImgWrap');
+    if (imgWrap) {
+        const toyOrbitHtml = _activeToys.map((t,i) => {
+            const td = SHOP_ITEMS.find(s=>s.id===t.id);
+            const spd = [3.5,5,7][i%3], rad = [46,56,66][i%3], dly = [0,1,2][i%3];
+            return `<span class="pet-widget-toy" style="--d:${spd}s;--r:${rad}px;animation-delay:-${dly}s;">${td?.icon||'🧸'}</span>`;
+        }).join('');
+        imgWrap.innerHTML = `
+            <img src="pets/${pet.type}_${mood}.png" alt="${pet.name}"
+                class="pet-widget-img mood-${mood}" onclick="openPetHouse()"
+                title="Mở Pet House"
+                style="opacity:0;transition:opacity .25s;"
+                onload="this.style.opacity='1'"
+                onerror="this.onerror=null;this.style.display='none';this.insertAdjacentHTML('afterend','<span style=\'font-size:3rem;animation:petBounce 2.5s ease-in-out infinite;\'>${pet.emoji}</span>')">
+            ${toyOrbitHtml}`;
+    }
+
+    // Name + bubble
+    const nameEl = document.getElementById('libPetName');
+    if (nameEl) nameEl.textContent = `${pet.name} · Lv.${pet.level||1}`;
+
+    const bubbleEl = document.getElementById('libPetBubble');
+    if (bubbleEl) bubbleEl.textContent = PET_MESSAGES[mood] || PET_MESSAGES.content;
+
+    // Stat bars
+    const hFill = document.getElementById('libHungerFill');
+    const pFill = document.getElementById('libHappyFill');
+    const hPct  = document.getElementById('libHungerPct');
+    const pPct  = document.getElementById('libHappyPct');
+    if (hFill) { hFill.style.width = hunger+'%';    hFill.style.background = hColor; }
+    if (pFill) { pFill.style.width = happiness+'%'; pFill.style.background = pColor; }
+    if (hPct)  hPct.textContent  = hunger+'%';
+    if (pPct)  pPct.textContent  = happiness+'%';
+}
+
 function toggleShopRow(row) {
     const carouselId = { packs:'shopPackGrid', themes:'shopThemeGrid', items:'shopItemGrid' }[row];
     const expandId   = { packs:'shopPackExpand', themes:'shopThemeExpand', items:'shopItemExpand' }[row];
@@ -4604,7 +4721,7 @@ function switchTab(name) {
     setTimeout(() => tab.classList.add('fade-in'), 10);
     document.querySelectorAll('.dtab').forEach(b => { b.classList.remove('active'); if(b.dataset.tab===name) b.classList.add('active'); });
     document.querySelectorAll('.mbtab').forEach(b => { b.classList.remove('active'); if(b.dataset.tab===name) b.classList.add('active'); });
-    if (name==='library') loadLibrary();
+    if (name==='library') { loadLibrary(); renderPetWidget(); }
     if (name==='review')  { loadSRSDueCount(); if (!topicLists.length) loadTopicLists(); }
     if (name==='games')   { if (!topicLists.length) loadTopicLists(); updateGameWordCount(); }
     if (name==='shop')    renderShop();
