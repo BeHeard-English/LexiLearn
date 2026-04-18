@@ -93,6 +93,42 @@
         .theme-buy-btn{width:100%;margin-top:10px;padding:9px;border-radius:10px;border:none;font-family:inherit;font-weight:800;font-size:.82rem;cursor:pointer;transition:.2s;}
         .theme-buy-btn.free,.theme-buy-btn.activate{background:var(--primary);color:#fff;}
 
+        /* ── SHOP ROWS (carousel layout) ── */
+        .shop-row{background:var(--card);border:1px solid var(--border);border-radius:18px;overflow:hidden;margin-bottom:14px;}
+        .shop-row-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;cursor:pointer;user-select:none;transition:.15s;gap:12px;}
+        .shop-row-header:hover{background:var(--primary-light);}
+        .shop-row-title{font-family:'Nunito',sans-serif;font-weight:900;font-size:.95rem;color:var(--text);}
+        .shop-row-sub{font-size:.72rem;color:var(--muted);margin-top:2px;}
+        .shop-row-chevron{font-size:1.4rem;font-weight:700;color:var(--muted);transition:transform .25s;flex-shrink:0;line-height:1;}
+        .shop-row-chevron.open{transform:rotate(90deg);}
+        .shop-row-carousel{display:flex;gap:10px;overflow-x:auto;padding:0 16px 14px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;}
+        .shop-row-carousel::-webkit-scrollbar{height:3px;}
+        .shop-row-carousel::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px;}
+        .shop-row-expand{padding:4px 12px 14px;display:grid;gap:10px;}
+        .shop-row-expand.hidden{display:none;}
+        /* shop card chip — shared across all 3 rows */
+        .sc-chip{flex-shrink:0;scroll-snap-align:start;background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:12px 14px;width:190px;display:flex;flex-direction:column;gap:6px;transition:.2s;cursor:default;}
+        .sc-chip:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.1);}
+        .sc-chip.owned{border-color:#fde68a;background:linear-gradient(135deg,#fffbeb,#fef3c7);}
+        .sc-chip.active-theme{border-color:#f59e0b;box-shadow:0 0 0 1.5px #f59e0b;}
+        .sc-chip-header{display:flex;align-items:center;gap:8px;}
+        .sc-chip-icon{font-size:1.5rem;flex-shrink:0;}
+        .sc-chip-name{font-family:'Nunito',sans-serif;font-weight:800;font-size:.82rem;color:var(--text);}
+        .sc-chip-desc{font-size:.7rem;color:var(--muted);line-height:1.4;}
+        .sc-chip-footer{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:2px;}
+        .sc-chip-price{display:inline-flex;align-items:center;gap:3px;font-size:.72rem;font-weight:800;color:#92400e;background:#fef3c7;border:1px solid #fde68a;border-radius:6px;padding:2px 7px;}
+        .sc-chip-btn{flex:1;padding:6px 8px;border-radius:8px;border:none;font-family:inherit;font-weight:800;font-size:.72rem;cursor:pointer;transition:.15s;text-align:center;}
+        .sc-chip-btn.buy{background:linear-gradient(135deg,#7c3aed,#4f46e5);color:#fff;}
+        .sc-chip-btn.buy:hover{filter:brightness(1.1);}
+        .sc-chip-btn.activate{background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;}
+        .sc-chip-btn.current{background:var(--success-bg);color:var(--success);cursor:default;}
+        .sc-chip-btn.no-coin{background:#f1f5f9;color:#94a3b8;cursor:not-allowed;}
+        .sc-chip-btn.free{background:var(--primary);color:#fff;}
+        /* expand grid sizing */
+        .shop-row-expand.themes-expand{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));}
+        .shop-row-expand.packs-expand{grid-template-columns:repeat(auto-fill,minmax(240px,1fr));}
+        .shop-row-expand.items-expand{grid-template-columns:repeat(auto-fill,minmax(190px,1fr));}
+
         /* ── STREAK FREEZE & PET SHOP ── */
         .item-shop-section{margin-top:28px;}
         .item-shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-top:14px;}
@@ -115,12 +151,12 @@
         .pet-house-bg{background:linear-gradient(135deg,#fef3c7,#fde68a,#fbbf24);border-radius:20px 20px 0 0;padding:28px 24px 20px;text-align:center;position:relative;overflow:hidden;}
         .pet-house-bg::before{content:'🌿';position:absolute;bottom:-4px;left:8px;font-size:2rem;opacity:.4;}
         .pet-house-bg::after{content:'🌸';position:absolute;top:8px;right:12px;font-size:1.6rem;opacity:.4;}
-        .pet-chibi{width:160px;height:160px;display:block;margin:0 auto;animation:petBounce 2s ease-in-out infinite;cursor:pointer;user-select:none;object-fit:contain;object-position:center;image-rendering:auto;border-radius:50%;box-shadow:0 0 0 3px rgba(255,255,255,.7),0 0 18px 4px rgba(251,191,36,.55),0 0 36px 8px rgba(251,191,36,.25);transition:box-shadow .4s ease;}
+        .pet-chibi{width:160px;height:160px;display:block;margin:0 auto;animation:petBounce 2s ease-in-out infinite;cursor:pointer;user-select:none;object-fit:contain;object-position:center;image-rendering:auto;filter:drop-shadow(0 0 6px rgba(251,191,36,.8)) drop-shadow(0 0 14px rgba(251,191,36,.4));transition:filter .4s ease;}
         .pet-chibi.happy{animation:petHappy .6s ease both;}
-        .pet-chibi.mood-happy{box-shadow:0 0 0 3px rgba(255,255,255,.8),0 0 20px 6px rgba(99,102,241,.5),0 0 40px 12px rgba(99,102,241,.25);}
-        .pet-chibi.mood-content{box-shadow:0 0 0 3px rgba(255,255,255,.7),0 0 18px 4px rgba(16,185,129,.5),0 0 36px 8px rgba(16,185,129,.22);}
-        .pet-chibi.mood-sad{box-shadow:0 0 0 3px rgba(255,255,255,.5),0 0 14px 4px rgba(148,163,184,.4),0 0 28px 6px rgba(148,163,184,.18);}
-        .pet-chibi.mood-hungry{box-shadow:0 0 0 3px rgba(255,255,255,.5),0 0 16px 5px rgba(239,68,68,.5),0 0 32px 8px rgba(239,68,68,.22);}
+        .pet-chibi.mood-happy{filter:drop-shadow(0 0 5px rgba(255,255,255,.9)) drop-shadow(0 0 10px rgba(99,102,241,.85)) drop-shadow(0 0 22px rgba(99,102,241,.5));}
+        .pet-chibi.mood-content{filter:drop-shadow(0 0 5px rgba(255,255,255,.9)) drop-shadow(0 0 10px rgba(16,185,129,.85)) drop-shadow(0 0 22px rgba(16,185,129,.5));}
+        .pet-chibi.mood-sad{filter:drop-shadow(0 0 4px rgba(255,255,255,.7)) drop-shadow(0 0 8px rgba(148,163,184,.6)) drop-shadow(0 0 16px rgba(148,163,184,.3));}
+        .pet-chibi.mood-hungry{filter:drop-shadow(0 0 5px rgba(255,255,255,.85)) drop-shadow(0 0 10px rgba(239,68,68,.9)) drop-shadow(0 0 22px rgba(239,68,68,.55)) drop-shadow(0 0 4px rgba(239,68,68,1));}
         @keyframes petBounce{0%,100%{transform:translateY(0) scale(1);}50%{transform:translateY(-10px) scale(1.05);}}
         .pet-chibi.happy{animation:petHappy .6s ease both;}
         @keyframes petHappy{0%{transform:scale(1);}25%{transform:scale(1.3) rotate(-10deg);}50%{transform:scale(1.2) rotate(10deg);}75%{transform:scale(1.25) rotate(-5deg);}100%{transform:scale(1);animation:petBounce 2s ease-in-out infinite;}}
@@ -1757,14 +1793,43 @@
                 </div>
             </div>
         </div>
-        <!-- Theme grid -->
-        <div class="theme-grid" id="shopThemeGrid"></div>
+        <!-- ── ROW 1: Bộ từ vựng ── -->
+        <div class="shop-row" id="shopRowPacks">
+            <div class="shop-row-header" onclick="toggleShopRow('packs')">
+                <div>
+                    <div class="shop-row-title">📦 Bộ từ vựng</div>
+                    <div class="shop-row-sub">Mua để thêm ngay vào thư viện · Từ đã có sẽ không bị ghi đè</div>
+                </div>
+                <span class="shop-row-chevron" id="shopChevronPacks">›</span>
+            </div>
+            <div class="shop-row-carousel" id="shopPackGrid"></div>
+            <div class="shop-row-expand hidden" id="shopPackExpand"></div>
+        </div>
 
-        <!-- Vật phẩm đặc biệt -->
-        <div class="item-shop-section">
-            <div style="font-family:'Nunito',sans-serif;font-size:1.1rem;font-weight:900;color:var(--text);margin-bottom:4px;">🛡️ Vật phẩm đặc biệt</div>
-            <div style="font-size:.8rem;color:var(--muted);margin-bottom:4px;">Bảo vệ streak, nuôi thú cưng và nhiều hơn nữa!</div>
-            <div class="item-shop-grid" id="shopItemGrid"></div>
+        <!-- ── ROW 2: Themes ── -->
+        <div class="shop-row" id="shopRowThemes">
+            <div class="shop-row-header" onclick="toggleShopRow('themes')">
+                <div>
+                    <div class="shop-row-title">🎨 Giao diện</div>
+                    <div class="shop-row-sub">Cá nhân hóa màu sắc của LexiPro</div>
+                </div>
+                <span class="shop-row-chevron" id="shopChevronThemes">›</span>
+            </div>
+            <div class="shop-row-carousel" id="shopThemeGrid"></div>
+            <div class="shop-row-expand hidden" id="shopThemeExpand"></div>
+        </div>
+
+        <!-- ── ROW 3: Vật phẩm ── -->
+        <div class="shop-row" id="shopRowItems">
+            <div class="shop-row-header" onclick="toggleShopRow('items')">
+                <div>
+                    <div class="shop-row-title">🛡️ Vật phẩm</div>
+                    <div class="shop-row-sub">Khiên streak, trứng thú cưng và thức ăn</div>
+                </div>
+                <span class="shop-row-chevron" id="shopChevronItems">›</span>
+            </div>
+            <div class="shop-row-carousel" id="shopItemGrid"></div>
+            <div class="shop-row-expand hidden" id="shopItemExpand"></div>
         </div>
 
         <!-- Pet House button -->
@@ -1772,13 +1837,6 @@
             <button onclick="openPetHouse()" style="width:100%;padding:14px;border-radius:14px;border:none;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;font-family:'Be Vietnam Pro',sans-serif;font-weight:800;font-size:.95rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;transition:.2s;" onmouseover="this.style.filter='brightness(1.08)'" onmouseout="this.style.filter=''">
                 <span id="petHouseBtnIcon">🐣</span> Mở Pet House
             </button>
-        </div>
-
-        <!-- Vocab Packs section -->
-        <div style="margin-top:28px;">
-            <div style="font-family:'Nunito',sans-serif;font-size:1.1rem;font-weight:900;color:var(--text);margin-bottom:4px;">📦 Bộ từ vựng</div>
-            <div style="font-size:.8rem;color:var(--muted);margin-bottom:4px;">Mua để thêm ngay vào thư viện của bạn · Từ đã có sẵn sẽ không bị ghi đè</div>
-            <div class="vpack-grid" id="shopPackGrid"></div>
         </div>
     </div>
 
@@ -4034,39 +4092,37 @@ if (!document.getElementById('sunsetCloudDriftStyle')) {
 // VOCAB PACKS — RENDER & PURCHASE
 // ══════════════════════════════════════════
 function renderVocabPacks() {
-    const grid = document.getElementById('shopPackGrid');
-    if (!grid) return;
-    grid.innerHTML = VOCAB_PACKS.map(pack => {
+    const carousel = document.getElementById('shopPackGrid');
+    const expand   = document.getElementById('shopPackExpand');
+    if (!carousel) return;
+    const chips = VOCAB_PACKS.map(pack => {
         const owned     = _purchasedPacks.has(pack.id);
         const canAfford = _userCoins >= pack.price;
         let btnClass, btnText;
-        if (owned)        { btnClass='owned';   btnText='✅ Đã có trong thư viện'; }
-        else if (canAfford){ btnClass='buy';    btnText=`🛒 Mua · 🪙 ${pack.price.toLocaleString('vi-VN')}`; }
-        else              { btnClass='no-coin'; btnText=`🔒 Cần 🪙 ${pack.price.toLocaleString('vi-VN')}`; }
-
-        return `<div class="vpack-card${owned?' owned':''}">
-            ${owned ? '<div class="vpack-owned-badge">Đã mua</div>' : ''}
-            <div class="vpack-header">
-                <div class="vpack-icon" style="background:${pack.iconBg};">${pack.emoji}</div>
+        if (owned)         { btnClass='current';  btnText='✅ Đã có'; }
+        else if (canAfford){ btnClass='buy';       btnText=`🛒 Mua`; }
+        else               { btnClass='no-coin';   btnText=`🔒 Mua`; }
+        const priceHtml = pack.price > 0
+            ? `<span class="sc-chip-price">🪙 ${pack.price.toLocaleString('vi-VN')}</span>`
+            : `<span class="sc-chip-price" style="background:#d1fae5;border-color:#6ee7b7;color:#065f46;">✨ Miễn phí</span>`;
+        return `<div class="sc-chip${owned?' owned':''}">
+            <div class="sc-chip-header">
+                <span class="sc-chip-icon" style="background:${pack.iconBg};border-radius:8px;padding:2px;">${pack.emoji}</span>
                 <div>
-                    <div class="vpack-title">${pack.name}</div>
-                    <div class="vpack-meta">📖 ${pack.wordCount} từ vựng</div>
+                    <div class="sc-chip-name">${pack.name}</div>
+                    <div style="font-size:.65rem;color:var(--muted);">📖 ${pack.wordCount} từ</div>
                 </div>
             </div>
-            <div class="vpack-desc">${pack.desc}</div>
-            <div class="vpack-tags">${pack.levels.map(l=>`<span class="vpack-tag">${l}</span>`).join('')}</div>
-            <div class="vpack-footer">
-                ${pack.price > 0
-                    ? `<div class="vpack-price">🪙 ${pack.price.toLocaleString('vi-VN')} coins</div>`
-                    : `<div class="vpack-price free">✨ Miễn phí</div>`}
-                <button class="vpack-buy-btn ${btnClass}"
-                    onclick="buyVocabPack('${pack.id}')"
-                    ${owned || btnClass==='no-coin' ? 'disabled' : ''}>
-                    ${btnText}
-                </button>
+            <div class="sc-chip-desc">${pack.desc}</div>
+            <div class="sc-chip-footer">
+                ${priceHtml}
+                <button class="sc-chip-btn ${btnClass}" onclick="buyVocabPack('${pack.id}')"
+                    ${owned || btnClass==='no-coin' ? 'disabled' : ''}>${btnText}</button>
             </div>
         </div>`;
     }).join('');
+    carousel.innerHTML = chips;
+    if (expand) { expand.innerHTML = chips; expand.classList.add('packs-expand'); }
 }
 
 async function buyVocabPack(packId) {
@@ -4148,46 +4204,62 @@ async function buyVocabPack(packId) {
     }
 }
 
+function toggleShopRow(row) {
+    const carouselId = { packs:'shopPackGrid', themes:'shopThemeGrid', items:'shopItemGrid' }[row];
+    const expandId   = { packs:'shopPackExpand', themes:'shopThemeExpand', items:'shopItemExpand' }[row];
+    const chevId     = { packs:'shopChevronPacks', themes:'shopChevronThemes', items:'shopChevronItems' }[row];
+    const carousel = document.getElementById(carouselId);
+    const expand   = document.getElementById(expandId);
+    const chev     = document.getElementById(chevId);
+    if (!carousel || !expand) return;
+    const isOpen = !expand.classList.contains('hidden');
+    if (isOpen) {
+        expand.classList.add('hidden');
+        carousel.style.display = 'flex';
+        if (chev) chev.classList.remove('open');
+    } else {
+        expand.classList.remove('hidden');
+        carousel.style.display = 'none';
+        if (chev) chev.classList.add('open');
+    }
+}
+
 function renderShop() {
-    const grid = document.getElementById('shopThemeGrid');
-    if (!grid) return;
+    const carousel = document.getElementById('shopThemeGrid');
+    if (!carousel) return;
     updateCoinUI();
     renderVocabPacks();
     renderItemShop();
-    grid.innerHTML = THEMES.map(theme => {
-        const owned    = _purchasedThemes.has(theme.id);
+    const chips = THEMES.map(theme => {
+        const owned     = _purchasedThemes.has(theme.id);
         const isCurrent = _activeTheme === theme.id;
         const canAfford = _userCoins >= theme.price;
         const [c1,c2,c3] = theme.preview;
-
         let btnClass, btnText;
-        if (isCurrent)      { btnClass='current'; btnText='✅ Đang dùng'; }
-        else if (owned)     { btnClass='activate'; btnText='⚡ Kích hoạt'; }
-        else if (theme.price===0) { btnClass='free'; btnText='Dùng miễn phí'; }
-        else if (canAfford) { btnClass='buy'; btnText=`🛒 Mua · 🪙 ${theme.price.toLocaleString('vi-VN')}`; }
-        else                { btnClass='no-coin'; btnText=`🔒 Cần 🪙 ${theme.price.toLocaleString('vi-VN')}`; }
-
-        return `<div class="theme-card${isCurrent?' active-theme':''}">
-            ${isCurrent ? '<div class="theme-active-badge">Đang dùng</div>' : ''}
-            <div class="theme-preview" style="background:${c2};">
-                <div class="theme-preview-nav" style="background:${c1};">
-                    <div class="theme-preview-dot"></div><div class="theme-preview-dot"></div><div class="theme-preview-dot"></div>
-                </div>
-                <div class="theme-preview-body">
-                    <div class="theme-preview-card" style="background:${c3};"></div>
-                    <div class="theme-preview-card2" style="background:${c3};opacity:.7;"></div>
-                </div>
+        if (isCurrent)        { btnClass='current';  btnText='✅ Đang dùng'; }
+        else if (owned)       { btnClass='activate'; btnText='⚡ Kích hoạt'; }
+        else if (theme.price===0) { btnClass='free'; btnText='✨ Dùng thử'; }
+        else if (canAfford)   { btnClass='buy';      btnText='🛒 Mua'; }
+        else                  { btnClass='no-coin';  btnText='🔒 Mua'; }
+        const priceHtml = theme.price > 0
+            ? `<span class="sc-chip-price">🪙 ${theme.price.toLocaleString('vi-VN')}</span>`
+            : `<span class="sc-chip-price" style="background:#d1fae5;border-color:#6ee7b7;color:#065f46;">✨ Miễn phí</span>`;
+        return `<div class="sc-chip${isCurrent?' active-theme':''}${owned?' owned':''}">
+            <div class="sc-chip-header">
+                <div style="width:28px;height:28px;border-radius:6px;background:${c2};border:2px solid ${c1};flex-shrink:0;"></div>
+                <div class="sc-chip-name">${theme.emoji} ${theme.name}</div>
             </div>
-            <div class="theme-card-body">
-                <div class="theme-name">${theme.emoji} ${theme.name}</div>
-                <div class="theme-desc">${theme.desc}</div>
-                ${theme.price > 0 ? `<div class="theme-price">🪙 ${theme.price.toLocaleString('vi-VN')} coins</div>` : '<div class="theme-price" style="background:#d1fae5;border-color:#6ee7b7;color:#065f46;">✨ Miễn phí</div>'}
-                <button class="theme-buy-btn ${btnClass}" onclick="handleThemeAction('${theme.id}')" ${btnClass==='no-coin'||btnClass==='current'?'disabled':''}>
-                    ${btnText}
-                </button>
+            <div class="sc-chip-desc">${theme.desc}</div>
+            <div class="sc-chip-footer">
+                ${priceHtml}
+                <button class="sc-chip-btn ${btnClass}" onclick="handleThemeAction('${theme.id}')"
+                    ${btnClass==='no-coin'||btnClass==='current'?'disabled':''}>${btnText}</button>
             </div>
         </div>`;
     }).join('');
+    carousel.innerHTML = chips;
+    const expand = document.getElementById('shopThemeExpand');
+    if (expand) { expand.innerHTML = chips; expand.classList.add('themes-expand'); }
 }
 
 async function handleThemeAction(themeId) {
@@ -7191,29 +7263,36 @@ const PET_TYPES = [
 ];
 
 function renderItemShop() {
-    const grid = document.getElementById('shopItemGrid');
-    if (!grid) return;
+    const carousel = document.getElementById('shopItemGrid');
+    if (!carousel) return;
 
-    grid.innerHTML = SHOP_ITEMS.map(item => {
+    const chips = SHOP_ITEMS.map(item => {
         const canAfford = _userCoins >= item.price;
-        let qty = '';
+        let qty = 0;
         if (item.id === 'shield') qty = _streakFreezes;
         else if (item.id === 'egg') qty = _petEggs;
         else qty = (_petFood[item.id] || 0);
 
-        return `<div class="item-card">
+        return `<div class="sc-chip${qty > 0 ? ' owned' : ''}">
             ${qty > 0 ? `<div class="item-qty-badge">x${qty}</div>` : ''}
-            <div class="item-icon-big">${item.icon}</div>
-            <div class="item-name">${item.name}</div>
-            <div class="item-desc">${item.desc}</div>
-            <div class="item-price">🪙 ${item.price.toLocaleString('vi-VN')}</div>
-            <button class="item-buy-btn ${canAfford?'':'no-coin'}"
-                onclick="buyShopItem('${item.id}')"
-                ${canAfford?'':' disabled'}>
-                ${canAfford ? '🛒 Mua' : '🪙 Không đủ coin'}
-            </button>
+            <div class="sc-chip-header">
+                <span class="sc-chip-icon">${item.icon}</span>
+                <div class="sc-chip-name">${item.name}</div>
+            </div>
+            <div class="sc-chip-desc">${item.desc}</div>
+            <div class="sc-chip-footer">
+                <span class="sc-chip-price">🪙 ${item.price.toLocaleString('vi-VN')}</span>
+                <button class="sc-chip-btn ${canAfford?'buy':'no-coin'}"
+                    onclick="buyShopItem('${item.id}')"
+                    ${canAfford?'':' disabled'}>
+                    ${canAfford ? '🛒 Mua' : '🔒 Mua'}
+                </button>
+            </div>
         </div>`;
     }).join('');
+    carousel.innerHTML = chips;
+    const expand = document.getElementById('shopItemExpand');
+    if (expand) { expand.innerHTML = chips; expand.classList.add('items-expand'); }
 
     // Show/hide Pet House button
     const wrap = document.getElementById('petHouseBannerWrap');
