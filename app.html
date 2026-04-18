@@ -4715,7 +4715,7 @@ function switchTab(name) {
     setTimeout(() => tab.classList.add('fade-in'), 10);
     document.querySelectorAll('.dtab').forEach(b => { b.classList.remove('active'); if(b.dataset.tab===name) b.classList.add('active'); });
     document.querySelectorAll('.mbtab').forEach(b => { b.classList.remove('active'); if(b.dataset.tab===name) b.classList.add('active'); });
-    if (name==='library') { loadLibrary(); renderPetWidget(); }
+    if (name==='library') { loadLibrary(); renderPetWidget(); window.scrollTo({ top: 0, behavior: 'smooth' }); }
     if (name==='review')  { loadSRSDueCount(); if (!topicLists.length) loadTopicLists(); }
     if (name==='games')   { if (!topicLists.length) loadTopicLists(); updateGameWordCount(); }
     if (name==='shop')    renderShop();
