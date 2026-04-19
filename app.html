@@ -98,7 +98,7 @@
         .pet-widget::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 80% 50%,rgba(251,191,36,.18) 0%,transparent 65%);pointer-events:none;}
         .pet-widget-inner{display:flex;align-items:center;gap:14px;position:relative;z-index:1;}
         .pet-widget-img-wrap{position:relative;flex-shrink:0;width:72px;height:72px;display:flex;align-items:center;justify-content:center;}
-        .pet-widget-img{width:68px;height:68px;object-fit:contain;object-position:center;animation:petBounce 2.5s ease-in-out infinite;cursor:pointer;filter:drop-shadow(0 0 6px rgba(251,191,36,.7));}
+        .pet-widget-img{width:92px;height:92px;object-fit:contain;object-position:center;animation:petBounce 2.5s ease-in-out infinite;cursor:pointer;filter:drop-shadow(0 0 6px rgba(251,191,36,.7));}
         .pet-widget-img.mood-happy   {filter:drop-shadow(0 0 5px rgba(255,255,255,.9)) drop-shadow(0 0 10px rgba(99,102,241,.8));}
         .pet-widget-img.mood-content {filter:drop-shadow(0 0 5px rgba(255,255,255,.9)) drop-shadow(0 0 10px rgba(16,185,129,.8));}
         .pet-widget-img.mood-sad     {filter:drop-shadow(0 0 4px rgba(255,255,255,.7)) drop-shadow(0 0 8px rgba(148,163,184,.6));}
@@ -106,9 +106,9 @@
         .pet-widget-toy{position:absolute;font-size:.95rem;animation:toyOrbit var(--d,4s) linear infinite;pointer-events:none;}
         .pet-widget-body{flex:1;min-width:0;}
         .pet-widget-name{font-family:'Nunito',sans-serif;font-weight:900;font-size:.85rem;color:#78350f;margin-bottom:3px;}
-        .pet-widget-bubble{position:relative;background:#fff;border:1.5px solid #fde68a;border-radius:12px 12px 12px 4px;padding:7px 12px;font-size:.8rem;font-weight:600;color:#44403c;line-height:1.5;display:inline-block;max-width:100%;box-shadow:0 2px 8px rgba(0,0,0,.07);}
-        .pet-widget-bubble::before{content:'';position:absolute;bottom:-8px;left:10px;border:4px solid transparent;border-top-color:#fde68a;}
-        .pet-widget-bubble::after{content:'';position:absolute;bottom:-6px;left:11px;border:3px solid transparent;border-top-color:#fff;}
+        .pet-widget-bubble{position:relative;background:#fff;border:1.5px solid #fde68a;border-radius:12px 12px 12px 4px;padding:7px 12px;font-size:.8rem;font-weight:600;color:#44403c;line-height:1.5;display:inline-block;max-width:100%;box-shadow:0 2px 8px rgba(0,0,0,.07);text-align:center;}
+        .pet-widget-bubble::before{content:'';position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#fde68a;}
+        .pet-widget-bubble::after{content:'';position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:#fff;}
         .pet-widget-stats{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;}
         .pet-widget-stat{display:flex;align-items:center;gap:4px;font-size:.68rem;font-weight:700;color:#92400e;}
         .pet-widget-mini-bar{width:50px;height:5px;border-radius:99px;background:#fde68a;overflow:hidden;flex-shrink:0;}
@@ -1142,13 +1142,17 @@
     <div id="tab-library" class="hidden fade-in">
         <!-- ── Pet widget (shown only if user has a pet) ── -->
         <div class="pet-widget" id="libPetWidget">
-            <div class="pet-widget-inner">
-                <div class="pet-widget-img-wrap" id="libPetImgWrap">
-                    <!-- img injected by JS -->
-                </div>
-                <div class="pet-widget-body">
+            <div style="display:flex;align-items:flex-end;gap:16px;position:relative;z-index:1;">
+                <!-- Left: pet + bubble stacked vertically -->
+                <div style="display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0;">
+                    <div class="pet-widget-bubble" id="libPetBubble" style="border-radius:12px 12px 12px 4px;max-width:220px;"></div>
+                    <div class="pet-widget-img-wrap" id="libPetImgWrap" style="width:96px;height:96px;">
+                        <!-- img injected by JS -->
+                    </div>
                     <div class="pet-widget-name" id="libPetName"></div>
-                    <div class="pet-widget-bubble" id="libPetBubble"></div>
+                </div>
+                <!-- Right: stats + button -->
+                <div style="flex:1;display:flex;flex-direction:column;gap:8px;padding-bottom:4px;">
                     <div class="pet-widget-stats">
                         <div class="pet-widget-stat">
                             🍽️
@@ -1161,9 +1165,7 @@
                             <span id="libHappyPct"></span>
                         </div>
                     </div>
-                </div>
-                <div class="pet-widget-action">
-                    <button class="pet-widget-btn" onclick="openPetHouse()">🏠 Pet House</button>
+                    <button class="pet-widget-btn" onclick="openPetHouse()" style="align-self:flex-start;">🏠 Pet House</button>
                 </div>
             </div>
         </div>
@@ -4308,7 +4310,7 @@ function renderPetWidget() {
 
     // Name + bubble
     const nameEl = document.getElementById('libPetName');
-    if (nameEl) nameEl.textContent = `${pet.name} · Lv.${pet.level||1}`;
+    if (nameEl) nameEl.textContent = pet.name;
 
     const bubbleEl = document.getElementById('libPetBubble');
     if (bubbleEl) bubbleEl.textContent = PET_MESSAGES[mood] || PET_MESSAGES.content;
@@ -7738,10 +7740,12 @@ async function feedPet(foodId) {
     const favFood = PET_TYPES.find(p=>p.type===pet.type)?.favFood;
     const bonus = foodId === favFood ? 1.5 : 1;
 
-    pet.hunger    = Math.min(100, (pet.hunger||50)    + Math.round(fx.hunger * bonus));
-    pet.happiness = Math.min(100, (pet.happiness||50) + Math.round(fx.happy  * bonus));
-    pet.lastFed         = Date.now();
-    pet.lastInteracted  = Date.now();  // reset happiness decay timer on feeding
+    // Tính decay thực tế trước khi cộng dinh dưỡng
+    const { hunger: realH, happiness: realP } = calcPetStats(pet);
+    pet.hunger    = Math.min(100, realH + Math.round(fx.hunger * bonus));
+    pet.happiness = Math.min(100, realP + Math.round(fx.happy  * bonus));
+    pet.lastFed        = Date.now();
+    pet.lastInteracted = Date.now();
 
     if (pet.happiness >= 100 && (pet.level||1) < 10) {
         pet.level = (pet.level||1) + 1;
@@ -7763,12 +7767,20 @@ async function feedPet(foodId) {
     renderPetWidget();   // sync library widget
 }
 
+let _lastPatTime = 0;
 function petPat() {
+    const now = Date.now();
+    if (now - _lastPatTime < 500) return; // chống tap liên tục quá nhanh
+    _lastPatTime = now;
     const pet = _pets[_activePetIdx];
     if (!pet) return;
     const chibi = document.getElementById('petChibi');
-    pet.happiness = Math.min(100, (pet.happiness||50) + 2);
-    const newMood = getPetMood(pet.hunger||50, pet.happiness);
+    // Tính decay thực tế trước, rồi mới cộng đúng +2
+    const { hunger: realHunger, happiness: realHappy } = calcPetStats(pet);
+    pet.happiness = Math.min(100, realHappy + 2);
+    pet.hunger    = realHunger;
+    pet.lastInteracted = Date.now();
+    const newMood = getPetMood(pet.hunger, pet.happiness);
     if (chibi && chibi.tagName === 'IMG') {
         chibi.src = `pets/${pet.type}_${newMood}.png`;
         chibi.className = `pet-chibi mood-${newMood}`;
@@ -7776,16 +7788,16 @@ function petPat() {
     } else if (chibi) {
         chibi.classList.remove('happy'); void chibi.offsetWidth; chibi.classList.add('happy');
     }
-    pet.lastInteracted = Date.now();
     showToast(`💕 ${pet.name} vui vẻ hơn rồi!`);
     // Update stat bar immediately without full re-render (keeps animation)
-    const fill = document.querySelector('.pet-stat-fill:last-child');
     const happyColor = pet.happiness > 60 ? '#6366f1' : pet.happiness > 30 ? '#f59e0b' : '#ef4444';
-    document.querySelectorAll('.pet-stat-fill').forEach((el,i) => {
-        if (i === 1) { el.style.width = pet.happiness + '%'; el.style.background = happyColor; }
-    });
+    const hungerColor2 = pet.hunger > 60 ? '#10b981' : pet.hunger > 30 ? '#f59e0b' : '#ef4444';
+    const fills = document.querySelectorAll('#petHouseBody .pet-stat-fill');
+    if (fills[0]) { fills[0].style.width = Math.round(pet.hunger) + '%';    fills[0].style.background = hungerColor2; }
+    if (fills[1]) { fills[1].style.width = Math.round(pet.happiness) + '%'; fills[1].style.background = happyColor; }
     const spans = document.querySelectorAll('#petHouseBody .pet-stat-bar + span');
-    if (spans[1]) { spans[1].textContent = pet.happiness + '%'; spans[1].style.color = happyColor; }
+    if (spans[0]) { spans[0].textContent = Math.round(pet.hunger) + '%';    spans[0].style.color = hungerColor2; }
+    if (spans[1]) { spans[1].textContent = Math.round(pet.happiness) + '%'; spans[1].style.color = happyColor; }
     _savePetAndFreeze();
     renderPetWidget();   // sync library widget
 }
