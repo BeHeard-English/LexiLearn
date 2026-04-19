@@ -99,6 +99,8 @@
         .pet-widget-inner{display:flex;align-items:center;gap:14px;position:relative;z-index:1;}
         .pet-widget-img-wrap{position:relative;flex-shrink:0;width:72px;height:72px;display:flex;align-items:center;justify-content:center;}
         .pet-widget-img{width:92px;height:92px;object-fit:contain;object-position:center;animation:petBounce 2.5s ease-in-out infinite;cursor:pointer;filter:drop-shadow(0 0 6px rgba(251,191,36,.7));}
+        @media(min-width:600px){.pet-widget-img{width:276px;height:276px;} .pet-widget-img-wrap{width:280px!important;height:280px!important;} #libWorstWordsSection{display:flex!important;} }
+        @media(max-width:599px){#libWorstWordsSection{display:none!important;} }
         .pet-widget-img.mood-happy   {filter:drop-shadow(0 0 5px rgba(255,255,255,.9)) drop-shadow(0 0 10px rgba(99,102,241,.8));}
         .pet-widget-img.mood-content {filter:drop-shadow(0 0 5px rgba(255,255,255,.9)) drop-shadow(0 0 10px rgba(16,185,129,.8));}
         .pet-widget-img.mood-sad     {filter:drop-shadow(0 0 4px rgba(255,255,255,.7)) drop-shadow(0 0 8px rgba(148,163,184,.6));}
@@ -1160,7 +1162,7 @@
             <div style="display:flex;gap:16px;position:relative;z-index:1;align-items:flex-start;">
 
                 <!-- Left column: bubble → pet → name + stats -->
-                <div style="display:flex;flex-direction:column;align-items:center;gap:5px;flex-shrink:0;min-width:96px;">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:5px;flex-shrink:0;">
                     <div class="pet-widget-bubble" id="libPetBubble"></div>
                     <div class="pet-widget-img-wrap" id="libPetImgWrap" style="width:96px;height:96px;"></div>
                     <div class="pet-widget-name" id="libPetName"></div>
@@ -1179,10 +1181,10 @@
                     </div>
                 </div>
 
-                <!-- Right column: worst words vocab section -->
-                <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;">
+                <!-- Right column: worst words vocab section (desktop/tablet only) -->
+                <div id="libWorstWordsSection" style="display:none;flex:1;min-width:0;flex-direction:column;gap:6px;">
                     <div style="font-size:.72rem;font-weight:800;color:#92400e;text-transform:uppercase;letter-spacing:.05em;">⚠️ Từ hay nhầm nhất</div>
-                    <div id="libWorstWords" style="display:flex;flex-direction:column;gap:5px;"></div>
+                    <div id="libWorstWords" style="display:grid;grid-template-columns:1fr 1fr;gap:5px;"></div>
                 </div>
             </div>
         </div>
@@ -4383,7 +4385,7 @@ function renderWorstWords() {
     const worst = [...fullLibrary]
         .filter(i => (i.incorrect_count||0) > 0)
         .sort((a,b) => (b.incorrect_count||0) - (a.incorrect_count||0))
-        .slice(0, 5);
+        .slice(0, 10);
     if (!worst.length) {
         container.innerHTML = '<div style="font-size:.75rem;color:var(--muted);padding:6px 0;">Chưa có từ nào bị nhầm. Tuyệt vời! 🎉</div>';
         return;
