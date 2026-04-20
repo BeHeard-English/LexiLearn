@@ -96,6 +96,20 @@
         /* ── PET LIBRARY WIDGET ── */
         .pet-widget{display:none;border-radius:18px;padding:14px 16px;margin-bottom:16px;background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1.5px solid #fde68a;position:relative;overflow:hidden;}
         .pet-widget::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 80% 50%,rgba(251,191,36,.18) 0%,transparent 65%);pointer-events:none;}
+        /* Deco icons: chỉ hiện trên mobile */
+        .pet-deco{display:none;pointer-events:none;user-select:none;}
+        @media(max-width:599px){
+            .pet-deco{display:block;position:absolute;font-size:1.15rem;opacity:.55;z-index:0;}
+            .pet-deco.d1{top:10px; left:10px; animation:decoFloat 3.2s ease-in-out infinite;}
+            .pet-deco.d2{top:46px; left:6px;  font-size:.8rem; opacity:.4; animation:decoFloat 4.1s ease-in-out infinite reverse;}
+            .pet-deco.d3{bottom:22px; left:14px; font-size:.9rem; animation:decoFloat 3.7s ease-in-out infinite 0.5s;}
+            .pet-deco.d4{bottom:8px;  left:4px;  font-size:.7rem; opacity:.35; animation:decoFloat 5s ease-in-out infinite 1s;}
+            .pet-deco.d5{top:10px; right:10px; animation:decoFloat 3.5s ease-in-out infinite 0.3s;}
+            .pet-deco.d6{top:44px; right:6px;  font-size:.8rem; opacity:.4; animation:decoFloat 4.4s ease-in-out infinite reverse 0.8s;}
+            .pet-deco.d7{bottom:22px; right:14px; font-size:.9rem; animation:decoFloat 3.9s ease-in-out infinite 1.2s;}
+            .pet-deco.d8{bottom:8px;  right:4px;  font-size:.7rem; opacity:.35; animation:decoFloat 4.8s ease-in-out infinite 0.6s;}
+        }
+        @keyframes decoFloat{0%,100%{transform:translateY(0);}50%{transform:translateY(-5px);}}
         .pet-widget-inner{display:flex;align-items:center;gap:14px;position:relative;z-index:1;}
         .pet-widget-img-wrap{position:relative;flex-shrink:0;width:72px;height:72px;display:flex;align-items:center;justify-content:center;}
         .pet-widget-img{width:92px;height:92px;object-fit:contain;object-position:center;animation:petBounce 2.5s ease-in-out infinite;cursor:pointer;filter:drop-shadow(0 0 6px rgba(251,191,36,.7));}
@@ -1177,6 +1191,15 @@
     <div id="tab-library" class="hidden fade-in">
         <!-- ── Pet widget (shown only if user has a pet) ── -->
         <div class="pet-widget" id="libPetWidget">
+            <!-- Trang trí môi trường, chỉ hiện mobile -->
+            <span class="pet-deco d1">🌿</span>
+            <span class="pet-deco d2">🌸</span>
+            <span class="pet-deco d3">🍀</span>
+            <span class="pet-deco d4">⭐</span>
+            <span class="pet-deco d5">✨</span>
+            <span class="pet-deco d6">🌼</span>
+            <span class="pet-deco d7">🐾</span>
+            <span class="pet-deco d8">💛</span>
             <div class="pet-widget-row">
 
                 <!-- Left column: bubble → pet → name + stats -->
