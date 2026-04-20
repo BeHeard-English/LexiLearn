@@ -7504,15 +7504,15 @@ function petImgHtml(petObj, mood, cssClass, extraStyle) {
 const SHOP_ITEMS = [
     // ── Đặc biệt ──
     { id:'shield',   icon:'🛡️', name:'Khiên Streak',    desc:'Bảo vệ streak 1 ngày nếu bỏ lỡ hôm đó', price:1000, unit:'khiên', group:'special' },
-    { id:'egg',      icon:'🥚', name:'Trứng bí ẩn',     desc:'Ấp ra thú cưng chibi ngẫu nhiên! Mỗi trứng một bất ngờ', price:2000, unit:'trứng', group:'special' },
+    { id:'egg',      icon:'🥚', name:'Trứng bí ẩn',     desc:'Ấp ra thú cưng ngẫu nhiên! Mỗi trứng một bất ngờ', price:2000, unit:'trứng', group:'special' },
     // ── Thức ăn ──
-    { id:'grain',    icon:'🌾', name:'Hạt tổng hợp',    desc:'+8 no bụng. Rẻ nhất, dùng hàng ngày', price:50, unit:'gói',   group:'food', hunger:8,  happy:0 },
-    { id:'apple',    icon:'🍎', name:'Táo',              desc:'+12 no bụng. Thức ăn cơ bản phổ biến', price:75, unit:'quả',   group:'food', hunger:12, happy:2 },
-    { id:'carrot',   icon:'🥕', name:'Cà rốt',           desc:'+15 no bụng & +5 vui vẻ. Tốt cho sức khoẻ', price:100, unit:'củ',    group:'food', hunger:15, happy:5 },
-    { id:'bread',    icon:'🍞', name:'Bánh mì',          desc:'+18 no bụng & +3 vui vẻ. No lâu hơn táo', price:125, unit:'ổ',    group:'food', hunger:18, happy:3 },
-    { id:'fish',     icon:'🐟', name:'Cá tươi',          desc:'+22 no bụng & +12 vui vẻ. Được cá yêu thích!', price:150, unit:'con',   group:'food', hunger:22, happy:12 },
-    { id:'cake',     icon:'🎂', name:'Bánh kem',         desc:'+10 no bụng & +25 vui vẻ. Vui đột biến!', price:200, unit:'miếng', group:'food', hunger:10, happy:25 },
-    { id:'sushi',    icon:'🍱', name:'Sushi cao cấp',    desc:'+30 no bụng & +20 vui vẻ. Bữa ăn sang chảnh nhất', price:300, unit:'hộp',  group:'food', hunger:30, happy:20 },
+    { id:'grain',    icon:'🌾', name:'Hạt tổng hợp',    desc:'+10 no bụng. Rẻ nhất, dùng hàng ngày', price:50, unit:'gói',   group:'food', hunger:10,  happy:0 },
+    { id:'apple',    icon:'🍎', name:'Táo',              desc:'+15 no bụng & +10 vui vẻ. Thức ăn cơ bản phổ biến', price:75, unit:'quả',   group:'food', hunger:15, happy:10 },
+    { id:'carrot',   icon:'🥕', name:'Cà rốt',           desc:'+25 no bụng & +20 vui vẻ. Tốt cho sức khoẻ', price:100, unit:'củ',    group:'food', hunger:25, happy:20 },
+    { id:'bread',    icon:'🍞', name:'Bánh mì',          desc:'+35 no bụng & +25 vui vẻ. Dễ ăn!', price:150, unit:'ổ',    group:'food', hunger:35, happy:25 },
+    { id:'fish',     icon:'🐟', name:'Cá tươi',          desc:'+45 no bụng & +30 vui vẻ. Được yêu thích!', price:200, unit:'con',   group:'food', hunger:45, happy:30 },
+    { id:'cake',     icon:'🎂', name:'Bánh kem',         desc:'+55 no bụng & +35 vui vẻ. Vui đột biến!', price:250, unit:'miếng', group:'food', hunger:55, happy:35 },
+    { id:'sushi',    icon:'🍱', name:'Sushi cao cấp',    desc:'+65 no bụng & +40 vui vẻ. Bữa ăn sang chảnh nhất', price:300, unit:'hộp',  group:'food', hunger:65, happy:40 },
     // ── Đồ chơi ──
     { id:'toy_ball',   icon:'⚽', name:'Bóng đá',        desc:'6h · Vui vẻ giảm chậm hơn 50%. Thú cưng thích lăn bóng!', price:150, unit:'cái', group:'toy', durationH:6,  slowHappy:0.5, slowHunger:1.0 },
     { id:'toy_rope',   icon:'🪢', name:'Dây kéo',        desc:'12h · Vui vẻ giảm chậm hơn 50%. Tốt cho cả hai!', price:250, unit:'cái', group:'toy', durationH:12, slowHappy:0.5, slowHunger:0.85 },
@@ -7521,12 +7521,12 @@ const SHOP_ITEMS = [
 ];
 
 const PET_TYPES = [
-    { type:'cat',    emoji:'🐱', name:'Mèo chibi',  favFood:'fish' },
-    { type:'dog',    emoji:'🐶', name:'Chó chibi',  favFood:'carrot' },
-    { type:'rabbit', emoji:'🐰', name:'Thỏ chibi',  favFood:'carrot' },
-    { type:'bird',   emoji:'🐤', name:'Chim chibi', favFood:'grain' },
-    { type:'hamster',emoji:'🐹', name:'Chuột túi',  favFood:'grain' },
-    { type:'fox',    emoji:'🦊', name:'Cáo chibi',  favFood:'apple' },
+    { type:'cat',    emoji:'🐱', name:'Mèo',  favFood:'fish' },
+    { type:'dog',    emoji:'🐶', name:'Chó',  favFood:'carrot' },
+    { type:'rabbit', emoji:'🐰', name:'Thỏ',  favFood:'carrot' },
+    { type:'bird',   emoji:'🐤', name:'Chim', favFood:'grain' },
+    { type:'hamster',emoji:'🐹', name:'Chuột',  favFood:'grain' },
+    { type:'fox',    emoji:'🦊', name:'Cáo',  favFood:'apple' },
 ];
 
 function renderItemShop() {
@@ -7736,7 +7736,7 @@ function renderPetHouseBody() {
               <div class="pet-chibi-wrap">
                 <img src="pets/${activePet.type}_${getPetMood(hunger,happiness)}.png"
                     alt="${activePet.name}" id="petChibi"
-                    class="pet-chibi mood-${getPetMood(hunger,happiness)}" onclick="petPat()" title="Vỗ về thú cưng 💕"
+                    class="pet-chibi mood-${getPetMood(hunger,happiness)}" onclick="petPat()" title="Chơi với thú cưng 💕"
                     style="opacity:0;transition:opacity .3s;position:relative;z-index:1;"
                     onload="this.style.opacity='1'"
                     onerror="this.onerror=null;this.style.display='none';document.getElementById('petChibiFallback').style.display='block'">
@@ -7752,7 +7752,7 @@ function renderPetHouseBody() {
                     return `<span class="pet-toy-orbit" style="--d:${spd}s;--r:${rad}px;animation-delay:-${dly}s;">${td?.icon||'🧸'}</span>`;
                 }).join('')}
               </div>
-              <div style="font-size:.72rem;color:var(--muted);margin-top:4px;">Chạm để vỗ về 💕</div>
+              <div style="font-size:.72rem;color:var(--muted);margin-top:4px;">Chạm để chơi cùng thú cưng 💕</div>
             </div>
             <div>
               <div style="font-weight:800;font-size:.82rem;color:var(--text);margin-bottom:8px;">🍱 Cho ăn</div>
