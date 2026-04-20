@@ -5837,8 +5837,9 @@ async function processPasteWords() {
     // Lọc từ đã có
     const existingWords = fullLibrary.map(i => i.word.toLowerCase());
     const newWords = parsedWords.filter(i => !existingWords.includes(i.word));
+    const dupCount = parsedWords.length - newWords.length;
     if (newWords.length === 0) {
-        showToast('💡 Tất cả các từ đã có trong thư viện!');
+        showToast(`💡 Tất cả ${dupCount} từ đã có trong thư viện!`);
         return;
     }
 
@@ -5868,7 +5869,8 @@ Do not output any markdown formatting or extra text, just the raw JSON array.`;
         await saveVocabToDb(finalData);
         await loadLibrary();
         closePasteWordsModal();
-        showToast(`✅ Đã thêm thành công ${finalData.length} từ vựng mới!`);
+        const dupMsg = dupCount > 0 ? ` · ${dupCount} từ trùng đã bỏ qua` : '';
+        showToast(`✅ Đã thêm ${finalData.length} từ mới${dupMsg}`);
         _extraBadgeData.importedDocx = true;
         db.collection('users').doc(currentUser.uid).set({ badgeExtra:{ importedDocx:true } }, {merge:true});
         const xp2 = await getUserXP(); checkAndAwardBadges(xp2);
@@ -6187,7 +6189,8 @@ async function processPasteForTopicList(listId, text) {
     const tlDoc = await db.collection('users').doc(currentUser.uid).collection('topicLists').doc(listId).get();
     const existingIds = (tlDoc.data()?.wordIds) || [];
     const newWords = parsedWords.filter(w => !existingIds.includes(w.word));
-    if (!newWords.length) { showToast('💡 Tất cả từ đã có trong danh sách!'); return; }
+    const dupCount = parsedWords.length - newWords.length;
+    if (!newWords.length) { showToast(`💡 Tất cả ${dupCount} từ đã có trong danh sách!`); return; }
 
     showToast(`✨ AI đang phân tích ${newWords.length} từ...`);
     try {
@@ -6211,7 +6214,8 @@ Only raw JSON, no markdown.`;
         if (tlIdx >= 0) topicLists[tlIdx].wordIds = allIds;
         renderTopicLists(); populateReviewVocabSelect(); await loadLibrary();
         if (currentTopicListId === listId) openTopicListDetail(listId);
-        showToast(`✅ Đã thêm ${finalData.length} từ vào danh sách!`);
+        const dupMsg2 = dupCount > 0 ? ` · ${dupCount} từ trùng đã bỏ qua` : '';
+        showToast(`✅ Đã thêm ${finalData.length} từ vào danh sách${dupMsg2}`);
     } catch(err) {
         console.error(err); showToast('❌ Có lỗi xảy ra, vui lòng thử lại.');
     }
