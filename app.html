@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Be Heard |Lexi Learning</title>
+    <title>Be Heard | Lexi Learning</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
@@ -102,7 +102,7 @@
         .pet-widget-row{display:flex;gap:16px;position:relative;z-index:1;align-items:flex-start;}
         @media(max-width:599px){.pet-widget-row{flex-direction:column;align-items:center;}}
         .pet-widget-left-col{display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0;}
-        .pet-widget-statblock{display:flex;flex-direction:column;gap:3px;width:100%;margin-top:1px;}
+        .pet-widget-statblock{display:flex;flex-direction:row;gap:8px;width:100%;margin-top:1px;align-items:center;}
         .pet-widget-stat-icon{display:inline-block;width:1.3em;text-align:center;flex-shrink:0;line-height:1;}
         @media(max-width:599px){
             .pet-widget-row{display:flex;gap:16px;position:relative;z-index:1;align-items:flex-start;}
@@ -130,7 +130,7 @@
         .pet-widget-bubble::before{content:'';position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#fde68a;}
         .pet-widget-bubble::after{content:'';position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);border:4px solid transparent;border-top-color:#fff;}
         .pet-widget-stats{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;}
-        .pet-widget-stat{display:flex;align-items:center;gap:4px;font-size:.68rem;font-weight:700;color:#92400e;}
+        .pet-widget-stat{display:flex;align-items:center;gap:4px;font-size:.68rem;font-weight:700;color:#92400e;flex:1;min-width:0;}
         .pet-widget-mini-bar{width:50px;height:5px;border-radius:99px;background:#fde68a;overflow:hidden;flex-shrink:0;}
         .pet-widget-mini-fill{height:100%;border-radius:99px;transition:width .5s;}
         .pet-widget-action{flex-shrink:0;}
