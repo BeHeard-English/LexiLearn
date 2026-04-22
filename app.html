@@ -496,6 +496,18 @@
         .creator-grid{display:grid;grid-template-columns:1fr;gap:20px;}
         @media(min-width:1100px){.creator-grid{grid-template-columns:7fr 5fr;}}
         .review-start{max-width:560px;margin:0 auto;}
+        @media(min-width:768px){
+            .review-start{max-width:860px;}
+            #reviewStart{padding:24px 28px!important;text-align:left!important;}
+            .review-setup-header{display:flex;align-items:center;gap:14px;margin-bottom:22px;padding-bottom:18px;border-bottom:1px solid var(--border);}
+            .review-setup-header-icon{font-size:2rem;line-height:1;flex-shrink:0;}
+            .review-setup-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 32px;}
+            .review-setup-col{display:flex;flex-direction:column;gap:18px;}
+        }
+        @media(max-width:767px){
+            .review-setup-header-icon{display:none;}
+            .review-setup-header{text-align:center;margin-bottom:22px;}
+        }
 
         /* ANIMATIONS */
         @keyframes fadeIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:none;}}
@@ -1396,73 +1408,102 @@
         <div class="review-start">
             <!-- Start card -->
             <div id="reviewStart" class="card slide-up" style="padding:32px 28px;text-align:center;">
-                <div style="font-size:2.8rem;margin-bottom:14px;">🎯</div>
-                <div style="font-family:'Nunito',sans-serif;font-size:1.6rem;font-weight:800;color:var(--primary);margin-bottom:8px;">Ôn tập từ vựng</div>
-                <p style="font-size:.9rem;color:var(--muted);margin-bottom:28px;">Từ đến hạn SRS được ưu tiên ⚡</p>
 
-                <!-- Vocab source -->
-                <div style="text-align:left;margin-bottom:22px;">
-                    <div class="section-label" style="margin-bottom:10px;">Nguồn từ vựng</div>
-                    <select id="reviewVocabSource" class="vocab-source-select">
-                        <option value="all">📚 Thư viện tổng hợp (tất cả)</option>
-                    </select>
-                </div>
-
-                <!-- Study type -->
-                <div style="text-align:left;margin-bottom:22px;">
-                    <div class="section-label" style="margin-bottom:10px;">Hình thức học <span style="font-weight:400;color:#94a3b8;text-transform:none;letter-spacing:0;">(chọn nhiều để đa dạng)</span></div>
-                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                        <button class="mode-btn active" data-study="quiz" style="gap:6px;">🎯 Trắc nghiệm</button>
-                        <button class="mode-btn" data-study="flash" style="gap:6px;">🃏 Flashcard</button>
-                        <button class="mode-btn" data-study="typing" style="gap:6px;">⌨️ Gõ đáp án</button>
-                        <button class="mode-btn" data-study="fillblank" style="gap:6px;">📝 Điền từ</button>
-                        <button class="mode-btn" data-study="sentence" style="gap:6px;">✍️ Viết Câu</button>
-                        <button class="mode-btn" data-study="listening" style="gap:6px;">🎧 Nghe hiểu</button>
+                <!-- Header -->
+                <div class="review-setup-header">
+                    <span class="review-setup-header-icon">🎯</span>
+                    <div>
+                        <div style="font-family:'Nunito',sans-serif;font-size:1.5rem;font-weight:800;color:var(--primary);line-height:1.2;">Ôn tập từ vựng</div>
+                        <p style="font-size:.85rem;color:var(--muted);margin:4px 0 0;">Từ đến hạn SRS được ưu tiên ⚡</p>
                     </div>
                 </div>
 
-                <!-- Mode (ẩn khi chọn điền từ vì câu ví dụ luôn là tiếng Anh) -->
-                <div id="reviewModeWrap" style="text-align:left;margin-bottom:22px;">
-                    <div class="section-label" style="margin-bottom:10px;">Chiều học</div>
-                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                        <button class="mode-btn active" data-mode="normal">🇬🇧 Từ → Nghĩa</button>
-                        <button class="mode-btn" data-mode="reverse">🇻🇳 Nghĩa → Từ</button>
-                    </div>
-                </div>
-                <!-- AI Grading option (chỉ hiển thị khi chọn typing? nhưng để đơn giản, đặt luôn, nhưng chỉ typing mới dùng) -->
-<div id="aiGradingOption" style="text-align:left;margin-bottom:22px;">
-    <label style="display:flex;align-items:center;gap:8px; cursor:pointer;">
-        <input type="checkbox" id="useAIGrading"> 🤖 Dùng AI chấm điểm (chỉ cho chế độ gõ từ → nghĩa)
-    </label>
-</div>
-                <!-- Count -->
-                <div style="text-align:left;margin-bottom:22px;">
-                    <div class="section-label" style="margin-bottom:10px;">Số câu hỏi</div>
-                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                        <button class="count-btn active" data-count="5">5 câu</button>
-                        <button class="count-btn" data-count="10">10 câu</button>
-                        <button class="count-btn" data-count="15">15 câu</button>
-                        <button class="count-btn" data-count="20">20 câu</button>
-                    </div>
-                </div>
-                <!-- Level -->
-                <div style="text-align:left;margin-bottom:28px;">
-                    <div class="section-label" style="margin-bottom:10px;">Cấp độ <span style="font-weight:400;color:#94a3b8;text-transform:none;letter-spacing:0;">(chọn nhiều)</span></div>
-                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                        <button class="level-btn active" data-level="A1">A1</button>
-                        <button class="level-btn active" data-level="A2">A2</button>
-                        <button class="level-btn active" data-level="B1">B1</button>
-                        <button class="level-btn active" data-level="B2">B2</button>
-                        <button class="level-btn active" data-level="C1">C1</button>
-                        <button class="level-btn active" data-level="C2">C2</button>
-                    </div>
-                </div>
-                <!-- SRS due info -->
-                <div id="srsDueInfo" style="display:none;background:var(--primary-light);border-radius:12px;padding:12px 16px;margin-bottom:20px;text-align:left;font-size:.85rem;color:var(--primary);font-weight:600;">
-                    ⏰ Bạn có <strong id="srsDueCount">0</strong> từ đến hạn ôn hôm nay — sẽ được ưu tiên trong bài.
-                </div>
-                <button onclick="startReviewQuiz()" class="btn-primary wide" style="padding:16px;font-size:1rem;">🚀 Bắt đầu ngay</button>
-            </div>
+                <!-- 2-col grid on desktop, single col on mobile -->
+                <div class="review-setup-grid">
+
+                    <!-- CỘT TRÁI -->
+                    <div class="review-setup-col">
+
+                        <!-- Vocab source -->
+                        <div>
+                            <div class="section-label" style="margin-bottom:10px;">Nguồn từ vựng</div>
+                            <select id="reviewVocabSource" class="vocab-source-select">
+                                <option value="all">📚 Thư viện tổng hợp (tất cả)</option>
+                            </select>
+                        </div>
+
+                        <!-- Study type -->
+                        <div>
+                            <div class="section-label" style="margin-bottom:10px;">Hình thức học <span style="font-weight:400;color:#94a3b8;text-transform:none;letter-spacing:0;">(chọn nhiều để đa dạng)</span></div>
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                <button class="mode-btn active" data-study="quiz" style="gap:6px;">🎯 Trắc nghiệm</button>
+                                <button class="mode-btn" data-study="flash" style="gap:6px;">🃏 Flashcard</button>
+                                <button class="mode-btn" data-study="typing" style="gap:6px;">⌨️ Gõ đáp án</button>
+                                <button class="mode-btn" data-study="fillblank" style="gap:6px;">📝 Điền từ</button>
+                                <button class="mode-btn" data-study="sentence" style="gap:6px;">✍️ Viết Câu</button>
+                                <button class="mode-btn" data-study="listening" style="gap:6px;">🎧 Nghe hiểu</button>
+                            </div>
+                        </div>
+
+                        <!-- Mode -->
+                        <div id="reviewModeWrap">
+                            <div class="section-label" style="margin-bottom:10px;">Chiều học</div>
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                <button class="mode-btn active" data-mode="normal">🇬🇧 Từ → Nghĩa</button>
+                                <button class="mode-btn" data-mode="reverse">🇻🇳 Nghĩa → Từ</button>
+                            </div>
+                        </div>
+
+                        <!-- AI Grading -->
+                        <div id="aiGradingOption">
+                            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                                <input type="checkbox" id="useAIGrading"> 🤖 Dùng AI chấm điểm <span style="font-size:.75rem;color:#94a3b8;">(chỉ cho chế độ gõ từ → nghĩa)</span>
+                            </label>
+                        </div>
+
+                    </div><!-- /cột trái -->
+
+                    <!-- CỘT PHẢI -->
+                    <div class="review-setup-col">
+
+                        <!-- Count -->
+                        <div>
+                            <div class="section-label" style="margin-bottom:10px;">Số câu hỏi</div>
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                <button class="count-btn active" data-count="5">5 câu</button>
+                                <button class="count-btn" data-count="10">10 câu</button>
+                                <button class="count-btn" data-count="15">15 câu</button>
+                                <button class="count-btn" data-count="20">20 câu</button>
+                            </div>
+                        </div>
+
+                        <!-- Level -->
+                        <div>
+                            <div class="section-label" style="margin-bottom:10px;">Cấp độ <span style="font-weight:400;color:#94a3b8;text-transform:none;letter-spacing:0;">(chọn nhiều)</span></div>
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                <button class="level-btn active" data-level="A1">A1</button>
+                                <button class="level-btn active" data-level="A2">A2</button>
+                                <button class="level-btn active" data-level="B1">B1</button>
+                                <button class="level-btn active" data-level="B2">B2</button>
+                                <button class="level-btn active" data-level="C1">C1</button>
+                                <button class="level-btn active" data-level="C2">C2</button>
+                            </div>
+                        </div>
+
+                        <!-- SRS due info -->
+                        <div id="srsDueInfo" style="display:none;background:var(--primary-light);border-radius:12px;padding:12px 16px;font-size:.85rem;color:var(--primary);font-weight:600;">
+                            ⏰ Bạn có <strong id="srsDueCount">0</strong> từ đến hạn ôn hôm nay — sẽ được ưu tiên trong bài.
+                        </div>
+
+                        <!-- Start button — pushed to bottom on desktop -->
+                        <div style="margin-top:auto;">
+                            <button onclick="startReviewQuiz()" class="btn-primary wide" style="padding:16px;font-size:1rem;">🚀 Bắt đầu ngay</button>
+                        </div>
+
+                    </div><!-- /cột phải -->
+
+                </div><!-- /review-setup-grid -->
+            </div><!-- /reviewStart -->
 
             <!-- Quiz area -->
             <div id="reviewQuizArea" style="display:none;">
