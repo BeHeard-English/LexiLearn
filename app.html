@@ -1435,13 +1435,13 @@
                         <!-- Study type -->
                         <div>
                             <div class="section-label" style="margin-bottom:10px;">Hình thức học <span style="font-weight:400;color:#94a3b8;text-transform:none;letter-spacing:0;">(chọn nhiều để đa dạng)</span></div>
-                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                                <button class="mode-btn active" data-study="quiz" style="gap:6px;">🎯 Trắc nghiệm</button>
-                                <button class="mode-btn" data-study="flash" style="gap:6px;">🃏 Flashcard</button>
-                                <button class="mode-btn" data-study="typing" style="gap:6px;">⌨️ Gõ đáp án</button>
-                                <button class="mode-btn" data-study="fillblank" style="gap:6px;">📝 Điền từ</button>
-                                <button class="mode-btn" data-study="sentence" style="gap:6px;">✍️ Viết Câu</button>
-                                <button class="mode-btn" data-study="listening" style="gap:6px;">🎧 Nghe hiểu</button>
+                            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+                                <button class="mode-btn active" data-study="quiz" style="gap:6px;justify-content:center;">🎯 Trắc nghiệm</button>
+                                <button class="mode-btn" data-study="flash" style="gap:6px;justify-content:center;">🃏 Flashcard</button>
+                                <button class="mode-btn" data-study="typing" style="gap:6px;justify-content:center;">⌨️ Gõ đáp án</button>
+                                <button class="mode-btn" data-study="fillblank" style="gap:6px;justify-content:center;">📝 Điền từ</button>
+                                <button class="mode-btn" data-study="sentence" style="gap:6px;justify-content:center;">✍️ Viết Câu</button>
+                                <button class="mode-btn" data-study="listening" style="gap:6px;justify-content:center;">🎧 Nghe hiểu</button>
                             </div>
                         </div>
 
@@ -1469,7 +1469,7 @@
                         <!-- Count -->
                         <div>
                             <div class="section-label" style="margin-bottom:10px;">Số câu hỏi</div>
-                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
                                 <button class="count-btn active" data-count="5">5 câu</button>
                                 <button class="count-btn" data-count="10">10 câu</button>
                                 <button class="count-btn" data-count="15">15 câu</button>
@@ -1480,7 +1480,7 @@
                         <!-- Level -->
                         <div>
                             <div class="section-label" style="margin-bottom:10px;">Cấp độ <span style="font-weight:400;color:#94a3b8;text-transform:none;letter-spacing:0;">(chọn nhiều)</span></div>
-                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
                                 <button class="level-btn active" data-level="A1">A1</button>
                                 <button class="level-btn active" data-level="A2">A2</button>
                                 <button class="level-btn active" data-level="B1">B1</button>
