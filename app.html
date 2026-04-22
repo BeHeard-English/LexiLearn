@@ -219,6 +219,32 @@
         .item-buy-btn:hover{filter:brightness(1.1);}
         .item-buy-btn.no-coin{background:#f1f5f9;color:#94a3b8;cursor:not-allowed;}
 
+        /* ── CUSTOM THEME MODAL ── */
+        .cth-bg-tabs{display:flex;gap:8px;margin-bottom:18px;}
+        .cth-bg-tab{flex:1;padding:9px 6px;border-radius:10px;border:2px solid var(--border);background:var(--card);color:var(--muted);font-family:inherit;font-weight:700;font-size:.82rem;cursor:pointer;text-align:center;transition:.15s;}
+        .cth-bg-tab.active{border-color:var(--primary-mid);background:var(--primary-light);color:var(--primary);}
+        .cth-section{margin-bottom:18px;}
+        .cth-label{font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-bottom:8px;}
+        .cth-img-drop{border:2px dashed var(--border);border-radius:14px;padding:24px 16px;text-align:center;cursor:pointer;transition:.2s;background:var(--bg);}
+        .cth-img-drop:hover{border-color:var(--primary-mid);background:var(--primary-light);}
+        .cth-img-preview{width:100%;height:130px;object-fit:cover;border-radius:10px;display:block;margin-top:10px;}
+        .cth-yt-input{width:100%;padding:10px 14px;border:2px solid var(--border);border-radius:10px;font-family:inherit;font-size:.88rem;background:var(--input-bg);color:var(--input-text);outline:none;transition:.2s;}
+        .cth-yt-input:focus{border-color:var(--primary-mid);box-shadow:0 0 0 3px var(--accent-glow);}
+        .cth-yt-thumb{width:100%;height:110px;object-fit:cover;border-radius:10px;margin-top:10px;display:none;}
+        .cth-slider-row{display:flex;align-items:center;gap:10px;}
+        .cth-slider{flex:1;accent-color:var(--primary-mid);}
+        .cth-slider-val{font-size:.78rem;font-weight:800;color:var(--primary);width:36px;text-align:right;flex-shrink:0;}
+        .cth-mode-row{display:flex;gap:8px;}
+        .cth-mode-btn{flex:1;padding:10px;border-radius:10px;border:2px solid var(--border);background:var(--card);color:var(--muted);font-family:inherit;font-weight:700;font-size:.85rem;cursor:pointer;transition:.15s;text-align:center;}
+        .cth-mode-btn.active{border-color:var(--primary-mid);background:var(--primary-light);color:var(--primary);}
+        /* Floating YouTube volume widget */
+        #ytVolumeWidget{position:fixed;bottom:80px;right:16px;z-index:500;background:rgba(0,0,0,.65);backdrop-filter:blur(10px);border-radius:14px;padding:10px 14px;display:none;align-items:center;gap:8px;box-shadow:0 4px 20px rgba(0,0,0,.3);}
+        #ytVolumeWidget.show{display:flex;}
+        #ytVolumeSlider{width:90px;accent-color:#fff;cursor:pointer;}
+        .yt-vol-icon{font-size:1rem;cursor:pointer;user-select:none;}
+        /* YT bg iframe sizing */
+        #ytBgIframe{position:absolute;top:50%;left:50%;width:100vw;height:56.25vw;min-height:100vh;min-width:177.77vh;transform:translate(-50%,-50%);border:none;pointer-events:none;}
+
         /* ── PET HOUSE MODAL ── */
         .pet-modal{display:none;position:fixed;inset:0;z-index:9200;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);align-items:center;justify-content:center;}
         .pet-modal.open{display:flex;}
@@ -1956,6 +1982,25 @@
                 </div>
             </div>
         </div>
+        <!-- ── SECTION: Cá nhân hoá giao diện ── -->
+        <div class="shop-row" id="shopRowCustom" style="background:linear-gradient(135deg,#fdf4ff,#faf5ff);border-color:#e9d5ff;">
+            <div class="shop-row-header" style="cursor:default;">
+                <div>
+                    <div class="shop-row-title">🎨 Cá nhân hoá giao diện</div>
+                    <div class="shop-row-sub">Ảnh nền hoặc video YouTube · Sáng/tối tuỳ chọn</div>
+                </div>
+                <div id="customThemeActiveBadge" style="display:none;background:#7c3aed;color:#fff;font-size:.65rem;font-weight:800;padding:3px 9px;border-radius:99px;text-transform:uppercase;letter-spacing:.05em;flex-shrink:0;">✅ Đang dùng</div>
+            </div>
+            <div style="padding:0 16px 16px;">
+                <div id="customThemePreviewBar" style="border-radius:12px;overflow:hidden;height:72px;margin-bottom:12px;background:#e9d5ff;display:flex;align-items:center;justify-content:center;font-size:.82rem;color:#7c3aed;font-weight:700;position:relative;">
+                    <span id="customThemePreviewText">Chưa cài đặt</span>
+                </div>
+                <button onclick="openCustomThemeModal()" style="width:100%;padding:11px;border-radius:11px;border:2px solid #7c3aed;background:#faf5ff;color:#7c3aed;font-family:inherit;font-weight:800;font-size:.88rem;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center;gap:8px;" onmouseover="this.style.background='#ede9fe'" onmouseout="this.style.background='#faf5ff'">
+                    ✏️ Tuỳ chỉnh giao diện
+                </button>
+            </div>
+        </div>
+
         <!-- ── ROW 1: Bộ từ vựng ── -->
         <div class="shop-row" id="shopRowPacks">
             <div class="shop-row-header" onclick="toggleShopRow('packs')">
@@ -2347,6 +2392,93 @@
             </button>
         </div>
     </div>
+</div>
+
+<!-- CUSTOM THEME MODAL -->
+<div id="customThemeModal" class="tl-modal" onclick="if(event.target===this)closeCustomThemeModal()">
+    <div class="tl-modal-box" style="max-width:460px;">
+        <div class="tl-modal-header">
+            <div>
+                <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:1rem;color:var(--primary);">🎨 Giao diện cá nhân hoá</div>
+                <div style="font-size:.72rem;color:var(--muted);margin-top:2px;">Ảnh nền hoặc video YouTube theo ý thích</div>
+            </div>
+            <button class="tl-close-btn" onclick="closeCustomThemeModal()">✕ Đóng</button>
+        </div>
+        <div class="tl-modal-body" style="display:flex;flex-direction:column;gap:0;">
+
+            <!-- Chế độ sáng/tối -->
+            <div class="cth-section">
+                <div class="cth-label">Chế độ giao diện</div>
+                <div class="cth-mode-row">
+                    <button class="cth-mode-btn active" id="cthModeLight" onclick="setCthMode('light')">☀️ Sáng</button>
+                    <button class="cth-mode-btn" id="cthModeDark" onclick="setCthMode('dark')">🌙 Tối</button>
+                </div>
+            </div>
+
+            <!-- Loại nền -->
+            <div class="cth-section">
+                <div class="cth-label">Nền</div>
+                <div class="cth-bg-tabs">
+                    <button class="cth-bg-tab active" id="cthTabNone" onclick="setCthBgTab('none')">🚫 Không có</button>
+                    <button class="cth-bg-tab" id="cthTabImage" onclick="setCthBgTab('image')">🖼 Ảnh</button>
+                    <button class="cth-bg-tab" id="cthTabYoutube" onclick="setCthBgTab('youtube')">▶️ YouTube</button>
+                </div>
+
+                <!-- Image upload section -->
+                <div id="cthImageSection" style="display:none;">
+                    <div class="cth-img-drop" id="cthImgDrop" onclick="document.getElementById('cthFileInput').click()">
+                        <div style="font-size:1.8rem;margin-bottom:6px;">📁</div>
+                        <div style="font-size:.82rem;font-weight:700;color:var(--muted);">Nhấn để chọn ảnh</div>
+                        <div style="font-size:.72rem;color:var(--muted);margin-top:3px;">JPG, JPEG, PNG · Tự động nén</div>
+                        <input type="file" id="cthFileInput" accept="image/jpeg,image/jpg,image/png" style="display:none" onchange="handleCthImageUpload(this)">
+                    </div>
+                    <img id="cthImgPreview" class="cth-img-preview" style="display:none;" alt="preview">
+                </div>
+
+                <!-- YouTube section -->
+                <div id="cthYoutubeSection" style="display:none;">
+                    <input type="text" class="cth-yt-input" id="cthYtUrl" placeholder="Dán link YouTube vào đây..." oninput="handleCthYtInput(this.value)">
+                    <img id="cthYtThumb" class="cth-yt-thumb" alt="YouTube thumbnail">
+                    <div id="cthYtError" style="display:none;font-size:.75rem;color:var(--danger);margin-top:6px;font-weight:700;"></div>
+                </div>
+            </div>
+
+            <!-- Overlay opacity -->
+            <div class="cth-section" id="cthOverlaySection" style="display:none;">
+                <div class="cth-label">Độ mờ phủ nền <span style="font-weight:400;text-transform:none;letter-spacing:0;">(để chữ dễ đọc hơn)</span></div>
+                <div class="cth-slider-row">
+                    <span style="font-size:.9rem;">🌑</span>
+                    <input type="range" class="cth-slider" id="cthOverlaySlider" min="0" max="85" value="45" oninput="document.getElementById('cthOverlayVal').textContent=this.value+'%'">
+                    <span style="font-size:.9rem;">🌕</span>
+                    <span class="cth-slider-val" id="cthOverlayVal">45%</span>
+                </div>
+            </div>
+
+            <!-- Volume (YouTube only) -->
+            <div class="cth-section" id="cthVolumeSection" style="display:none;">
+                <div class="cth-label">Âm lượng mặc định</div>
+                <div class="cth-slider-row">
+                    <span style="font-size:.9rem;">🔇</span>
+                    <input type="range" class="cth-slider" id="cthVolumeSlider" min="0" max="100" value="30" oninput="document.getElementById('cthVolumeVal').textContent=this.value+'%'">
+                    <span style="font-size:.9rem;">🔊</span>
+                    <span class="cth-slider-val" id="cthVolumeVal">30%</span>
+                </div>
+                <div style="font-size:.72rem;color:var(--muted);margin-top:6px;">💡 Trình duyệt yêu cầu tắt tiếng khi tải — dùng nút 🔊 góc màn hình để bật âm thanh</div>
+            </div>
+
+        </div>
+        <div class="tl-modal-footer">
+            <button class="tl-close-btn" onclick="closeCustomThemeModal()">Hủy</button>
+            <button class="btn-primary" style="padding:10px 22px;" onclick="saveCustomTheme()">💾 Lưu & Áp dụng</button>
+        </div>
+    </div>
+</div>
+
+<!-- Floating YouTube volume control -->
+<div id="ytVolumeWidget">
+    <span class="yt-vol-icon" id="ytVolIcon" onclick="toggleYtMute()">🔇</span>
+    <input type="range" id="ytVolumeSlider" min="0" max="100" value="0" oninput="setYtVolume(this.value)">
+    <span style="font-size:.72rem;font-weight:800;color:#fff;min-width:28px;" id="ytVolLabel">0%</span>
 </div>
 
 <!-- BADGE GALLERY MODAL -->
@@ -2839,6 +2971,7 @@ let _activePetIdx   = 0;          // index into _pets of the "on display" pet
 let _petFood        = { apple:0, fish:0, carrot:0, grain:0, bread:0, cake:0, sushi:0 };
 let _activeToys     = []; // [{ id, expiresAt(ms), slowHappy, slowHunger }]
 let _activeTheme    = 'default';
+let _customTheme    = { bgType:'none', bgData:'', darkMode:false, volume:30, overlayOpacity:45 };
 
 async function loadUserShopData() {
     if (!currentUser) return;
@@ -2854,6 +2987,7 @@ async function loadUserShopData() {
     _userCoins       = data.coins || 0;
     _purchasedThemes = new Set(['default', ...(data.purchasedThemes || [])]);
     _activeTheme     = data.activeTheme || 'default';
+    _customTheme     = data.customTheme  || { bgType:'none', bgData:'', darkMode:false, volume:30, overlayOpacity:45 };
     _purchasedPacks  = new Set(data.purchasedPacks || []);
     _streakFreezes   = data.streakFreezes  || 0;
     _streakFrozenDays = data.streakFrozenDays || [];
@@ -2949,6 +3083,7 @@ function applyThemeEffect(themeId) {
     else if (themeId === 'midnight') applyMidnightEffect();
     else if (themeId === 'neonarcade') applyNeonArcadeEffect();
     else if (themeId === 'sweetpastel') applySweetPastelEffect();
+    else if (themeId === 'custom')     applyCustomThemeEffect();
 }
 
 // ── Ocean Deep ───────────────────────────────────────────────────────
@@ -4540,6 +4675,7 @@ function renderShop() {
     updateCoinUI();
     renderVocabPacks();
     renderItemShop();
+    renderCustomThemeSection();
     const chips = THEMES.map(theme => {
         const owned     = _purchasedThemes.has(theme.id);
         const isCurrent = _activeTheme === theme.id;
@@ -4554,7 +4690,7 @@ function renderShop() {
         const priceHtml = theme.price > 0
             ? `<span class="sc-chip-price">🪙 ${theme.price.toLocaleString('vi-VN')}</span>`
             : `<span class="sc-chip-price" style="background:#d1fae5;border-color:#6ee7b7;color:#065f46;">✨ Miễn phí</span>`;
-        return `<div class="sc-chip${isCurrent?' active-theme':''}${owned?' owned':''}">
+        return `<div class="sc-chip${isCurrent?' active-theme':''}${owned||theme.price===0?' owned':''}">
             <div class="sc-chip-header">
                 <div style="width:28px;height:28px;border-radius:6px;background:${c2};border:2px solid ${c1};flex-shrink:0;"></div>
                 <div class="sc-chip-name">${theme.emoji} ${theme.name}</div>
@@ -10041,6 +10177,286 @@ function _fallbackEvaluateSentence(userSentence, targetWord, viPrompt) {
         feedback: feedback + " (chấm cơ bản do AI tạm thời không khả dụng)"
     };
 }
+// ══════════════════════════════════════════
+// CUSTOM THEME SYSTEM
+// ══════════════════════════════════════════
+let _ytIframe = null;
+let _ytMuted  = true;
+
+// ── Render custom theme section in shop ───────────────────────────────
+function renderCustomThemeSection() {
+    const badge   = document.getElementById('customThemeActiveBadge');
+    const preview = document.getElementById('customThemePreviewBar');
+    const text    = document.getElementById('customThemePreviewText');
+    if (!preview) return;
+
+    const isActive = _activeTheme === 'custom';
+    if (badge) badge.style.display = isActive ? 'block' : 'none';
+
+    const ct = _customTheme;
+    if (ct.bgType === 'image' && ct.bgData) {
+        preview.style.backgroundImage    = `url(${ct.bgData})`;
+        preview.style.backgroundSize     = 'cover';
+        preview.style.backgroundPosition = 'center';
+        if (text) text.style.display = 'none';
+    } else if (ct.bgType === 'youtube' && ct.bgData) {
+        preview.style.backgroundImage    = `url(https://img.youtube.com/vi/${ct.bgData}/hqdefault.jpg)`;
+        preview.style.backgroundSize     = 'cover';
+        preview.style.backgroundPosition = 'center';
+        if (text) { text.textContent = '▶️ YouTube'; text.style.display = 'block'; text.style.color = '#fff'; text.style.textShadow = '0 1px 4px rgba(0,0,0,.6)'; }
+    } else {
+        preview.style.backgroundImage = '';
+        if (text) { text.textContent = 'Chưa cài đặt · Nhấn để tuỳ chỉnh'; text.style.display = 'block'; }
+    }
+
+    // Hiện border tím khi đang active
+    const row = document.getElementById('shopRowCustom');
+    if (row) row.style.borderColor = isActive ? '#7c3aed' : '#e9d5ff';
+}
+
+// ── Apply custom theme effect ─────────────────────────────────────────
+function applyCustomThemeEffect() {
+    clearThemeEffect();
+    const root  = document.documentElement;
+    const layer = document.getElementById('themeEffectLayer');
+    if (!layer) return;
+
+    // Áp dụng vars sáng hoặc tối
+    const baseTheme = THEMES.find(t => t.id === (_customTheme.darkMode ? 'dark' : 'default'));
+    if (baseTheme) Object.entries(baseTheme.vars).forEach(([k,v]) => root.style.setProperty(k, v));
+
+    const overlay = `rgba(0,0,0,${(_customTheme.overlayOpacity||45)/100})`;
+
+    if (_customTheme.bgType === 'image' && _customTheme.bgData) {
+        document.body.style.backgroundImage    = `url(${_customTheme.bgData})`;
+        document.body.style.backgroundSize     = 'cover';
+        document.body.style.backgroundPosition = 'center';
+        document.body.style.backgroundAttachment = 'fixed';
+        layer.innerHTML = `<div style="position:fixed;inset:0;background:${overlay};pointer-events:none;z-index:1;"></div>`;
+        hideYtVolumeWidget();
+    } else if (_customTheme.bgType === 'youtube' && _customTheme.bgData) {
+        const vid = _customTheme.bgData;
+        _ytMuted = true;
+        layer.innerHTML = `
+            <div id="ytBgWrap" style="position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;">
+                <iframe id="ytBgIframe"
+                    src="https://www.youtube.com/embed/${vid}?autoplay=1&mute=1&loop=1&playlist=${vid}&controls=0&disablekb=1&fs=0&modestbranding=1&rel=0&enablejsapi=1"
+                    allow="autoplay;encrypted-media" frameborder="0"></iframe>
+            </div>
+            <div style="position:fixed;inset:0;background:${overlay};pointer-events:none;z-index:1;"></div>`;
+        _ytIframe = document.getElementById('ytBgIframe');
+        showYtVolumeWidget();
+    } else {
+        document.body.style.backgroundImage = '';
+        hideYtVolumeWidget();
+    }
+}
+
+// ── YouTube volume helpers ─────────────────────────────────────────────
+function ytPostMessage(func, args) {
+    if (!_ytIframe) return;
+    try { _ytIframe.contentWindow.postMessage(JSON.stringify({event:'command',func,args}), '*'); } catch(e){}
+}
+function showYtVolumeWidget() {
+    const w = document.getElementById('ytVolumeWidget');
+    if (w) { w.classList.add('show'); }
+    const sl = document.getElementById('ytVolumeSlider');
+    if (sl) { sl.value = 0; document.getElementById('ytVolLabel').textContent = '0%'; }
+    document.getElementById('ytVolIcon').textContent = '🔇';
+}
+function hideYtVolumeWidget() {
+    const w = document.getElementById('ytVolumeWidget');
+    if (w) w.classList.remove('show');
+    _ytIframe = null;
+}
+function setYtVolume(val) {
+    val = parseInt(val);
+    document.getElementById('ytVolLabel').textContent = val + '%';
+    if (_ytMuted && val > 0) {
+        ytPostMessage('unMute', []);
+        _ytMuted = false;
+        document.getElementById('ytVolIcon').textContent = val === 0 ? '🔇' : val < 50 ? '🔉' : '🔊';
+    }
+    if (val === 0) { ytPostMessage('mute', []); _ytMuted = true; document.getElementById('ytVolIcon').textContent = '🔇'; }
+    else { document.getElementById('ytVolIcon').textContent = val < 50 ? '🔉' : '🔊'; }
+    ytPostMessage('setVolume', [val]);
+}
+function toggleYtMute() {
+    const sl = document.getElementById('ytVolumeSlider');
+    if (_ytMuted) {
+        const vol = _customTheme.volume || 30;
+        sl.value = vol;
+        document.getElementById('ytVolLabel').textContent = vol + '%';
+        ytPostMessage('unMute', []);
+        ytPostMessage('setVolume', [vol]);
+        _ytMuted = false;
+        document.getElementById('ytVolIcon').textContent = vol < 50 ? '🔉' : '🔊';
+    } else {
+        ytPostMessage('mute', []);
+        _ytMuted = true;
+        sl.value = 0;
+        document.getElementById('ytVolLabel').textContent = '0%';
+        document.getElementById('ytVolIcon').textContent = '🔇';
+    }
+}
+
+// ── Modal open / close ─────────────────────────────────────────────────
+function openCustomThemeModal() {
+    const ct = _customTheme;
+    // Populate state
+    setCthMode(ct.darkMode ? 'dark' : 'light');
+    setCthBgTab(ct.bgType || 'none');
+    document.getElementById('cthOverlaySlider').value = ct.overlayOpacity ?? 45;
+    document.getElementById('cthOverlayVal').textContent = (ct.overlayOpacity ?? 45) + '%';
+    document.getElementById('cthVolumeSlider').value = ct.volume ?? 30;
+    document.getElementById('cthVolumeVal').textContent = (ct.volume ?? 30) + '%';
+    // Image preview
+    if (ct.bgType === 'image' && ct.bgData) {
+        const p = document.getElementById('cthImgPreview');
+        p.src = ct.bgData; p.style.display = 'block';
+    }
+    // YouTube preview
+    if (ct.bgType === 'youtube' && ct.bgData) {
+        document.getElementById('cthYtUrl').value = 'https://youtu.be/' + ct.bgData;
+        showCthYtThumb(ct.bgData);
+    }
+    document.getElementById('customThemeModal').classList.add('open');
+}
+function closeCustomThemeModal() {
+    document.getElementById('customThemeModal').classList.remove('open');
+}
+
+// ── Modal UI helpers ───────────────────────────────────────────────────
+function setCthMode(mode) {
+    document.getElementById('cthModeLight').classList.toggle('active', mode === 'light');
+    document.getElementById('cthModeDark').classList.toggle('active', mode === 'dark');
+}
+function setCthBgTab(tab) {
+    ['none','image','youtube'].forEach(t => {
+        document.getElementById('cthTab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.toggle('active', t === tab);
+    });
+    document.getElementById('cthImageSection').style.display   = tab === 'image'   ? 'block' : 'none';
+    document.getElementById('cthYoutubeSection').style.display = tab === 'youtube' ? 'block' : 'none';
+    document.getElementById('cthOverlaySection').style.display = tab !== 'none'    ? 'block' : 'none';
+    document.getElementById('cthVolumeSection').style.display  = tab === 'youtube' ? 'block' : 'none';
+}
+
+// ── Image upload & compress ────────────────────────────────────────────
+async function handleCthImageUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+    const drop = document.getElementById('cthImgDrop');
+    drop.innerHTML = '<div style="font-size:1rem;color:var(--muted);">⏳ Đang nén ảnh...</div>';
+    try {
+        const base64 = await compressCthImage(file);
+        const preview = document.getElementById('cthImgPreview');
+        preview.src = base64; preview.style.display = 'block';
+        drop.innerHTML = `<div style="font-size:.82rem;font-weight:700;color:var(--success);">✅ ${file.name}</div><div style="font-size:.72rem;color:var(--muted);margin-top:3px;">Nhấn để đổi ảnh</div><input type="file" id="cthFileInput" accept="image/jpeg,image/jpg,image/png" style="display:none" onchange="handleCthImageUpload(this)">`;
+        drop._base64 = base64;
+    } catch(e) {
+        drop.innerHTML = '<div style="font-size:.82rem;color:var(--danger);">❌ Lỗi đọc file. Thử lại.</div>';
+    }
+}
+function compressCthImage(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const img = new Image();
+            img.onload = () => {
+                const MAX = 1280;
+                const ratio = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight));
+                const canvas = document.createElement('canvas');
+                canvas.width  = Math.round(img.naturalWidth  * ratio);
+                canvas.height = Math.round(img.naturalHeight * ratio);
+                canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+                resolve(canvas.toDataURL('image/jpeg', 0.72));
+            };
+            img.onerror = reject;
+            img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+// ── YouTube URL parsing ────────────────────────────────────────────────
+function extractYtVideoId(url) {
+    const patterns = [
+        /[?&]v=([^&#]+)/,
+        /youtu\.be\/([^?&#]+)/,
+        /youtube\.com\/embed\/([^?&#]+)/,
+        /youtube\.com\/shorts\/([^?&#]+)/
+    ];
+    for (const p of patterns) {
+        const m = url.match(p);
+        if (m) return m[1];
+    }
+    return null;
+}
+function handleCthYtInput(val) {
+    const errEl   = document.getElementById('cthYtError');
+    const thumbEl = document.getElementById('cthYtThumb');
+    errEl.style.display = 'none'; thumbEl.style.display = 'none';
+    const vid = extractYtVideoId(val.trim());
+    if (!vid) {
+        if (val.trim().length > 10) { errEl.textContent = '❌ Không nhận ra link YouTube. Thử dạng: youtu.be/xxx hoặc youtube.com/watch?v=xxx'; errEl.style.display = 'block'; }
+        return;
+    }
+    showCthYtThumb(vid);
+}
+function showCthYtThumb(vid) {
+    const thumbEl = document.getElementById('cthYtThumb');
+    thumbEl.src = `https://img.youtube.com/vi/${vid}/hqdefault.jpg`;
+    thumbEl.style.display = 'block';
+    thumbEl.onerror = () => { thumbEl.style.display = 'none'; };
+}
+
+// ── Save & apply ───────────────────────────────────────────────────────
+async function saveCustomTheme() {
+    if (!currentUser) { showToast('⚠️ Cần đăng nhập!'); return; }
+    const darkMode       = document.getElementById('cthModeDark').classList.contains('active');
+    const bgTab          = ['none','image','youtube'].find(t => document.getElementById('cthTab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.contains('active'));
+    const overlayOpacity = parseInt(document.getElementById('cthOverlaySlider').value);
+    const volume         = parseInt(document.getElementById('cthVolumeSlider').value);
+
+    let bgData = _customTheme.bgData || '';
+
+    if (bgTab === 'image') {
+        const drop = document.getElementById('cthImgDrop');
+        if (drop._base64) bgData = drop._base64;
+        else if (!bgData) { showToast('⚠️ Vui lòng chọn ảnh!'); return; }
+    } else if (bgTab === 'youtube') {
+        const url = document.getElementById('cthYtUrl').value.trim();
+        const vid = extractYtVideoId(url);
+        if (!vid) { showToast('❌ Link YouTube không hợp lệ!'); return; }
+        bgData = vid;
+    } else {
+        bgData = '';
+    }
+
+    _customTheme = { bgType: bgTab, bgData, darkMode, volume, overlayOpacity };
+    _activeTheme = 'custom';
+    _purchasedThemes.add('custom');
+
+    applyCustomThemeEffect();
+    closeCustomThemeModal();
+    renderShop();
+    renderCustomThemeSection();
+    showToast('🎨 Đã áp dụng giao diện cá nhân hoá!');
+
+    try {
+        // Lưu Firestore — bgData ảnh có thể lớn, dùng set merge để tránh ghi đè toàn bộ doc
+        const saveData = { bgType: bgTab, bgData: bgTab === 'image' ? bgData : bgData, darkMode, volume, overlayOpacity };
+        await db.collection('users').doc(currentUser.uid).set({
+            activeTheme: 'custom',
+            customTheme: saveData
+        }, { merge: true });
+    } catch(e) {
+        console.error('Lỗi lưu custom theme:', e);
+        showToast('⚠️ Lưu thất bại, kiểm tra dung lượng ảnh.');
+    }
+}
+
 // ══════════════════════════════════════════
 // CONFETTI ENGINE
 // ══════════════════════════════════════════
