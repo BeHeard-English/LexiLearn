@@ -7507,8 +7507,8 @@ function calcPetStats(pet) {
     const slowHunger = validToys.reduce((a,t) => a * t.slowHunger, 1.0);
     const hrsFed  = pet.lastFed        ? (now - pet.lastFed)        / 3600000 : 24;
     const hrsPlay = pet.lastInteracted ? (now - pet.lastInteracted) / 3600000 : 24;
-    const hunger    = Math.max(0, Math.min(100, Math.round((pet.hunger||50)    - (hrsFed  * 100/24) * slowHunger)));
-    const happiness = Math.max(0, Math.min(100, Math.round((pet.happiness||80) - (hrsPlay * 6)      * slowHappy)));
+    const hunger    = Math.max(0, Math.min(100, Math.round((pet.hunger    ?? 50) - (hrsFed  * 100/24) * slowHunger)));
+    const happiness = Math.max(0, Math.min(100, Math.round((pet.happiness ?? 80) - (hrsPlay * 6)      * slowHappy)));
     return { hunger, happiness, mood: getPetMood(hunger, happiness) };
 }
 
@@ -7928,9 +7928,10 @@ function petPat() {
     const chibi = document.getElementById('petChibi');
     // Tính decay thực tế trước, rồi mới cộng đúng +10
     const { hunger: realHunger, happiness: realHappy } = calcPetStats(pet);
-    pet.happiness = Math.min(100, realHappy + 10);
-    pet.hunger    = realHunger;
-    pet.lastFed        = Date.now(); // reset decay timer hunger để tránh tính 2 lần
+    pet.happiness  = Math.min(100, realHappy + 10);
+    pet.hunger     = realHunger;      // snapshot hunger hiện tại
+    pet.lastFed    = Date.now();      // reset lastFed để calcPetStats không tính decay 2 lần từ giá trị cũ
+    // lastFed reset ở đây KHÔNG làm hunger tăng vì pet.hunger đã được ghi đè bằng realHunger rồi
     pet.lastInteracted = Date.now();
     const newMood = getPetMood(pet.hunger, pet.happiness);
     if (chibi && chibi.tagName === 'IMG') {
