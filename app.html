@@ -534,8 +534,75 @@
             .review-setup-col{display:flex;flex-direction:column;gap:18px;}
         }
         @media(max-width:767px){
-            .review-setup-header-icon{display:none;}
-            .review-setup-header{text-align:center;margin-bottom:22px;}
+            .review-start{max-width:100%;}
+            #reviewStart{padding:14px 12px!important;text-align:left!important;}
+
+            /* Header compact */
+            .review-setup-header{margin-bottom:14px;padding-bottom:12px;}
+            .review-setup-header > div > div:first-child{font-size:1.1rem!important;}
+            .review-setup-header > div > p{font-size:.72rem!important;margin:2px 0 0!important;}
+
+            /* Flatten 2-col grid → single col */
+            .review-setup-grid{display:flex;flex-direction:column;gap:12px;}
+            .review-setup-col{display:contents;}
+
+            /* Hình thức học → 2×3 grid co giãn theo màn hình */
+            .mobile-study-scroll{display:grid!important;grid-template-columns:repeat(3,1fr);gap:5px;overflow:visible;}
+            .mobile-study-scroll .mode-btn{
+                flex-shrink:unset;
+                padding:6px 4px;
+                font-size:clamp(.65rem,.9vw + .5rem,.8rem);
+                white-space:normal;
+                text-align:center;
+                word-break:keep-all;
+                line-height:1.2;
+                min-height:34px;
+                display:flex;align-items:center;justify-content:center;
+            }
+
+            /* Số câu + Cấp độ side by side */
+            .mobile-count-level-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+            /* Section labels nhỏ hơn */
+            .review-setup-col .section-label{font-size:.65rem;margin-bottom:6px!important;}
+
+            /* Count buttons */
+            .mobile-count-level-row .count-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+            .mobile-count-level-row .count-grid .count-btn{
+                font-size:clamp(.68rem,.8vw + .5rem,.78rem);
+                padding:6px 2px;
+                text-align:center;
+            }
+
+            /* Level buttons */
+            .mobile-count-level-row .level-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;}
+            .mobile-count-level-row .level-grid .level-btn{
+                font-size:clamp(.68rem,.8vw + .5rem,.78rem);
+                padding:6px 2px;
+                text-align:center;
+            }
+
+            /* Chiều học */
+            #reviewModeWrap .mode-row-mobile{display:grid!important;grid-template-columns:1fr 1fr;gap:6px;}
+            #reviewModeWrap .mode-row-mobile .mode-btn{
+                font-size:clamp(.68rem,.8vw + .5rem,.78rem);
+                padding:7px 4px;
+                justify-content:center;
+                white-space:nowrap;
+                overflow:hidden;
+                text-overflow:ellipsis;
+            }
+
+            /* AI grading */
+            #aiGradingOption label{font-size:.75rem;gap:6px;}
+            #aiGradingOption span{display:none;}
+
+            /* SRS info */
+            #srsDueInfo{font-size:.75rem;padding:8px 10px;}
+
+            /* Start button */
+            #reviewStart .start-btn-wrap{position:sticky;bottom:0;background:var(--card);padding:10px 0 2px;margin-top:4px;}
+            #reviewStart .start-btn-wrap .btn-primary{padding:12px;font-size:.92rem;}
         }
 
         /* ANIMATIONS */
@@ -1475,7 +1542,7 @@
                         <!-- Study type -->
                         <div>
                             <div class="section-label" style="margin-bottom:10px;">Hình thức học <span style="font-weight:400;color:#94a3b8;text-transform:none;letter-spacing:0;">(chọn nhiều để đa dạng)</span></div>
-                            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+                            <div class="mobile-study-scroll" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
                                 <button class="mode-btn active" data-study="quiz" style="justify-content:center;white-space:nowrap;">Trắc nghiệm</button>
                                 <button class="mode-btn" data-study="flash" style="justify-content:center;white-space:nowrap;">Flashcard</button>
                                 <button class="mode-btn" data-study="typing" style="justify-content:center;white-space:nowrap;">Gõ đáp án</button>
@@ -1488,7 +1555,7 @@
                         <!-- Mode -->
                         <div id="reviewModeWrap">
                             <div class="section-label" style="margin-bottom:10px;">Chiều học</div>
-                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                            <div class="mode-row-mobile" style="display:flex;gap:8px;flex-wrap:wrap;">
                                 <button class="mode-btn active" data-mode="normal">🇬🇧 Từ → Nghĩa</button>
                                 <button class="mode-btn" data-mode="reverse">🇻🇳 Nghĩa → Từ</button>
                             </div>
@@ -1506,10 +1573,13 @@
                     <!-- CỘT PHẢI -->
                     <div class="review-setup-col">
 
+                        <!-- Số câu + Cấp độ: side by side on mobile -->
+                        <div class="mobile-count-level-row">
+
                         <!-- Count -->
                         <div>
                             <div class="section-label" style="margin-bottom:10px;">Số câu hỏi</div>
-                            <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
+                            <div class="count-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;">
                                 <button class="count-btn active" data-count="5">5 câu</button>
                                 <button class="count-btn" data-count="10">10 câu</button>
                                 <button class="count-btn" data-count="15">15 câu</button>
@@ -1520,7 +1590,7 @@
                         <!-- Level -->
                         <div>
                             <div class="section-label" style="margin-bottom:10px;">Cấp độ <span style="font-weight:400;color:#94a3b8;text-transform:none;letter-spacing:0;">(chọn nhiều)</span></div>
-                            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+                            <div class="level-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
                                 <button class="level-btn active" data-level="A1">A1</button>
                                 <button class="level-btn active" data-level="A2">A2</button>
                                 <button class="level-btn active" data-level="B1">B1</button>
@@ -1530,13 +1600,15 @@
                             </div>
                         </div>
 
+                        </div><!-- /mobile-count-level-row -->
+
                         <!-- SRS due info -->
                         <div id="srsDueInfo" style="display:none;background:var(--primary-light);border-radius:12px;padding:12px 16px;font-size:.85rem;color:var(--primary);font-weight:600;">
                             ⏰ Bạn có <strong id="srsDueCount">0</strong> từ đến hạn ôn hôm nay — sẽ được ưu tiên trong bài.
                         </div>
 
-                        <!-- Start button — pushed to bottom on desktop -->
-                        <div style="margin-top:auto;">
+                        <!-- Start button -->
+                        <div class="start-btn-wrap" style="margin-top:auto;">
                             <button onclick="startReviewQuiz()" class="btn-primary wide" style="padding:16px;font-size:1rem;">🚀 Bắt đầu ngay</button>
                         </div>
 
@@ -5121,6 +5193,23 @@ function attachPhraseSelectionListener() {
 
         // Tạo phrase string
         const phrase = inRange.map(sp => sp.innerText.trim()).join(' ');
+
+        // Nếu tất cả spans trong vùng chọn đã thuộc cùng 1 phrase → bỏ chọn
+        const existingIds = new Set(inRange.map(sp => sp.dataset.phraseId).filter(Boolean));
+        if (existingIds.size === 1 && inRange.every(sp => sp.classList.contains('is-phrase'))) {
+            const pid = [...existingIds][0];
+            inRange.forEach(sp => {
+                sp.classList.remove('is-bold', 'is-phrase');
+                delete sp.dataset.phraseId;
+            });
+            // Xóa phrase khỏi set — tìm theo phraseId
+            window._phraseSet.forEach(p => {
+                if (p === phrase) window._phraseSet.delete(p);
+            });
+            sel.removeAllRanges();
+            return;
+        }
+
         const phraseId = 'ph_' + Date.now();
 
         // Đánh dấu spans thuộc cụm này
