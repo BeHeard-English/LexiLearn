@@ -1262,7 +1262,7 @@
                 </div>
             </div>
             <div class="card" style="display:flex;flex-direction:column;min-height:340px;">
-                <div id="editor" style="flex:1;padding:24px;font-size:1.1rem;line-height:1.9;color:#334155;min-height:280px;">
+                <div id="editor" style="flex:1;padding:24px;font-size:1.1rem;line-height:1.9;color:var(--text);min-height:280px;">
                     <div class="empty-state"><div class="icon">📝</div><p>Nội dung bài học sẽ hiện ở đây</p><p style="font-size:.8rem;margin-top:6px;font-weight:500;">Double-click vào từ để đánh dấu từ khó</p></div>
                 </div>
                 <div class="editor-bar">
@@ -5163,9 +5163,12 @@ window.addEventListener('beforeunload', () => {
 document.getElementById('loadBtn').onclick = () => {
     const text = document.getElementById('rawInput').value.trim(); if(!text) return;
     window._phraseSet = new Set(); // reset phrase set khi load bài mới
-    document.getElementById('editor').innerHTML = text.split(/(\s+)/).map(w =>
-        w.trim()==='' ? w : `<span class="editor-word" ondblclick="this.classList.toggle('is-bold')">${w}</span>`
-    ).join('');
+    document.getElementById('editor').innerHTML = text.split(/(\s+)/).map(w => {
+        if (w.trim() === '') return w;
+        // Strip dấu câu đầu/cuối, giữ lại apostrophe và hyphen bên trong từ
+        const clean = w.trim().replace(/^[^a-zA-Z]+|[^a-zA-Z]+$/g, '');
+        return clean ? `<span class="editor-word" ondblclick="this.classList.toggle('is-bold')">${clean}</span>` : '';
+    }).join('');
     // Gắn listener nhận diện cụm từ sau khi editor có nội dung
     attachPhraseSelectionListener();
 };
