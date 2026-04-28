@@ -254,12 +254,12 @@
         .pet-chibi{width:160px;height:160px;display:block;margin:0 auto;animation:petBounce 2s ease-in-out infinite;cursor:pointer;user-select:none;object-fit:contain;object-position:center;image-rendering:auto;filter:drop-shadow(0 0 6px rgba(251,191,36,.8)) drop-shadow(0 0 14px rgba(251,191,36,.4));transition:filter .4s ease;}
         .pet-chibi.happy{animation:petHappy .6s ease both;}
         /* ── toy orbit icons ── */
-        .pet-toy-orbit{position:absolute;font-size:1.4rem;animation:toyOrbit var(--d,4s) linear infinite;pointer-events:none;filter:drop-shadow(0 2px 4px rgba(0,0,0,.25));}
+        .pet-toy-orbit{position:absolute;font-size:2rem;animation:toyOrbit var(--d,4s) linear infinite;pointer-events:none;filter:drop-shadow(0 2px 6px rgba(0,0,0,.3));z-index:2;}
         @keyframes toyOrbit{
-            0%  {transform:rotate(0deg)   translateX(var(--r,72px)) rotate(0deg);}
-            100%{transform:rotate(360deg) translateX(var(--r,72px)) rotate(-360deg);}
+            0%  {transform:rotate(0deg)   translateX(var(--r,88px)) rotate(0deg);}
+            100%{transform:rotate(360deg) translateX(var(--r,88px)) rotate(-360deg);}
         }
-        .pet-chibi-wrap{position:relative;display:flex;align-items:center;justify-content:center;width:200px;height:200px;margin:0 auto;}
+        .pet-chibi-wrap{position:relative;display:flex;align-items:center;justify-content:center;width:200px;height:200px;margin:0 auto;overflow:visible;}
         .pet-chibi.mood-happy{filter:drop-shadow(0 0 5px rgba(255,255,255,.9)) drop-shadow(0 0 10px rgba(99,102,241,.85)) drop-shadow(0 0 22px rgba(99,102,241,.5));}
         .pet-chibi.mood-content{filter:drop-shadow(0 0 5px rgba(255,255,255,.9)) drop-shadow(0 0 10px rgba(16,185,129,.85)) drop-shadow(0 0 22px rgba(16,185,129,.5));}
         .pet-chibi.mood-sad{filter:drop-shadow(0 0 4px rgba(255,255,255,.7)) drop-shadow(0 0 8px rgba(148,163,184,.6)) drop-shadow(0 0 16px rgba(148,163,184,.3));}
@@ -5164,11 +5164,47 @@ document.getElementById('loadBtn').onclick = () => {
     const text = document.getElementById('rawInput').value.trim(); if(!text) return;
     window._phraseSet = new Set(); // reset phrase set khi load bài mới
     document.getElementById('editor').innerHTML = text.split(/(\s+)/).map(w =>
-        w.trim()==='' ? w : `<span class="editor-word" ondblclick="this.classList.toggle('is-bold')">${w}</span>`
+        w.trim()==='' ? w : `<span class="editor-word" ondblclick="editorWordDblClick(this)">${w}</span>`
     ).join('');
     // Gắn listener nhận diện cụm từ sau khi editor có nội dung
     attachPhraseSelectionListener();
 };
+
+// ── Double-click: toggle từ đơn HOẶC bỏ từ khỏi cụm ─────────────────
+function editorWordDblClick(span) {
+    if (span.classList.contains('is-phrase')) {
+        // Bỏ từ này khỏi cụm
+        const pid = span.dataset.phraseId;
+        span.classList.remove('is-bold', 'is-phrase');
+        delete span.dataset.phraseId;
+
+        // Tìm các spans còn lại trong cùng phrase
+        const remaining = Array.from(document.querySelectorAll(`.editor-word[data-phrase-id="${pid}"]`));
+
+        if (remaining.length === 0) {
+            // Cụm rỗng → không cần làm gì thêm
+        } else if (remaining.length === 1) {
+            // Chỉ còn 1 từ → không đủ tạo cụm, bỏ luôn
+            remaining[0].classList.remove('is-bold', 'is-phrase');
+            delete remaining[0].dataset.phraseId;
+        }
+
+        // Rebuild _phraseSet từ những gì còn lại trong DOM
+        window._phraseSet = new Set();
+        const allPids = new Set(
+            Array.from(document.querySelectorAll('.editor-word.is-phrase'))
+                 .map(s => s.dataset.phraseId).filter(Boolean)
+        );
+        allPids.forEach(p => {
+            const words = Array.from(document.querySelectorAll(`.editor-word[data-phrase-id="${p}"]`))
+                              .map(s => s.innerText.trim()).join(' ');
+            if (words) window._phraseSet.add(words);
+        });
+    } else {
+        // Từ đơn → toggle bình thường
+        span.classList.toggle('is-bold');
+    }
+}
 
 // ── Phrase selection (chuột + cảm ứng) ─────────────────────────────
 window._phraseSet = new Set();
@@ -8130,9 +8166,9 @@ function renderPetHouseBody() {
                 <div id="petChibiFallback" style="display:none;font-size:5rem;cursor:pointer;animation:petBounce 2s ease-in-out infinite;position:relative;z-index:1;" onclick="petPat()">${activePet.emoji}</div>
                 ${_activeToys.filter(t=>t.expiresAt>now).map((t,idx)=>{
                     const td = SHOP_ITEMS.find(i=>i.id===t.id);
-                    const speeds = [4,5.5,7,9];
-                    const radii  = [76,86,96,106];
-                    const delays = [0,1.2,2.5,3.8];
+                    const speeds = [5, 7, 9, 11];
+                    const radii  = [85, 95, 105, 115];
+                    const delays = [0, 1.5, 3.0, 4.5];
                     const spd = speeds[idx % speeds.length];
                     const rad = radii[idx % radii.length];
                     const dly = delays[idx % delays.length];
