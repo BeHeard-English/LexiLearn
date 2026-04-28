@@ -5163,12 +5163,9 @@ window.addEventListener('beforeunload', () => {
 document.getElementById('loadBtn').onclick = () => {
     const text = document.getElementById('rawInput').value.trim(); if(!text) return;
     window._phraseSet = new Set(); // reset phrase set khi load bài mới
-    document.getElementById('editor').innerHTML = text.split(/(\s+)/).map(w => {
-        if (w.trim() === '') return w;
-        // Strip dấu câu đầu/cuối, giữ lại apostrophe và hyphen bên trong từ
-        const clean = w.trim().replace(/^[^a-zA-Z]+|[^a-zA-Z]+$/g, '');
-        return clean ? `<span class="editor-word" ondblclick="this.classList.toggle('is-bold')">${clean}</span>` : '';
-    }).join('');
+    document.getElementById('editor').innerHTML = text.split(/(\s+)/).map(w =>
+        w.trim()==='' ? w : `<span class="editor-word" ondblclick="this.classList.toggle('is-bold')">${w}</span>`
+    ).join('');
     // Gắn listener nhận diện cụm từ sau khi editor có nội dung
     attachPhraseSelectionListener();
 };
@@ -5238,7 +5235,11 @@ document.getElementById('generateBtn').onclick = async () => {
 
     // Thu thập từ đơn (is-bold nhưng không is-phrase)
     const boldSpans = Array.from(document.querySelectorAll('.editor-word.is-bold:not(.is-phrase)'));
-    const singleWords = Array.from(new Set(boldSpans.map(el => el.innerText.trim().replace(/[^a-zA-Z'-]/g,'')).filter(w=>w.length>1)));
+    const singleWords = Array.from(new Set(
+        boldSpans
+            .map(el => el.innerText.trim().replace(/^[^a-zA-Z]+|[^a-zA-Z]+$/g, '')) // strip dấu đầu/cuối
+            .filter(w => w.length > 1)
+    ));
 
     // Thu thập cụm từ (is-phrase) — loại trùng lặp
     const phrases = Array.from(window._phraseSet || []);
@@ -7900,10 +7901,10 @@ const SHOP_ITEMS = [
     { id:'cake',     icon:'🎂', name:'Bánh kem',         desc:'+55 no bụng & +35 vui vẻ. Vui đột biến!', price:250, unit:'miếng', group:'food', hunger:55, happy:35 },
     { id:'sushi',    icon:'🍱', name:'Sushi cao cấp',    desc:'+65 no bụng & +40 vui vẻ. Bữa ăn sang chảnh nhất', price:300, unit:'hộp',  group:'food', hunger:65, happy:40 },
     // ── Đồ chơi ──
-    { id:'toy_ball',   icon:'⚽', name:'Bóng đá',        desc:'6h · Vui vẻ giảm chậm hơn 50%. Thú cưng thích lăn bóng!', price:300, unit:'cái', group:'toy', durationH:6,  slowHappy:0.5, slowHunger:1.0 },
-    { id:'toy_rope',   icon:'🪢', name:'Dây kéo',        desc:'12h · Vui vẻ giảm chậm hơn 50%. Tốt cho cả hai!', price:500, unit:'cái', group:'toy', durationH:12, slowHappy:0.5, slowHunger:0.85 },
-    { id:'toy_feeder', icon:'🍡', name:'Máng ăn tự động',desc:'18h · No bụng giảm chậm hơn 40%. Không cần cho ăn liên tục', price:800, unit:'cái', group:'toy', durationH:18, slowHappy:0.9, slowHunger:0.6 },
-    { id:'toy_palace', icon:'🏯', name:'Cung điện mini',  desc:'24h · Cả hai giảm chậm hơn 40%. Thú cưng tự do vui chơi!', price:1200, unit:'cái', group:'toy', durationH:24, slowHappy:0.6, slowHunger:0.6 },
+    { id:'toy_ball',   icon:'⚽', name:'Bóng đá',        desc:'6h · Vui vẻ giảm chậm hơn 50%. Thú cưng thích lăn bóng!', price:50,  unit:'cái', group:'toy', durationH:6,  slowHappy:0.5, slowHunger:1.0 },
+    { id:'toy_rope',   icon:'🪢', name:'Dây kéo',        desc:'12h · Vui vẻ giảm chậm hơn 50%. Tốt cho cả hai!', price:70,  unit:'cái', group:'toy', durationH:12, slowHappy:0.5, slowHunger:0.85 },
+    { id:'toy_feeder', icon:'🍡', name:'Máng ăn tự động',desc:'18h · No bụng giảm chậm hơn 40%. Không cần cho ăn liên tục', price:100, unit:'cái', group:'toy', durationH:18, slowHappy:0.9, slowHunger:0.6 },
+    { id:'toy_palace', icon:'🏯', name:'Cung điện mini',  desc:'24h · Cả hai giảm chậm hơn 40%. Thú cưng tự do vui chơi!', price:120, unit:'cái', group:'toy', durationH:24, slowHappy:0.6, slowHunger:0.6 },
 ];
 
 const PET_TYPES = [
@@ -10464,6 +10465,7 @@ function applyCustomThemeEffect() {
                     src="https://www.youtube-nocookie.com/embed/${vid}?autoplay=1&mute=1&loop=1&playlist=${vid}&controls=0&disablekb=1&fs=0&modestbranding=1&rel=0&enablejsapi=1&playsinline=1&iv_load_policy=3"
                     allow="autoplay; encrypted-media; picture-in-picture"
                     allowfullscreen="false"
+                    style="pointer-events:auto;"
                     frameborder="0"></iframe>
             </div>
             <div style="position:fixed;inset:0;background:${overlay};pointer-events:none;z-index:1;"></div>`;
