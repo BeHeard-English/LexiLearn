@@ -6313,7 +6313,7 @@ async function processPasteWords() {
     btn.innerHTML = '⏳ Đang xử lý...';
 
     try {
-        const BATCH = 15; // tối đa 15 từ/lần gọi AI để tránh cắt JSON
+        const BATCH = 50; // tối đa 50 từ/lần gọi AI
         let finalData = [];
 
         for (let i = 0; i < newWords.length; i += BATCH) {
@@ -6333,7 +6333,7 @@ Do not output any markdown formatting or extra text, just the raw JSON array.`;
             const aiRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-                body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 2400, messages: [{ role: 'user', content: prompt }] })
+                body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 4000, messages: [{ role: 'user', content: prompt }] })
             });
             const data = await aiRes.json();
             let jsonStr = data.choices[0].message.content.replace(/```json|```/g, '').trim();
