@@ -6311,25 +6311,44 @@ async function processPasteWords() {
     const btn = document.getElementById('processPasteBtn');
     btn.disabled = true;
     btn.innerHTML = '⏳ Đang xử lý...';
-    showToast(`✨ Đang nhờ AI phân tích ${newWords.length} từ mới...`);
 
     try {
-        const wordsPromptData = newWords.map(w => `"${w.word}": "${w.vn}"`).join(', ');
-        const prompt = `I have a list of English words and their Vietnamese meanings: { ${wordsPromptData} }. 
+        const BATCH = 15; // tối đa 15 từ/lần gọi AI để tránh cắt JSON
+        let finalData = [];
+
+        for (let i = 0; i < newWords.length; i += BATCH) {
+            const batch = newWords.slice(i, i + BATCH);
+            const batchNum = Math.floor(i / BATCH) + 1;
+            const totalBatch = Math.ceil(newWords.length / BATCH);
+            if (totalBatch > 1) {
+                btn.innerHTML = `⏳ Đang xử lý... (${batchNum}/${totalBatch})`;
+            }
+
+            const wordsPromptData = batch.map(w => `"${w.word}": "${w.vn}"`).join(', ');
+            const prompt = `I have a list of English words and their Vietnamese meanings: { ${wordsPromptData} }.
 Return a JSON array exactly matching this structure:
-[{"word":"string","ipa":"string","vn":"(keep the provided Vietnamese meaning)","level":"A1-C2","example":"English sentence"}]
+[{"word":"string","ipa":"string","vn":"(keep the provided Vietnamese meaning exactly)","level":"A1-C2","example":"English sentence"}]
 Do not output any markdown formatting or extra text, just the raw JSON array.`;
 
-        const aiRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-            body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 1200, messages: [{ role: 'user', content: prompt }] })
-        });
-        const data = await aiRes.json();
-        let jsonStr = data.choices[0].message.content.replace(/```json|```/g, '').trim();
-        let finalData;
-        try { finalData = JSON.parse(jsonStr); }
-        catch(e) { showToast('❌ AI trả về định dạng không hợp lệ, vui lòng thử lại.'); return; }
+            const aiRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
+                body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 2400, messages: [{ role: 'user', content: prompt }] })
+            });
+            const data = await aiRes.json();
+            let jsonStr = data.choices[0].message.content.replace(/```json|```/g, '').trim();
+            // Đảm bảo JSON hợp lệ dù bị cắt: cắt bỏ phần thừa sau ] cuối
+            const lastBracket = jsonStr.lastIndexOf(']');
+            if (lastBracket >= 0) jsonStr = jsonStr.slice(0, lastBracket + 1);
+            try {
+                const batchResult = JSON.parse(jsonStr);
+                finalData = [...finalData, ...batchResult];
+            } catch(e) {
+                showToast(`❌ Lỗi batch ${batchNum}/${totalBatch}, bỏ qua và tiếp tục...`);
+            }
+        }
+
+        if (!finalData.length) { showToast('❌ AI không trả về kết quả hợp lệ, vui lòng thử lại.'); return; }
 
         await saveVocabToDb(finalData);
         await loadLibrary();
@@ -6664,7 +6683,7 @@ Return a JSON array: [{"word":"string","ipa":"string","vn":"(keep provided Vietn
 Only raw JSON, no markdown.`;
         const aiRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`},
-            body: JSON.stringify({ model:'llama-3.3-70b-versatile', max_tokens:1200, messages:[{ role:'user', content:prompt }] })
+            body: JSON.stringify({ model:'llama-3.3-70b-versatile', max_tokens:2400, messages:[{ role:'user', content:prompt }] })
         });
         const aiData = await aiRes.json();
         let finalData;
@@ -6726,7 +6745,7 @@ Return a JSON array: [{"word":"string","ipa":"string","vn":"(keep provided Vietn
 Only raw JSON, no markdown.`;
             const aiRes  = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`},
-                body: JSON.stringify({ model:'llama-3.3-70b-versatile', max_tokens:1200, messages:[{ role:'user', content:prompt }] })
+                body: JSON.stringify({ model:'llama-3.3-70b-versatile', max_tokens:2400, messages:[{ role:'user', content:prompt }] })
             });
             const aiData = await aiRes.json();
             let finalData;
@@ -7082,7 +7101,7 @@ document.getElementById('libFileInput').onchange = async (e) => {
     },
     body: JSON.stringify({
         model: "llama-3.3-70b-versatile",
-        max_tokens: 1200,
+        max_tokens: 2400,
         messages: [
             {
                 role: "user",
