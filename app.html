@@ -5210,12 +5210,22 @@ function editorWordDblClick(span) {
 window._phraseSet = new Set();
 function attachPhraseSelectionListener() {
     const editor = document.getElementById('editor');
-    const handle = () => {
+
+    // Flag để mouseup không tranh với dblclick
+    let _dblClickPending = false;
+
+    // Mobile double-tap tracking
+    let _lastTap = 0, _lastTapTarget = null;
+
+    const handle = (e) => {
+        // Nếu đây là mouseup của double-click → bỏ qua, để dblclick xử lý
+        if (_dblClickPending) { _dblClickPending = false; return; }
+
         const sel = window.getSelection();
         if (!sel || sel.isCollapsed || !sel.rangeCount) return;
         const range = sel.getRangeAt(0);
         const text  = sel.toString().trim();
-        if (!text || text.split(/\s+/).length < 2) return; // cụm ít nhất 2 từ
+        if (!text || text.split(/\s+/).length < 2) return;
 
         // Lấy tất cả spans nằm trong vùng chọn
         const spans = Array.from(editor.querySelectorAll('.editor-word'));
@@ -5254,10 +5264,31 @@ function attachPhraseSelectionListener() {
             sp.dataset.phraseId = phraseId;
         });
         window._phraseSet.add(phrase);
-        sel.removeAllRanges(); // bỏ highlight selection sau khi đánh dấu
+        sel.removeAllRanges();
     };
+
+    // mouseup cho desktop — set flag trước dblclick
+    editor.addEventListener('dblclick', () => { _dblClickPending = true; });
     editor.addEventListener('mouseup',  handle);
-    editor.addEventListener('touchend', handle, { passive: true });
+
+    // touchend: phân biệt double-tap (< 300ms) vs kéo chọn cụm
+    editor.addEventListener('touchend', (e) => {
+        const now = Date.now();
+        const target = e.target;
+        if (now - _lastTap < 300 && target === _lastTapTarget && target.classList.contains('editor-word')) {
+            // Double-tap → gọi editorWordDblClick
+            _lastTap = 0; _lastTapTarget = null;
+            e.preventDefault();
+            editorWordDblClick(target);
+            return;
+        }
+        _lastTap = now;
+        _lastTapTarget = target;
+        // Sau 350ms mới xử lý phrase để tránh nhầm với double-tap
+        setTimeout(() => {
+            if (Date.now() - _lastTap >= 300) handle(e);
+        }, 320);
+    }, { passive: false });
 }
 document.getElementById('fileInput').onchange = async e => {
     const f = e.target.files[0]; if(!f) return;
