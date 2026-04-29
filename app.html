@@ -6246,12 +6246,34 @@ function clearPasteInput() {
 function parsePasteLines(text) {
     return text.split('\n')
         .map(line => {
+            // Xoá bullet/số đầu dòng
             const clean = line.replace(/^[\d\.\-\*\•\s]+/, '').trim();
-            const sep = clean.includes(':') ? ':' : clean.includes('\t') ? '\t' : null;
-            if (!sep) return null;
-            const idx = clean.indexOf(sep);
-            const enWord  = clean.slice(0, idx).trim().toLowerCase();
-            const vnMeaning = clean.slice(idx + 1).trim();
+            if (!clean) return null;
+
+            // Tìm dấu phân cách: ưu tiên ':' rồi '\t' rồi ' - ' rồi ' / '
+            let idx = -1, sepLen = 1;
+            if (clean.includes(':')) {
+                idx = clean.indexOf(':'); sepLen = 1;
+            } else if (clean.includes('\t')) {
+                idx = clean.indexOf('\t'); sepLen = 1;
+            } else if (clean.includes(' - ')) {
+                idx = clean.indexOf(' - '); sepLen = 3;
+            } else if (clean.includes(' / ')) {
+                idx = clean.indexOf(' / '); sepLen = 3;
+            }
+            if (idx < 0) return null;
+
+            // Phần tiếng Anh: strip chú thích trong () [] và khoảng trắng thừa
+            const rawEn  = clean.slice(0, idx).trim();
+            const enWord = rawEn
+                .replace(/[\(\[\{][^\)\]\}]*[\)\]\}]/g, '') // xoá (…) [..] {..}
+                .replace(/\s+/g, ' ')
+                .trim()
+                .toLowerCase();
+
+            // Phần tiếng Việt: giữ nguyên kể cả () vì là phần nghĩa bổ sung
+            const vnMeaning = clean.slice(idx + sepLen).trim();
+
             return (enWord && vnMeaning) ? { word: enWord, vn: vnMeaning } : null;
         })
         .filter(Boolean);
@@ -6679,12 +6701,16 @@ async function processFileForTopicList(listId, file) {
             let parsedWords = [];
             lines.forEach(line => {
                 const cleanLine = line.replace(/^[\d\.\-\*\•\s]+/, '').trim();
-                if (cleanLine.includes(':')) {
-                    const parts  = cleanLine.split(':');
-                    const enWord = parts[0].trim().toLowerCase();
-                    const vnMean = parts.slice(1).join(':').trim();
-                    if (enWord && vnMean) parsedWords.push({ word: enWord, vn: vnMean });
-                }
+                let idx = -1, sepLen = 1;
+                if (cleanLine.includes(':'))       { idx = cleanLine.indexOf(':');     sepLen = 1; }
+                else if (cleanLine.includes('\t')) { idx = cleanLine.indexOf('\t');    sepLen = 1; }
+                else if (cleanLine.includes(' - ')){ idx = cleanLine.indexOf(' - ');  sepLen = 3; }
+                else if (cleanLine.includes(' / ')){ idx = cleanLine.indexOf(' / ');  sepLen = 3; }
+                if (idx < 0) return;
+                const enWord  = cleanLine.slice(0, idx).trim()
+                    .replace(/[\(\[\{][^\)\]\}]*[\)\]\}]/g, '').replace(/\s+/g,' ').trim().toLowerCase();
+                const vnMean  = cleanLine.slice(idx + sepLen).trim();
+                if (enWord && vnMean) parsedWords.push({ word: enWord, vn: vnMean });
             });
             if (!parsedWords.length) { showToast('⚠️ Không tìm thấy từ hợp lệ (định dạng: Từ: Nghĩa)'); return; }
 
@@ -7011,18 +7037,17 @@ document.getElementById('libFileInput').onchange = async (e) => {
             
             // 2. Xử lý Regex loại bỏ số thứ tự, bullet point và tách Anh:Việt
             lines.forEach(line => {
-                // Xóa ký tự dạng: "1. ", "12. ", "- ", "* ", "• " ở đầu dòng
                 const cleanLine = line.replace(/^[\d\.\-\*\•\s]+/, '').trim();
-                
-                if(cleanLine.includes(':')) {
-                    const parts = cleanLine.split(':');
-                    const enWord = parts[0].trim().toLowerCase();
-                    const vnMeaning = parts.slice(1).join(':').trim(); // Đề phòng trường hợp nghĩa có chứa dấu :
-                    
-                    if(enWord && vnMeaning) {
-                        parsedWords.push({ word: enWord, vn: vnMeaning });
-                    }
-                }
+                let idx = -1, sepLen = 1;
+                if (cleanLine.includes(':'))        { idx = cleanLine.indexOf(':');    sepLen = 1; }
+                else if (cleanLine.includes('\t'))  { idx = cleanLine.indexOf('\t');   sepLen = 1; }
+                else if (cleanLine.includes(' - ')) { idx = cleanLine.indexOf(' - '); sepLen = 3; }
+                else if (cleanLine.includes(' / ')) { idx = cleanLine.indexOf(' / '); sepLen = 3; }
+                if (idx < 0) return;
+                const enWord    = cleanLine.slice(0, idx).trim()
+                    .replace(/[\(\[\{][^\)\]\}]*[\)\]\}]/g, '').replace(/\s+/g,' ').trim().toLowerCase();
+                const vnMeaning = cleanLine.slice(idx + sepLen).trim();
+                if (enWord && vnMeaning) parsedWords.push({ word: enWord, vn: vnMeaning });
             });
 
             if(parsedWords.length === 0) {
