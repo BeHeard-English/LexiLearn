@@ -1451,8 +1451,9 @@
                 <div id="topicListsSection" style="background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px 20px;margin-bottom:20px;">
                     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
                         <div onclick="openTopicListAll()" style="font-weight:800;font-size:.92rem;color:var(--text);cursor:pointer;user-select:none;" title="Xem tất cả danh sách">📋 Topics</div>
-                        <div style="display:flex;align-items:center;gap:10px;">
+                        <div style="display:flex;align-items:center;gap:8px;">
                             <div style="font-size:.65rem;color:#94a3b8;">← kéo ngang →</div>
+                            <button onclick="openMergeTopicsModal()" style="font-size:.73rem;font-weight:700;color:#7c3aed;background:#f5f3ff;border:none;border-radius:8px;padding:5px 11px;cursor:pointer;">⚡ Hợp nhất</button>
                             <button onclick="showCreateNewList()" style="font-size:.73rem;font-weight:700;color:var(--primary);background:var(--primary-light);border:none;border-radius:8px;padding:5px 11px;cursor:pointer;">+ Tạo mới</button>
                         </div>
                     </div>
@@ -2580,6 +2581,57 @@
     </div>
 </div>
 
+
+<!-- MERGE TOPICS MODAL -->
+<div id="mergeTopicsModal" class="tl-modal" onclick="if(event.target===this)closeMergeTopicsModal()">
+    <div class="tl-modal-box" style="max-width:460px;">
+        <div class="tl-modal-header">
+            <div>
+                <div style="font-family:'Nunito',sans-serif;font-weight:800;font-size:1rem;color:var(--primary);">⚡ Hợp nhất chủ đề</div>
+                <div style="font-size:.72rem;color:var(--muted);margin-top:2px;">Chọn các chủ đề muốn hợp nhất thành 1</div>
+            </div>
+            <button class="tl-close-btn" onclick="closeMergeTopicsModal()">✕ Đóng</button>
+        </div>
+        <div class="tl-modal-body" style="gap:16px;">
+
+            <!-- Chọn chủ đề -->
+            <div>
+                <div class="cth-label" style="margin-bottom:8px;">Chọn chủ đề cần hợp nhất <span style="font-weight:400;text-transform:none;letter-spacing:0;color:#94a3b8;">(ít nhất 2)</span></div>
+                <div id="mergeTopicCheckList" style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;padding-right:4px;"></div>
+            </div>
+
+            <!-- Tên chủ đề mới -->
+            <div>
+                <div class="cth-label" style="margin-bottom:8px;">Tên chủ đề mới</div>
+                <input id="mergeTopicName" type="text" class="cth-yt-input" placeholder="Nhập tên chủ đề sau khi hợp nhất...">
+            </div>
+
+            <!-- Chọn icon -->
+            <div>
+                <div class="cth-label" style="margin-bottom:8px;">Icon</div>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span id="mergeIconPreview" style="font-size:1.8rem;cursor:pointer;line-height:1;" onclick="openMergeIconPicker()">📋</span>
+                    <button onclick="openMergeIconPicker()" style="font-size:.78rem;padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--card);color:var(--muted);cursor:pointer;font-family:inherit;font-weight:700;">Đổi icon</button>
+                    <div id="mergeIconPickerWrap" style="display:none;flex-wrap:wrap;gap:6px;flex:1;max-height:100px;overflow-y:auto;"></div>
+                </div>
+            </div>
+
+            <!-- Xoá chủ đề gốc -->
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.82rem;color:var(--text);font-weight:600;">
+                <input type="checkbox" id="mergeDeleteOriginals" checked>
+                Xoá các chủ đề gốc sau khi hợp nhất
+            </label>
+
+            <!-- Preview -->
+            <div id="mergePreview" style="display:none;background:var(--primary-light);border-radius:10px;padding:10px 14px;font-size:.78rem;color:var(--primary);font-weight:700;"></div>
+
+        </div>
+        <div class="tl-modal-footer">
+            <button class="tl-close-btn" onclick="closeMergeTopicsModal()">Hủy</button>
+            <button class="btn-primary" style="padding:10px 22px;" onclick="confirmMergeTopics()">⚡ Hợp nhất</button>
+        </div>
+    </div>
+</div>
 
 <!-- BADGE GALLERY MODAL -->
 <div id="badgeGalleryModal" class="badge-modal" onclick="closeBadgeGallery()">
@@ -10838,6 +10890,121 @@ async function saveCustomTheme() {
     } catch(e) {
         console.error('Lỗi lưu custom theme:', e);
         showToast('⚠️ Lưu thất bại, kiểm tra dung lượng ảnh.');
+    }
+}
+
+// ══════════════════════════════════════════
+// MERGE TOPICS
+// ══════════════════════════════════════════
+let _mergeSelectedIcon = '📋';
+
+function openMergeTopicsModal() {
+    if (topicLists.length < 2) { showToast('💡 Cần ít nhất 2 chủ đề để hợp nhất!'); return; }
+    _mergeSelectedIcon = '📋';
+    document.getElementById('mergeIconPreview').textContent = '📋';
+    document.getElementById('mergeTopicName').value = '';
+    document.getElementById('mergeIconPickerWrap').style.display = 'none';
+    document.getElementById('mergePreview').style.display = 'none';
+    document.getElementById('mergeDeleteOriginals').checked = true;
+
+    // Render checklist
+    const list = document.getElementById('mergeTopicCheckList');
+    list.innerHTML = topicLists.map(tl => `
+        <label style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;border:1.5px solid var(--border);cursor:pointer;background:var(--card);transition:.15s;"
+            onmouseover="this.style.borderColor='var(--primary-mid)'" onmouseout="updateMergeCheckStyle(this)">
+            <input type="checkbox" data-id="${tl.id}" data-name="${tl.name}" data-count="${getValidWordIds(tl).length}"
+                onchange="updateMergePreview()" style="flex-shrink:0;cursor:pointer;">
+            <span style="font-size:1.2rem;">${tl.icon || '📋'}</span>
+            <span style="flex:1;font-weight:700;font-size:.85rem;color:var(--text);">${tl.name}</span>
+            <span style="font-size:.72rem;color:var(--muted);flex-shrink:0;">${getValidWordIds(tl).length} từ</span>
+        </label>`).join('');
+    document.getElementById('mergeTopicsModal').classList.add('open');
+}
+
+function updateMergeCheckStyle(label) {
+    const cb = label.querySelector('input[type=checkbox]');
+    label.style.borderColor = cb.checked ? 'var(--primary-mid)' : 'var(--border)';
+    label.style.background  = cb.checked ? 'var(--primary-light)' : 'var(--card)';
+}
+
+function updateMergePreview() {
+    document.querySelectorAll('#mergeTopicCheckList label').forEach(l => updateMergeCheckStyle(l));
+    const checked = Array.from(document.querySelectorAll('#mergeTopicCheckList input:checked'));
+    const preview = document.getElementById('mergePreview');
+    if (checked.length < 2) { preview.style.display = 'none'; return; }
+    const totalWords = checked.reduce((sum, cb) => sum + parseInt(cb.dataset.count), 0);
+    const names = checked.map(cb => cb.dataset.name).join(' + ');
+    preview.style.display = 'block';
+    preview.innerHTML = `Hợp nhất: <strong>${names}</strong><br>Tổng: ~${totalWords} từ (sẽ loại trùng)`;
+}
+
+function openMergeIconPicker() {
+    const wrap = document.getElementById('mergeIconPickerWrap');
+    if (wrap.style.display !== 'none') { wrap.style.display = 'none'; return; }
+    wrap.style.display = 'flex';
+    wrap.innerHTML = TOPIC_ICONS.map(ic =>
+        `<button onclick="selectMergeIcon('${ic}')" style="font-size:1.4rem;padding:4px 6px;border:2px solid transparent;border-radius:8px;cursor:pointer;background:var(--card);transition:.15s;"
+            onmouseover="this.style.borderColor='var(--primary-mid)'"
+            onmouseout="this.style.borderColor='transparent'">${ic}</button>`
+    ).join('');
+}
+
+function selectMergeIcon(icon) {
+    _mergeSelectedIcon = icon;
+    document.getElementById('mergeIconPreview').textContent = icon;
+    document.getElementById('mergeIconPickerWrap').style.display = 'none';
+}
+
+function closeMergeTopicsModal() {
+    document.getElementById('mergeTopicsModal').classList.remove('open');
+}
+
+async function confirmMergeTopics() {
+    const checked = Array.from(document.querySelectorAll('#mergeTopicCheckList input:checked'));
+    if (checked.length < 2) { showToast('⚠️ Chọn ít nhất 2 chủ đề!'); return; }
+
+    const name = document.getElementById('mergeTopicName').value.trim();
+    if (!name) { showToast('⚠️ Nhập tên chủ đề mới!'); return; }
+
+    const deleteOriginals = document.getElementById('mergeDeleteOriginals').checked;
+    const ids = checked.map(cb => cb.dataset.id);
+
+    // Gộp wordIds, loại trùng
+    const allWordIds = [];
+    const seen = new Set();
+    ids.forEach(id => {
+        const tl = topicLists.find(t => t.id === id);
+        if (!tl) return;
+        getValidWordIds(tl).forEach(w => {
+            const k = w.toLowerCase();
+            if (!seen.has(k)) { seen.add(k); allWordIds.push(w); }
+        });
+    });
+
+    showToast('⏳ Đang hợp nhất...');
+    closeMergeTopicsModal();
+
+    try {
+        // Tạo chủ đề mới
+        const newRef = db.collection('users').doc(currentUser.uid).collection('topicLists').doc();
+        const newTopic = { name, icon: _mergeSelectedIcon, wordIds: allWordIds, createdAt: Date.now() };
+        await newRef.set(newTopic);
+        topicLists.push({ id: newRef.id, ...newTopic });
+
+        // Xoá chủ đề gốc nếu chọn
+        if (deleteOriginals) {
+            for (const id of ids) {
+                await db.collection('users').doc(currentUser.uid).collection('topicLists').doc(id).delete();
+            }
+            topicLists = topicLists.filter(t => !ids.includes(t.id));
+        }
+
+        renderTopicLists();
+        populateReviewVocabSelect();
+        showToast(`✅ Đã hợp nhất thành "${_mergeSelectedIcon} ${name}" · ${allWordIds.length} từ (đã loại trùng)`);
+    } catch(e) {
+        console.error(e);
+        showToast('❌ Lỗi khi hợp nhất, vui lòng thử lại.');
     }
 }
 
