@@ -1585,6 +1585,7 @@
                                 <button class="count-btn" data-count="15">15 câu</button>
                                 <button class="count-btn" data-count="20">20 câu</button>
                             </div>
+                            <button class="count-btn" data-count="all" style="width:100%;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:6px;">⏰ Toàn bộ từ đến hạn</button>
                         </div>
 
                         <!-- Level -->
@@ -5864,7 +5865,9 @@ async function loadSRSDueCount() {
 // REVIEW — START
 // ══════════════════════════════════════════
 async function startReviewQuiz() {
-    const count  = parseInt(document.querySelector('.count-btn.active')?.dataset.count||'10');
+    const countVal = document.querySelector('.count-btn.active')?.dataset.count || '10';
+    const countAll = countVal === 'all';
+    const count    = countAll ? 999 : parseInt(countVal);
     const levels = Array.from(document.querySelectorAll('.level-btn.active')).map(b=>b.dataset.level);
     reviewMode   = document.querySelector('.mode-btn[data-mode].active')?.dataset.mode||'normal';
     
@@ -5933,11 +5936,20 @@ async function startReviewQuiz() {
     // SRS: due words first
     const due    = shuffle(pool.filter(i=> isDue(i)));
     const notDue = shuffle(pool.filter(i=>!isDue(i)));
-    const basePool = [...due, ...notDue];
+
+    // Nếu chọn "toàn bộ từ đến hạn" → chỉ lấy due words, không giới hạn số lượng
+    const basePool = countAll
+        ? (due.length > 0 ? due : [...due, ...notDue]) // fallback nếu không có từ đến hạn
+        : [...due, ...notDue];
+
+    if (countAll && due.length === 0) {
+        showToast('💡 Không có từ nào đến hạn hôm nay! Đang lấy toàn bộ thư viện.');
+    }
 
     // Phân bổ đồng đều số câu cho các modes
-    const countPerMode = Math.floor(count / selectedModes.length);
-    const remainder = count % selectedModes.length;
+    const effectiveCount = countAll ? basePool.length : count;
+    const countPerMode = Math.floor(effectiveCount / selectedModes.length);
+    const remainder = effectiveCount % selectedModes.length;
     
     let mixedPool = [];
     let poolCopy = [...basePool]; // Để không ảnh hưởng basePool
