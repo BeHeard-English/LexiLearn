@@ -6748,7 +6748,8 @@ Only raw JSON, no markdown.`;
         await db.collection('users').doc(currentUser.uid).collection('topicLists').doc(listId).update({ wordIds: allIds });
         const tlIdx = topicLists.findIndex(t => t.id === listId);
         if (tlIdx >= 0) topicLists[tlIdx].wordIds = allIds;
-        renderTopicLists(); populateReviewVocabSelect(); await loadLibrary();
+        await loadLibrary(); // phải load trước để getValidWordIds thấy từ mới
+        renderTopicLists(); populateReviewVocabSelect();
         if (currentTopicListId === listId) openTopicListDetail(listId);
         const dupMsg2 = dupCount > 0 ? ` · ${dupCount} từ trùng đã bỏ qua` : '';
         showToast(`✅ Đã thêm ${finalData.length} từ vào danh sách${dupMsg2}`);
@@ -10985,22 +10986,20 @@ async function confirmMergeTopics() {
     closeMergeTopicsModal();
 
     try {
-        // Tạo chủ đề mới
+        // Tạo chủ đề mới — dùng serverTimestamp để orderBy('createdAt') không lỗi
         const newRef = db.collection('users').doc(currentUser.uid).collection('topicLists').doc();
-        const newTopic = { name, icon: _mergeSelectedIcon, wordIds: allWordIds, createdAt: Date.now() };
+        const newTopic = { name, icon: _mergeSelectedIcon, wordIds: allWordIds, createdAt: firebase.firestore.FieldValue.serverTimestamp() };
         await newRef.set(newTopic);
-        topicLists.push({ id: newRef.id, ...newTopic });
 
         // Xoá chủ đề gốc nếu chọn
         if (deleteOriginals) {
             for (const id of ids) {
                 await db.collection('users').doc(currentUser.uid).collection('topicLists').doc(id).delete();
             }
-            topicLists = topicLists.filter(t => !ids.includes(t.id));
         }
 
-        renderTopicLists();
-        populateReviewVocabSelect();
+        // Reload từ Firestore để đảm bảo consistent
+        await loadTopicLists();
         showToast(`✅ Đã hợp nhất thành "${_mergeSelectedIcon} ${name}" · ${allWordIds.length} từ (đã loại trùng)`);
     } catch(e) {
         console.error(e);
