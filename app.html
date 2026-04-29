@@ -573,6 +573,12 @@
                 padding:6px 2px;
                 text-align:center;
             }
+            /* Nút toàn bộ từ đến hạn */
+            .mobile-count-level-row .count-btn[data-count="all"]{
+                font-size:clamp(.68rem,.8vw + .5rem,.78rem);
+                padding:6px 4px;
+                white-space:nowrap;
+            }
 
             /* Level buttons */
             .mobile-count-level-row .level-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;}
@@ -1585,7 +1591,7 @@
                                 <button class="count-btn" data-count="15">15 câu</button>
                                 <button class="count-btn" data-count="20">20 câu</button>
                             </div>
-                            <button class="count-btn" data-count="all" style="width:100%;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:6px;">⏰ Toàn bộ từ đến hạn</button>
+                            <button class="count-btn" data-count="all" style="width:100%;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;font-size:.85rem;">⏰ Toàn bộ từ đến hạn</button>
                         </div>
 
                         <!-- Level -->
