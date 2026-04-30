@@ -3071,7 +3071,7 @@ const VOCAB_PACKS = [
       "emoji": "📖",
       "desc": "Thành ngữ thông dụng nhất — nâng cao khả năng diễn đạt tự nhiên",
       "price": 1500,
-      "wordCount": 50,
+      "wordCount": 100,
       "levels": ["B1", "B2"],
       "color": "#dcfce7",
       "iconBg": "#16a34a",
@@ -10640,22 +10640,32 @@ function applyCustomThemeEffect() {
     } else if (_customTheme.bgType === 'youtube' && _customTheme.bgData) {
         const vid = _customTheme.bgData;
         _ytMuted = true;
-        // Dùng setTimeout để đảm bảo DOM sẵn sàng trước khi tạo iframe
-        layer.innerHTML = `
-            <div id="ytBgWrap" style="position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;">
-                <iframe id="ytBgIframe"
-                    src="https://www.youtube-nocookie.com/embed/${vid}?autoplay=1&mute=1&loop=1&playlist=${vid}&controls=0&disablekb=1&fs=0&modestbranding=1&rel=0&enablejsapi=1&playsinline=1&iv_load_policy=3"
-                    allow="autoplay; encrypted-media; picture-in-picture"
-                    allowfullscreen="false"
-                    style="pointer-events:auto;"
-                    frameborder="0"></iframe>
-            </div>
-            <div style="position:fixed;inset:0;background:${overlay};pointer-events:none;z-index:1;"></div>`;
-        // Gán sau khi innerHTML render xong
-        setTimeout(() => { _ytIframe = document.getElementById('ytBgIframe'); }, 100);
+        const overlay = `rgba(0,0,0,${(_customTheme.overlayOpacity||45)/100})`;
+        // Placeholder trước, tạo iframe sau khi page painted → browser cho phép autoplay
+        layer.innerHTML = `<div style="position:fixed;inset:0;background:${overlay};pointer-events:none;z-index:1;"></div>`;
         const volSlider = document.getElementById('bgVolumeSlider');
         if (volSlider) { volSlider.value = 0; document.getElementById('bgVolLabel').textContent = '0%'; document.getElementById('bgVolIcon').textContent = '🔇'; }
         showBgVolumeRow();
+        // Dùng requestAnimationFrame x2 để chắc chắn page đã paint xong trước khi tạo iframe
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            const wrap = document.getElementById('ytBgWrap');
+            if (!wrap) {
+                // Tạo wrap nếu chưa có
+                const wrapEl = document.createElement('div');
+                wrapEl.id = 'ytBgWrap';
+                wrapEl.style.cssText = 'position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;';
+                const iframe = document.createElement('iframe');
+                iframe.id  = 'ytBgIframe';
+                iframe.src = `https://www.youtube-nocookie.com/embed/${vid}?autoplay=1&mute=1&loop=1&playlist=${vid}&controls=0&disablekb=1&fs=0&modestbranding=1&rel=0&enablejsapi=1&playsinline=1&iv_load_policy=3`;
+                iframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture');
+                iframe.setAttribute('allowfullscreen', 'false');
+                iframe.setAttribute('frameborder', '0');
+                iframe.style.pointerEvents = 'auto';
+                wrapEl.appendChild(iframe);
+                layer.insertBefore(wrapEl, layer.firstChild);
+                _ytIframe = iframe;
+            }
+        }));
     } else {
         document.body.style.backgroundImage = '';
         hideBgVolumeRow();
