@@ -5455,34 +5455,28 @@ async function saveVocabToDb(data) {
 let _recentWordsCache = null; // cache kết quả fetch recent để tránh query lặp
 
 async function loadRecentWords() {
-    if (!currentUser) return;
-    const tbody  = document.getElementById('libraryTableBody');
-    const empty  = document.getElementById('libEmpty');
-    if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:var(--muted);font-size:.85rem;">⏳ Đang tải...</td></tr>';
+    // Dùng fullLibrary (đã load sẵn) + sort JS thay vì Firestore orderBy
+    // Lý do: orderBy('createdAt') bỏ qua các từ không có trường createdAt (từ cũ)
+    let list = [...fullLibrary];
 
-    try {
-        // Luôn query Firestore để lấy đúng thứ tự createdAt mới nhất
-        const snap = await db.collection('users').doc(currentUser.uid)
-            .collection('vocabulary')
-            .orderBy('createdAt', 'desc')
-            .get();
+    // Áp dụng filter level/search hiện tại
+    const q = libQuery.toLowerCase();
+    if (q) list = list.filter(i => i.word.toLowerCase().includes(q) || (i.vn||'').toLowerCase().includes(q));
+    if (activeLibLevel === 'DUE')      list = list.filter(i => isDue(i));
+    else if (activeLibLevel !== 'ALL') list = list.filter(i => i.level === activeLibLevel);
 
-        let list = snap.docs.map(d => d.data());
+    // Sort: từ có createdAt mới nhất lên đầu; từ không có createdAt (cũ) xuống cuối
+    list.sort((a, b) => {
+        const ta = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : 0;
+        const tb = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : 0;
+        if (tb !== ta) return tb - ta;
+        // Từ không có timestamp: giữ thứ tự gốc trong fullLibrary (từ mới thêm ở cuối)
+        return fullLibrary.indexOf(b) - fullLibrary.indexOf(a);
+    });
 
-        // Áp dụng filter level/search hiện tại
-        const q = libQuery.toLowerCase();
-        if (q) list = list.filter(i => i.word.toLowerCase().includes(q) || (i.vn||'').toLowerCase().includes(q));
-        if (activeLibLevel === 'DUE')      list = list.filter(i => isDue(i));
-        else if (activeLibLevel !== 'ALL') list = list.filter(i => i.level === activeLibLevel);
-
-        // Render bảng với danh sách đã sort
-        _libPage = 1;
-        _libCurrentList = list;
-        _renderLibTable(list);
-    } catch(e) {
-        console.error('loadRecentWords error', e);
-        if (tbody) tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:24px;color:#dc2626;">⚠️ Không thể tải. Thử lại sau.</td></tr>';
-    }
+    _libPage = 1;
+    _libCurrentList = list;
+    _renderLibTable(list);
 }
 
 async function loadLibrary() {
@@ -7580,13 +7574,22 @@ async function showFlashcard() {
 }
 
 function flipCard() {
-    if (_fcFlipped) return;
-    _fcFlipped = true;
-    document.getElementById('theFlashcard').classList.add('flipped');
-    setTimeout(() => {
-        document.getElementById('fcRatingWrap').style.display = 'block';
-        // Removed auto‑speech on flip due to iOS restrictions
-    }, 280);
+    const card = document.getElementById('theFlashcard');
+    const isBack = card.classList.contains('flipped');
+
+    if (!isBack) {
+        // Lật sang mặt sau
+        card.classList.add('flipped');
+        if (!_fcFlipped) {
+            _fcFlipped = true;
+            setTimeout(() => {
+                document.getElementById('fcRatingWrap').style.display = 'block';
+            }, 280);
+        }
+    } else {
+        // Lật về mặt trước
+        card.classList.remove('flipped');
+    }
 }
 
 function speakFC() {
