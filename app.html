@@ -1673,14 +1673,19 @@
                             </div>
                             <div class="fc-word" id="fcWord">Word</div>
                             <div class="fc-ipa" id="fcIpa"></div>
-                            <span class="fc-hint">Nhấn để lật xem nghĩa 👆</span>
+                            <span class="fc-hint" id="fcFrontHint">Nhấn để lật xem nghĩa 👆</span>
                         </div>
                         <div class="flashcard-face fc-back">
-                            <div class="quiz-prompt-label" id="fcBackLabel" style="color:var(--muted);">Nghĩa tiếng Việt</div>
+                            <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
+                                <div class="quiz-prompt-label" id="fcBackLabel" style="color:var(--muted);">Nghĩa tiếng Việt</div>
+                                <button class="tts-btn" id="fcBackTtsBtn" onclick="event.stopPropagation();speakFCBack()" style="display:none;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M12 6v12m-3.536-9.536a5 5 0 000 7.072"/></svg>
+                                </button>
+                            </div>
                             <div class="fc-meaning" id="fcMeaning">Nghĩa</div>
                             <div class="fc-ipa" id="fcBackIpa" style="font-family:monospace;font-size:.9rem;color:var(--muted);margin-top:4px;"></div>
                             <div class="fc-example" id="fcExample"></div>
-                            <span class="fc-back-hint">Tự đánh giá bên dưới ↓</span>
+                            <span class="fc-back-hint" id="fcBackHint">Tự đánh giá bên dưới ↓</span>
                         </div>
                     </div>
                 </div>
@@ -5273,9 +5278,8 @@ function attachPhraseSelectionListener() {
     // Flag để mouseup không tranh với dblclick
     let _dblClickPending = false;
 
-    // Mobile double-tap tracking — dùng touchstart để nhận ngay khi chạm, không chờ nhấc ngón
+    // Mobile double-tap tracking
     let _lastTap = 0, _lastTapTarget = null;
-    const DBL_TAP_MS = 500;
 
     const handle = (e) => {
         // Nếu đây là mouseup của double-click → bỏ qua, để dblclick xử lý
@@ -5331,31 +5335,23 @@ function attachPhraseSelectionListener() {
     editor.addEventListener('dblclick', () => { _dblClickPending = true; });
     editor.addEventListener('mouseup',  handle);
 
-    // touchstart: nhận diện double-tap ngay khi ngón chạm xuống lần 2
-    // → không cần chờ nhấc ngón, nhanh và chính xác hơn touchend
-    editor.addEventListener('touchstart', (e) => {
-        const now    = Date.now();
-        const touch  = e.changedTouches[0];
-        // Tìm span từ tọa độ chạm (tránh trường hợp target là text node)
-        const el     = document.elementFromPoint(touch.clientX, touch.clientY);
-        const wordEl = el?.closest ? el.closest('.editor-word') : null;
-
-        if (wordEl && now - _lastTap < DBL_TAP_MS && _lastTapTarget === wordEl) {
-            // Double-tap nhận diện ngay khi chạm lần 2
+    // touchend: phân biệt double-tap (< 300ms) vs kéo chọn cụm
+    editor.addEventListener('touchend', (e) => {
+        const now = Date.now();
+        const target = e.target;
+        if (now - _lastTap < 300 && target === _lastTapTarget && target.classList.contains('editor-word')) {
+            // Double-tap → gọi editorWordDblClick
             _lastTap = 0; _lastTapTarget = null;
-            e.preventDefault();          // chặn browser zoom & selection
-            editorWordDblClick(wordEl);
+            e.preventDefault();
+            editorWordDblClick(target);
             return;
         }
-        _lastTap       = now;
-        _lastTapTarget = wordEl;
-    }, { passive: false });
-
-    // touchend: chỉ xử lý kéo chọn cụm từ (phrase selection)
-    editor.addEventListener('touchend', (e) => {
-        // Bỏ qua nếu vừa xử lý double-tap (trong cửa sổ DBL_TAP_MS)
-        if (Date.now() - _lastTap < DBL_TAP_MS) return;
-        handle(e);
+        _lastTap = now;
+        _lastTapTarget = target;
+        // Sau 350ms mới xử lý phrase để tránh nhầm với double-tap
+        setTimeout(() => {
+            if (Date.now() - _lastTap >= 300) handle(e);
+        }, 320);
     }, { passive: false });
 }
 document.getElementById('fileInput').onchange = async e => {
@@ -7515,41 +7511,79 @@ async function showFlashcard() {
     currentWord  = target;
 
     if (reviewMode === 'normal') {
+    // Mặt trước: từ tiếng Anh + nút nghe
     document.getElementById('fcPromptLabel').innerText = 'Từ tiếng Anh';
     document.getElementById('fcWord').innerText = target.word;
     document.getElementById('fcIpa').innerText  = target.ipa || '';
-    document.getElementById('fcBackLabel').innerText  = 'Nghĩa tiếng Việt';
     document.getElementById('fcTtsBtn').style.display = 'flex';
+    // Mặt sau: nghĩa tiếng Việt, không cần nút nghe (đã có ở mặt trước)
+    document.getElementById('fcBackLabel').innerText  = 'Nghĩa tiếng Việt';
     document.getElementById('fcMeaning').innerText = target.vn;
     document.getElementById('fcExample').innerText = target.example || '';
-    // Ở chế độ normal, mặt sau hiển thị nghĩa nên không cần phiên âm
     document.getElementById('fcBackIpa').innerText = '';
+    document.getElementById('fcBackTtsBtn').style.display = 'none';
+    // Hint mặt trước / sau
+    document.getElementById('fcFrontHint').innerText = 'Nhấn để lật xem nghĩa 👆';
+    document.getElementById('fcBackHint').innerText  = 'Tự đánh giá bên dưới ↓';
 } else {
+    // Mặt trước: nghĩa tiếng Việt, ẩn nút nghe (chưa lộ từ)
     document.getElementById('fcPromptLabel').innerText = 'Nghĩa tiếng Việt';
     document.getElementById('fcWord').innerText = target.vn;
     document.getElementById('fcIpa').innerText  = '';
-    document.getElementById('fcBackLabel').innerText  = 'Từ tiếng Anh';
     document.getElementById('fcTtsBtn').style.display = 'none';
+    // Mặt sau: từ tiếng Anh + nút nghe
+    document.getElementById('fcBackLabel').innerText  = 'Từ tiếng Anh';
     document.getElementById('fcMeaning').innerText = target.word;
     document.getElementById('fcExample').innerText = target.example || '';
     document.getElementById('fcBackIpa').innerText = target.ipa || '';
+    document.getElementById('fcBackTtsBtn').style.display = 'flex';
+    // Hint mặt trước / sau
+    document.getElementById('fcFrontHint').innerText = 'Nhấn để lật xem từ 👆';
+    document.getElementById('fcBackHint').innerText  = 'Tự đánh giá bên dưới ↓';
 }
 }
 
 function flipCard() {
-    if (_fcFlipped) return;
-    _fcFlipped = true;
-    document.getElementById('theFlashcard').classList.add('flipped');
-    setTimeout(() => {
-        document.getElementById('fcRatingWrap').style.display = 'block';
-        // Removed auto‑speech on flip due to iOS restrictions
-    }, 280);
+    const card        = document.getElementById('theFlashcard');
+    const isShowingBack = card.classList.contains('flipped');
+
+    if (!isShowingBack) {
+        // Lật sang mặt sau
+        card.classList.add('flipped');
+        if (!_fcFlipped) {
+            // Lần đầu lật: hiện nút đánh giá
+            _fcFlipped = true;
+            setTimeout(() => {
+                document.getElementById('fcRatingWrap').style.display = 'block';
+            }, 280);
+        }
+        // Cập nhật hint mặt trước thành "lật lại"
+        const frontHint = document.getElementById('fcFrontHint');
+        if (frontHint) frontHint.innerText = 'Nhấn để lật lại 🔄';
+    } else {
+        // Lật về mặt trước
+        card.classList.remove('flipped');
+        // Khôi phục hint mặt trước theo chế độ
+        const frontHint = document.getElementById('fcFrontHint');
+        if (frontHint) {
+            frontHint.innerText = reviewMode === 'normal'
+                ? 'Nhấn để lật xem nghĩa 👆'
+                : 'Nhấn để lật xem từ 👆';
+        }
+    }
 }
 
 function speakFC() {
     if (!currentWord) return;
     speak(reviewMode === 'normal' ? currentWord.word : currentWord.vn,
           reviewMode === 'normal' ? 'en-US' : 'vi-VN');
+}
+
+// Nút nghe ở mặt sau (chế độ nghĩa→từ: từ tiếng Anh ở mặt sau)
+function speakFCBack() {
+    if (!currentWord) return;
+    // Mặt sau luôn chứa từ tiếng Anh khi ở reverse mode
+    speak(currentWord.word, 'en-US');
 }
 
 async function rateFC(rating) {
