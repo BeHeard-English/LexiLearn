@@ -5516,15 +5516,19 @@ async function loadRecentWords() {
 async function loadLibrary() {
     if(!currentUser) return;
     const cached = _loadCache();
+    let _freshFromFirestore = false;
     if (cached) {
         fullLibrary = cached;
     } else {
         const snap = await db.collection('users').doc(currentUser.uid).collection('vocabulary').get();
         fullLibrary = snap.docs.map(d => d.data());
         _saveCache(fullLibrary);
+        _freshFromFirestore = true;
     }
     _libPage = 1;
-    await syncAllTopicListWordIds();
+    // syncAllTopicListWordIds chỉ chạy khi fullLibrary lấy thẳng từ Firestore
+    // Tránh tình trạng cache cũ khiến hàm này xóa nhầm từ vừa thêm vào
+    if (_freshFromFirestore) await syncAllTopicListWordIds();
     renderLibrary();
     updateXPUI(_cachedXP);
     renderProgressChart();
@@ -6973,14 +6977,29 @@ async function openTopicListDetail(listId) {
     document.getElementById('topicDetailModal').classList.add('open');
     closeIconPicker(); // đảm bảo picker đóng khi mở modal mới
 
-    // Chỉ fetch topicList doc (1 read) — vocab dùng fullLibrary đã có trong RAM
+    // Fetch topicList doc để lấy wordIds mới nhất
     const tlSnap = await db.collection('users').doc(currentUser.uid).collection('topicLists').doc(listId).get();
-
-    // Cập nhật wordIds local từ Firestore
     const freshWordIds = (tlSnap.exists && tlSnap.data().wordIds) || [];
     tl.wordIds = freshWordIds;
 
-    // fullLibrary đã đủ, không cần fetch thêm
+    // Kiểm tra nếu có từ trong wordIds không có trong fullLibrary (cache cũ)
+    // → fetch bổ sung từ Firestore để không bị mất từ khi hiển thị
+    const libKeys = new Set(fullLibrary.map(w => (w.word || '').toLowerCase()));
+    const missingIds = freshWordIds.filter(id => !libKeys.has(id));
+    if (missingIds.length > 0) {
+        try {
+            const extraSnaps = await Promise.all(
+                missingIds.map(id => db.collection('users').doc(currentUser.uid)
+                                       .collection('vocabulary').doc(id).get())
+            );
+            const extraWords = extraSnaps.filter(s => s.exists).map(s => s.data());
+            if (extraWords.length) {
+                fullLibrary = [...fullLibrary, ...extraWords];
+                _saveCache(fullLibrary); // cập nhật cache để lần sau không cần fetch lại
+            }
+        } catch(e) { console.warn('openTopicListDetail: fetch missing words failed', e); }
+    }
+
     document.getElementById('tdCount').textContent = `${freshWordIds.length} từ vựng`;
     renderTopicDetailTable(freshWordIds);
 
