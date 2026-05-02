@@ -5280,6 +5280,8 @@ function attachPhraseSelectionListener() {
     let _dblClickPending = false;
 
     // Mobile double-tap tracking
+    // 500ms cho cảm ứng — rộng hơn 300ms mặc định để nhận tap nhanh trên điện thoại/tablet
+    const DBL_TAP_MS = 500;
     let _lastTap = 0, _lastTapTarget = null;
 
     const handle = (e) => {
@@ -5336,23 +5338,29 @@ function attachPhraseSelectionListener() {
     editor.addEventListener('dblclick', () => { _dblClickPending = true; });
     editor.addEventListener('mouseup',  handle);
 
-    // touchend: phân biệt double-tap (< 300ms) vs kéo chọn cụm
-    editor.addEventListener('touchend', (e) => {
-        const now = Date.now();
-        const target = e.target;
-        if (now - _lastTap < 300 && target === _lastTapTarget && target.classList.contains('editor-word')) {
-            // Double-tap → gọi editorWordDblClick
+    // touchstart: nhận diện double-tap ngay khi ngón chạm xuống lần 2
+    // → không cần chờ nhấc ngón, nhanh và chính xác hơn touchend
+    editor.addEventListener('touchstart', (e) => {
+        const now   = Date.now();
+        const touch = e.changedTouches[0];
+        const el    = document.elementFromPoint(touch.clientX, touch.clientY);
+        const wordEl = el?.closest ? el.closest('.editor-word') : null;
+
+        if (wordEl && now - _lastTap < DBL_TAP_MS && _lastTapTarget === wordEl) {
             _lastTap = 0; _lastTapTarget = null;
-            e.preventDefault();
-            editorWordDblClick(target);
+            e.preventDefault(); // chặn browser zoom & selection trên iOS
+            editorWordDblClick(wordEl);
             return;
         }
-        _lastTap = now;
-        _lastTapTarget = target;
-        // Sau 350ms mới xử lý phrase để tránh nhầm với double-tap
-        setTimeout(() => {
-            if (Date.now() - _lastTap >= 300) handle(e);
-        }, 320);
+        _lastTap       = now;
+        _lastTapTarget = wordEl;
+    }, { passive: false });
+
+    // touchend: chỉ xử lý kéo chọn cụm từ (phrase selection)
+    editor.addEventListener('touchend', (e) => {
+        // Bỏ qua nếu vừa xử lý double-tap trong cửa sổ DBL_TAP_MS
+        if (Date.now() - _lastTap < DBL_TAP_MS) return;
+        handle(e);
     }, { passive: false });
 }
 document.getElementById('fileInput').onchange = async e => {
