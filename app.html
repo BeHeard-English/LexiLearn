@@ -5440,13 +5440,32 @@ function renderVocabList() {
 
 async function saveVocabToDb(data) {
     if(!currentUser) return;
+
+    // Xác định từ nào thực sự MỚI (chưa có trong fullLibrary) để gắn createdAt
+    const existingKeys = new Set(fullLibrary.map(i => i.word.toLowerCase()));
+
     const batch = db.batch();
     data.forEach(item => {
-        const ref = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(item.word.toLowerCase());
-        batch.set(ref, { ...item, correct_count:firebase.firestore.FieldValue.increment(0), incorrect_count:firebase.firestore.FieldValue.increment(0), srs_interval:1, srs_ease:2.5, srs_reps:0, srs_next_review:firebase.firestore.Timestamp.fromDate(new Date()), last_updated:firebase.firestore.FieldValue.serverTimestamp() }, {merge:true});
+        const ref  = db.collection('users').doc(currentUser.uid).collection('vocabulary').doc(item.word.toLowerCase());
+        const isNew = !existingKeys.has(item.word.toLowerCase());
+        const payload = {
+            ...item,
+            correct_count:   firebase.firestore.FieldValue.increment(0),
+            incorrect_count: firebase.firestore.FieldValue.increment(0),
+            srs_interval:    1, srs_ease: 2.5, srs_reps: 0,
+            srs_next_review: firebase.firestore.Timestamp.fromDate(new Date()),
+            last_updated:    firebase.firestore.FieldValue.serverTimestamp(),
+        };
+        // createdAt chỉ gán cho từ mới — không ghi đè từ cũ đã có
+        if (isNew) payload.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+        batch.set(ref, payload, { merge: true });
     });
     await batch.commit();
-    _clearCache(); // cache cũ không còn đúng sau khi thêm từ mới
+
+    // Reload fullLibrary để loadRecentWords thấy ngay từ vừa thêm
+    const snap = await db.collection('users').doc(currentUser.uid).collection('vocabulary').get();
+    fullLibrary = snap.docs.map(d => ({ ...d.data(), _docId: d.id }));
+    _saveCache(fullLibrary);
 }
 
 // ══════════════════════════════════════════
@@ -5465,12 +5484,19 @@ async function loadRecentWords() {
     if (activeLibLevel === 'DUE')      list = list.filter(i => isDue(i));
     else if (activeLibLevel !== 'ALL') list = list.filter(i => i.level === activeLibLevel);
 
-    // Sort: từ có createdAt mới nhất lên đầu; từ không có createdAt (cũ) xuống cuối
+    // Sort: từ có createdAt mới nhất lên đầu; từ không có createdAt xuống cuối
+    // Firestore Timestamp có .seconds, hoặc .toDate(); JS Date/string dùng new Date()
+    const toMs = (v) => {
+        if (!v) return 0;
+        if (typeof v.toDate === 'function') return v.toDate().getTime();   // Firestore Timestamp
+        if (typeof v.seconds === 'number')  return v.seconds * 1000;       // plain object {seconds,nanoseconds}
+        return new Date(v).getTime() || 0;                                  // string / Date
+    };
     list.sort((a, b) => {
-        const ta = a.createdAt ? (a.createdAt.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt).getTime()) : 0;
-        const tb = b.createdAt ? (b.createdAt.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt).getTime()) : 0;
+        const ta = toMs(a.createdAt);
+        const tb = toMs(b.createdAt);
         if (tb !== ta) return tb - ta;
-        // Từ không có timestamp: giữ thứ tự gốc trong fullLibrary (từ mới thêm ở cuối)
+        // Cả hai không có timestamp: từ ở cuối fullLibrary (thêm sau) lên trước
         return fullLibrary.indexOf(b) - fullLibrary.indexOf(a);
     });
 
