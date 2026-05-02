@@ -1157,7 +1157,31 @@
     75% { top: 30%; left: 90%; transform: scale(1.8); opacity: 0.8; }
     100% { top: 10%; left: -10%; transform: scale(1); opacity: 0.4; }
 }
-    </style>
+    
+        /* ── GOLD COIN ICON ── */
+        .gc {
+            display: inline-block;
+            width: 1.1em; height: 1.1em;
+            border-radius: 50%;
+            background: radial-gradient(circle at 36% 32%, #fff176 0%, #FFD700 38%, #FFA000 68%, #E65100 100%);
+            box-shadow: 0 1px 4px rgba(0,0,0,.28), inset 0 1px 2px rgba(255,255,255,.55);
+            border: 1.5px solid #e6a000;
+            vertical-align: middle;
+            flex-shrink: 0;
+            position: relative;
+        }
+        .gc::after {
+            content: '';
+            position: absolute;
+            top: 15%; left: 20%;
+            width: 30%; height: 20%;
+            border-radius: 50%;
+            background: rgba(255,255,255,.45);
+            transform: rotate(-30deg);
+        }
+        .gc-lg { width: 1.4em; height: 1.4em; }
+        .gc-xl { width: 1.8em; height: 1.8em; border-width: 2px; }
+</style>
 </head>
 <body>
 
@@ -1178,7 +1202,7 @@
     </div>
     <div class="nav-right">
         <div class="coin-nav-wrap hidden" id="coinNavWrap" onclick="switchTab('shop')" title="Xem cửa hàng">
-            <span style="font-size:1rem;line-height:1;">🪙</span>
+            <span class="gc"></span>
             <span class="coin-nav-val" id="coinNavVal">0</span>
         </div>
         <div class="xp-nav-wrap hidden" id="xpNavWrap">
@@ -1673,19 +1697,14 @@
                             </div>
                             <div class="fc-word" id="fcWord">Word</div>
                             <div class="fc-ipa" id="fcIpa"></div>
-                            <span class="fc-hint" id="fcFrontHint">Nhấn để lật xem nghĩa 👆</span>
+                            <span class="fc-hint">Nhấn để lật xem nghĩa 👆</span>
                         </div>
                         <div class="flashcard-face fc-back">
-                            <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">
-                                <div class="quiz-prompt-label" id="fcBackLabel" style="color:var(--muted);">Nghĩa tiếng Việt</div>
-                                <button class="tts-btn" id="fcBackTtsBtn" onclick="event.stopPropagation();speakFCBack()" style="display:none;">
-                                    <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M12 6v12m-3.536-9.536a5 5 0 000 7.072"/></svg>
-                                </button>
-                            </div>
+                            <div class="quiz-prompt-label" id="fcBackLabel" style="color:var(--muted);">Nghĩa tiếng Việt</div>
                             <div class="fc-meaning" id="fcMeaning">Nghĩa</div>
                             <div class="fc-ipa" id="fcBackIpa" style="font-family:monospace;font-size:.9rem;color:var(--muted);margin-top:4px;"></div>
                             <div class="fc-example" id="fcExample"></div>
-                            <span class="fc-back-hint" id="fcBackHint">Tự đánh giá bên dưới ↓</span>
+                            <span class="fc-back-hint">Tự đánh giá bên dưới ↓</span>
                         </div>
                     </div>
                 </div>
@@ -2068,10 +2087,10 @@
         <div class="shop-header">
             <div style="position:relative;z-index:1;">
                 <div style="font-family:'Nunito',sans-serif;font-size:1.6rem;font-weight:900;margin-bottom:4px;">🛍 Cửa hàng</div>
-                <div style="font-size:.85rem;opacity:.8;margin-bottom:16px;">Dùng coin để mở khóa giao diện & bộ từ vựng · 1 XP = 1 🪙</div>
+                <div style="font-size:.85rem;opacity:.8;margin-bottom:16px;">Dùng coin để mở khóa giao diện & bộ từ vựng · 1 XP = 1 <span class="gc"></span></div>
                 <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
                     <div class="shop-coin-display">
-                        <span style="font-size:1.4rem;line-height:1;">🪙</span>
+                        <span class="gc gc-lg"></span>
                         <div>
                             <div class="shop-coin-big" id="shopCoinBig">0</div>
                             <div style="font-size:.65rem;opacity:.7;font-weight:700;text-transform:uppercase;letter-spacing:.06em;">Coins</div>
@@ -2441,7 +2460,8 @@
         <span class="badge-modal-icon" id="badgeModalIcon">🏆</span>
         <div style="font-family:'Nunito',sans-serif;font-size:.8rem;font-weight:800;color:var(--gold);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">Huy hiệu mới mở khóa!</div>
         <div style="font-family:'Nunito',sans-serif;font-size:1.3rem;font-weight:800;color:var(--text);margin-bottom:8px;" id="badgeModalName"></div>
-        <div style="font-size:.85rem;color:var(--muted);line-height:1.6;margin-bottom:20px;" id="badgeModalDesc"></div>
+        <div style="font-size:.85rem;color:var(--muted);line-height:1.6;margin-bottom:12px;" id="badgeModalDesc"></div>
+        <div id="badgeModalCoinReward" style="display:none;text-align:center;margin-bottom:16px;"></div>
         <button onclick="closeBadgeModal()" style="background:var(--primary);color:#fff;border:none;border-radius:12px;padding:12px 28px;font-family:'Be Vietnam Pro',sans-serif;font-weight:800;font-size:.9rem;cursor:pointer;width:100%;">Tuyệt vời! 🎉</button>
     </div>
 </div>
@@ -3172,6 +3192,9 @@ async function loadUserShopData() {
     await checkAndAwardBadges(_cachedXP);
     renderBadges();
     renderPetWidget();
+
+    // Kiểm tra thưởng streak tuần sau khi dữ liệu user đã load
+    await checkWeeklyStreakReward(data);
 }
 
 function updateCoinUI() {
@@ -3196,7 +3219,7 @@ async function addCoins(amount, _direct = false) {
     // Floating coin pop
     const el = document.createElement('div');
     el.style.cssText = 'position:fixed;top:80px;right:100px;background:#1c1917;color:#fde68a;padding:8px 14px;border-radius:12px;font-weight:800;font-size:.85rem;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.3);animation:xpPop .6s ease both;pointer-events:none;';
-    el.innerText = `+${amount} 🪙`;
+    el.innerHTML = `+${amount} <span class="gc"></span>`;
     document.body.appendChild(el);
     setTimeout(() => { el.style.opacity='0'; el.style.transition='opacity .4s'; setTimeout(()=>el.remove(),400); }, 1800);
 }
@@ -4587,7 +4610,7 @@ function renderVocabPacks() {
         else if (canAfford){ btnClass='buy';       btnText=`🛒 Mua`; }
         else               { btnClass='no-coin';   btnText=`🔒 Mua`; }
         const priceHtml = pack.price > 0
-            ? `<span class="sc-chip-price">🪙 ${pack.price.toLocaleString('vi-VN')}</span>`
+            ? `<span class="sc-chip-price"><span class="gc"></span> ${pack.price.toLocaleString('vi-VN')}</span>`
             : `<span class="sc-chip-price" style="background:#d1fae5;border-color:#6ee7b7;color:#065f46;">✨ Miễn phí</span>`;
         return `<div class="sc-chip${owned?' owned':''}">
             <div class="sc-chip-header">
@@ -4845,7 +4868,7 @@ function renderShop() {
         else if (canAfford)   { btnClass='buy';      btnText='🛒 Mua'; }
         else                  { btnClass='no-coin';  btnText='🔒 Mua'; }
         const priceHtml = theme.price > 0
-            ? `<span class="sc-chip-price">🪙 ${theme.price.toLocaleString('vi-VN')}</span>`
+            ? `<span class="sc-chip-price"><span class="gc"></span> ${theme.price.toLocaleString('vi-VN')}</span>`
             : `<span class="sc-chip-price" style="background:#d1fae5;border-color:#6ee7b7;color:#065f46;">✨ Miễn phí</span>`;
         return `<div class="sc-chip${isCurrent?' active-theme':''}${owned||theme.price===0?' owned':''}">
             <div class="sc-chip-header">
@@ -7511,79 +7534,41 @@ async function showFlashcard() {
     currentWord  = target;
 
     if (reviewMode === 'normal') {
-    // Mặt trước: từ tiếng Anh + nút nghe
     document.getElementById('fcPromptLabel').innerText = 'Từ tiếng Anh';
     document.getElementById('fcWord').innerText = target.word;
     document.getElementById('fcIpa').innerText  = target.ipa || '';
-    document.getElementById('fcTtsBtn').style.display = 'flex';
-    // Mặt sau: nghĩa tiếng Việt, không cần nút nghe (đã có ở mặt trước)
     document.getElementById('fcBackLabel').innerText  = 'Nghĩa tiếng Việt';
+    document.getElementById('fcTtsBtn').style.display = 'flex';
     document.getElementById('fcMeaning').innerText = target.vn;
     document.getElementById('fcExample').innerText = target.example || '';
+    // Ở chế độ normal, mặt sau hiển thị nghĩa nên không cần phiên âm
     document.getElementById('fcBackIpa').innerText = '';
-    document.getElementById('fcBackTtsBtn').style.display = 'none';
-    // Hint mặt trước / sau
-    document.getElementById('fcFrontHint').innerText = 'Nhấn để lật xem nghĩa 👆';
-    document.getElementById('fcBackHint').innerText  = 'Tự đánh giá bên dưới ↓';
 } else {
-    // Mặt trước: nghĩa tiếng Việt, ẩn nút nghe (chưa lộ từ)
     document.getElementById('fcPromptLabel').innerText = 'Nghĩa tiếng Việt';
     document.getElementById('fcWord').innerText = target.vn;
     document.getElementById('fcIpa').innerText  = '';
-    document.getElementById('fcTtsBtn').style.display = 'none';
-    // Mặt sau: từ tiếng Anh + nút nghe
     document.getElementById('fcBackLabel').innerText  = 'Từ tiếng Anh';
+    document.getElementById('fcTtsBtn').style.display = 'none';
     document.getElementById('fcMeaning').innerText = target.word;
     document.getElementById('fcExample').innerText = target.example || '';
     document.getElementById('fcBackIpa').innerText = target.ipa || '';
-    document.getElementById('fcBackTtsBtn').style.display = 'flex';
-    // Hint mặt trước / sau
-    document.getElementById('fcFrontHint').innerText = 'Nhấn để lật xem từ 👆';
-    document.getElementById('fcBackHint').innerText  = 'Tự đánh giá bên dưới ↓';
 }
 }
 
 function flipCard() {
-    const card        = document.getElementById('theFlashcard');
-    const isShowingBack = card.classList.contains('flipped');
-
-    if (!isShowingBack) {
-        // Lật sang mặt sau
-        card.classList.add('flipped');
-        if (!_fcFlipped) {
-            // Lần đầu lật: hiện nút đánh giá
-            _fcFlipped = true;
-            setTimeout(() => {
-                document.getElementById('fcRatingWrap').style.display = 'block';
-            }, 280);
-        }
-        // Cập nhật hint mặt trước thành "lật lại"
-        const frontHint = document.getElementById('fcFrontHint');
-        if (frontHint) frontHint.innerText = 'Nhấn để lật lại 🔄';
-    } else {
-        // Lật về mặt trước
-        card.classList.remove('flipped');
-        // Khôi phục hint mặt trước theo chế độ
-        const frontHint = document.getElementById('fcFrontHint');
-        if (frontHint) {
-            frontHint.innerText = reviewMode === 'normal'
-                ? 'Nhấn để lật xem nghĩa 👆'
-                : 'Nhấn để lật xem từ 👆';
-        }
-    }
+    if (_fcFlipped) return;
+    _fcFlipped = true;
+    document.getElementById('theFlashcard').classList.add('flipped');
+    setTimeout(() => {
+        document.getElementById('fcRatingWrap').style.display = 'block';
+        // Removed auto‑speech on flip due to iOS restrictions
+    }, 280);
 }
 
 function speakFC() {
     if (!currentWord) return;
     speak(reviewMode === 'normal' ? currentWord.word : currentWord.vn,
           reviewMode === 'normal' ? 'en-US' : 'vi-VN');
-}
-
-// Nút nghe ở mặt sau (chế độ nghĩa→từ: từ tiếng Anh ở mặt sau)
-function speakFCBack() {
-    if (!currentWord) return;
-    // Mặt sau luôn chứa từ tiếng Anh khi ở reverse mode
-    speak(currentWord.word, 'en-US');
 }
 
 async function rateFC(rating) {
@@ -7749,6 +7734,146 @@ async function renderProgressChart() {
 }
 
 // ══════════════════════════════════════════
+// ══════════════════════════════════════════
+// WEEKLY STREAK COIN REWARD
+// ══════════════════════════════════════════
+
+/** Trả về chuỗi YYYY-MM-DD cho thứ 2 của tuần chứa ngày `date` */
+function getMondayKey(date) {
+    const d = new Date(date);
+    const dow = d.getDay(); // 0=CN,1=T2,...
+    const diff = (dow === 0) ? -6 : 1 - dow; // về thứ 2
+    d.setDate(d.getDate() + diff);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+/** Trả về mảng 7 key YYYY-MM-DD của tuần T2–CN có thứ 2 là `mondayKey` */
+function getWeekKeys(mondayKey) {
+    const keys = [];
+    const base = new Date(mondayKey + 'T00:00:00');
+    for (let i = 0; i < 7; i++) {
+        const d = new Date(base);
+        d.setDate(d.getDate() + i);
+        keys.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`);
+    }
+    return keys;
+}
+
+async function checkWeeklyStreakReward(userData) {
+    if (!currentUser) return;
+
+    const todayKey    = (() => { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
+    const thisMon     = getMondayKey(new Date());
+    const lastRewarded = userData?.lastWeeklyStreakReward || '';
+
+    // Chưa đến thứ 2 đầu tiên sau tuần kết thúc → chưa tặng
+    if (thisMon <= lastRewarded) return;  // tuần này đã nhận rồi
+
+    // Tuần cần tổng kết = tuần TRƯỚC thứ 2 hiện tại (T2 – CN)
+    const prevMonDate = new Date(thisMon + 'T00:00:00');
+    prevMonDate.setDate(prevMonDate.getDate() - 7);
+    const prevMon = `${prevMonDate.getFullYear()}-${String(prevMonDate.getMonth()+1).padStart(2,'0')}-${String(prevMonDate.getDate()).padStart(2,'0')}`;
+    const weekKeys = getWeekKeys(prevMon); // 7 ngày T2→CN tuần trước
+
+    // Fetch activity 7 ngày tuần trước từ Firestore
+    let studiedDays = 0;
+    try {
+        const snaps = await Promise.all(
+            weekKeys.map(k => db.collection('users').doc(currentUser.uid)
+                               .collection('activity').doc(k).get())
+        );
+        for (const snap of snaps) {
+            if (snap.exists && (snap.data().reviewed || 0) > 0) studiedDays++;
+        }
+    } catch(e) {
+        console.warn('Weekly streak reward fetch error', e);
+        return; // thử lại lần sau
+    }
+
+    if (studiedDays === 0) {
+        // Tuần trước không học ngày nào → đánh dấu đã kiểm tra, không tặng
+        await db.collection('users').doc(currentUser.uid)
+                .set({ lastWeeklyStreakReward: thisMon }, { merge: true });
+        return;
+    }
+
+    const coinsEarned = studiedDays * 100;
+    _userCoins += coinsEarned;
+    updateCoinUI();
+
+    await db.collection('users').doc(currentUser.uid).set({
+        coins: _userCoins,
+        lastWeeklyStreakReward: thisMon
+    }, { merge: true });
+
+    // Hiện popup thưởng
+    showWeeklyStreakPopup(studiedDays, coinsEarned, weekKeys[0], weekKeys[6]);
+}
+
+function showWeeklyStreakPopup(days, coins, fromKey, toKey) {
+    // Tạo overlay nếu chưa có
+    let overlay = document.getElementById('weeklyStreakRewardModal');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'weeklyStreakRewardModal';
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9800;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);';
+        overlay.innerHTML = `
+        <div id="wsrBox" style="background:var(--card);border-radius:28px;padding:36px 28px 28px;max-width:340px;width:90%;text-align:center;box-shadow:0 24px 64px rgba(0,0,0,.3);animation:badgeModalPop .4s cubic-bezier(.4,0,.2,1) both;position:relative;">
+            <div style="font-size:3rem;margin-bottom:8px;">🔥</div>
+            <div style="font-family:'Nunito',sans-serif;font-size:1.35rem;font-weight:900;color:var(--text);margin-bottom:6px;">Thưởng streak tuần!</div>
+            <div id="wsrDateRange" style="font-size:.75rem;color:var(--muted);font-weight:600;margin-bottom:18px;"></div>
+            <!-- Streak days visual -->
+            <div id="wsrDayDots" style="display:flex;justify-content:center;gap:6px;margin-bottom:20px;"></div>
+            <div style="background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1.5px solid #fde68a;border-radius:16px;padding:14px 20px;margin-bottom:20px;">
+                <div style="font-size:.75rem;font-weight:700;color:#92400e;margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em;">Phần thưởng nhận được</div>
+                <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
+                    <span class="gc gc-xl"></span>
+                    <span id="wsrCoins" style="font-family:'Nunito',sans-serif;font-size:2rem;font-weight:900;color:#b45309;"></span>
+                    <span style="font-size:.85rem;font-weight:700;color:#92400e;">xu</span>
+                </div>
+                <div id="wsrFormula" style="font-size:.72rem;color:#a16207;margin-top:4px;font-weight:600;"></div>
+            </div>
+            ${days === 7 ? `<div style="background:linear-gradient(135deg,#fdf4ff,#ede9fe);border:1.5px solid #c4b5fd;border-radius:12px;padding:10px 14px;margin-bottom:18px;font-size:.78rem;font-weight:700;color:#7c3aed;">🏅 Tuần hoàn hảo! Giữ được cả 7 ngày — xuất sắc!</div>` : ''}
+            <button onclick="document.getElementById('weeklyStreakRewardModal').remove()" style="background:var(--primary);color:#fff;border:none;border-radius:14px;padding:13px 0;width:100%;font-family:'Be Vietnam Pro',sans-serif;font-weight:800;font-size:.95rem;cursor:pointer;">
+                Tuyệt vời! 🎉
+            </button>
+        </div>`;
+        document.body.appendChild(overlay);
+    }
+
+    // Điền dữ liệu
+    const weekKeys = getWeekKeys(getMondayKey(new Date(fromKey + 'T00:00:00')));
+    const dayLabels = ['T2','T3','T4','T5','T6','T7','CN'];
+
+    // Lấy set ngày đã học trong tuần để tô chấm
+    const dotsHtml = weekKeys.map((k, i) => {
+        // Không thể biết chính xác ngày nào trong 7 ngày có học mà không query lại,
+        // nên chỉ hiện X trong Y ngày đã học (tô đặc từ trái sang)
+        const filled = i < days;
+        return `<div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+            <div style="width:32px;height:32px;border-radius:50%;background:${filled?'var(--primary)':'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:.9rem;">${filled?'✅':''}</div>
+            <span style="font-size:.6rem;font-weight:700;color:${filled?'var(--primary)':'var(--muted)'};">${dayLabels[i]}</span>
+        </div>`;
+    }).join('');
+
+    document.getElementById('wsrDayDots').innerHTML = dotsHtml;
+    document.getElementById('wsrCoins').textContent  = coins.toLocaleString('vi-VN');
+    document.getElementById('wsrFormula').innerHTML = `${days} ngày × 100 <span class='gc'></span> / ngày`;
+
+    // Format date range
+    const fmt = (k) => {
+        const [y,m,d] = k.split('-');
+        return `${parseInt(d)}/${parseInt(m)}`;
+    };
+    document.getElementById('wsrDateRange').textContent = `Tuần ${fmt(fromKey)} – ${fmt(toKey)}`;
+
+    // Confetti
+    setTimeout(() => {
+        launchConfettiBurst(window.innerWidth/2, window.innerHeight/3, 80);
+        launchConfetti(1500);
+    }, 200);
+}
+
 // STREAK CALENDAR
 // ══════════════════════════════════════════
 let _streakYear  = null;
@@ -8167,7 +8292,7 @@ function renderItemShop() {
             </div>
             <div class="sc-chip-desc">${item.desc}</div>
             <div class="sc-chip-footer">
-                <span class="sc-chip-price">🪙 ${item.price.toLocaleString('vi-VN')}</span>
+                <span class="sc-chip-price"><span class="gc"></span> ${item.price.toLocaleString('vi-VN')}</span>
                 <button class="sc-chip-btn ${canAfford?'buy':'no-coin'}"
                     onclick="buyShopItem('${item.id}')"
                     ${canAfford?'':' disabled'}>
