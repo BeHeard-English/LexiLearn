@@ -1677,7 +1677,12 @@
                             <span class="fc-hint">Nhấn để lật xem nghĩa 👆</span>
                         </div>
                         <div class="flashcard-face fc-back">
-                            <div class="quiz-prompt-label" id="fcBackLabel" style="color:var(--muted);">Nghĩa tiếng Việt</div>
+                            <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:4px;">
+                                <div class="quiz-prompt-label" id="fcBackLabel" style="color:var(--muted);">Nghĩa tiếng Việt</div>
+                                <button id="fcBackTtsBtn" class="tts-btn" onclick="event.stopPropagation();speakFCBack()" title="Nghe phát âm" style="display:none;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M12 6v12m-3.536-9.536a5 5 0 000 7.072"/></svg>
+                                </button>
+                            </div>
                             <div class="fc-meaning" id="fcMeaning">Nghĩa</div>
                             <div class="fc-ipa" id="fcBackIpa" style="font-family:monospace;font-size:.9rem;color:var(--muted);margin-top:4px;"></div>
                             <div class="fc-example" id="fcExample"></div>
@@ -6284,6 +6289,18 @@ async function checkAnswer(btn, selected, correct, word) {
 
     if(isCorrect){
         btn.classList.add('correct');
+        // Reverse mode: nút đúng vẫn có thể bấm để nghe sau khi trả lời đúng
+        if (reviewMode === 'reverse') {
+            btn.disabled = false;
+            btn.title = 'Nhấn để nghe phát âm';
+            btn.onclick = (e) => { e.stopPropagation(); speak(word, 'en-US'); };
+            if (!btn.querySelector('.mc-tts-icon')) {
+                const icon = document.createElement('span');
+                icon.className = 'mc-tts-icon';
+                icon.innerHTML = ' <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px;vertical-align:middle;opacity:.7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M12 6v12m-3.536-9.536a5 5 0 000 7.072"/></svg>';
+                btn.appendChild(icon);
+            }
+        }
         overlay.style.cssText='display:block;padding:12px 18px;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;text-align:center;border-radius:12px;margin-top:14px;background:linear-gradient(135deg,#d1fae5,#a7f3d0);color:#065f46;';
         overlay.innerText='✅ Chính xác!';
         playFeedback(true);
@@ -6298,9 +6315,30 @@ async function checkAnswer(btn, selected, correct, word) {
         currentReviewIdx++; // Chuyển sang câu tiếp theo
     } else {
         btn.classList.add('wrong');
-        allBtns.forEach(b=>{ if(b.innerText.includes(correct)) b.classList.add('correct'); });
+        // Highlight đáp án đúng
+        allBtns.forEach(b => {
+            const btnWord = b.innerText.replace(/^[A-D]\s*/,'').trim();
+            if (btnWord === correct || b.innerText.includes(correct)) {
+                b.classList.add('correct');
+                // Chế độ reverse: thêm icon 🔊 vào nút đúng để nghe phát âm sau khi reveal
+                if (reviewMode === 'reverse') {
+                    b.disabled = false;
+                    b.title = 'Nhấn để nghe phát âm';
+                    b.style.cursor = 'pointer';
+                    const oldClick = b.onclick;
+                    b.onclick = (e) => { e.stopPropagation(); speak(correct, 'en-US'); };
+                    // Thêm icon loa nhỏ vào cuối nút
+                    if (!b.querySelector('.mc-tts-icon')) {
+                        const icon = document.createElement('span');
+                        icon.className = 'mc-tts-icon';
+                        icon.innerHTML = ' <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px;vertical-align:middle;opacity:.7" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M12 6v12m-3.536-9.536a5 5 0 000 7.072"/></svg>';
+                        b.appendChild(icon);
+                    }
+                }
+            }
+        });
         overlay.style.cssText='display:block;padding:12px 18px;font-weight:800;font-size:.85rem;letter-spacing:.04em;text-align:center;border-radius:12px;margin-top:14px;background:linear-gradient(135deg,#fee2e2,#fecaca);color:#991b1b;';
-        overlay.innerHTML=`✍️ Chưa chính xác — Ôn lại sau!<div style="margin-top:6px;font-size:.8rem;font-weight:600;color:#7f1d1d;text-transform:none;letter-spacing:0;">Đáp án đúng: <strong style="color:#991b1b;">${correct}</strong></div>`;
+        overlay.innerHTML=`✍️ Chưa chính xác — Ôn lại sau!<div style="margin-top:6px;font-size:.8rem;font-weight:600;color:#7f1d1d;text-transform:none;letter-spacing:0;">Đáp án đúng: <strong style="color:#991b1b;">${correct}</strong>${reviewMode==='reverse'?'<span style="font-size:.72rem;opacity:.7;margin-left:6px;">(nhấn vào đáp án để nghe)</span>':''}</div>`;
         playFeedback(false);
         await addXP(2);
         await recordWordReview(word, false);
@@ -7604,26 +7642,32 @@ async function showFlashcard() {
     const target = reviewPool[currentReviewIdx];
     currentWord  = target;
 
+    const backTtsBtn = document.getElementById('fcBackTtsBtn');
     if (reviewMode === 'normal') {
-    document.getElementById('fcPromptLabel').innerText = 'Từ tiếng Anh';
-    document.getElementById('fcWord').innerText = target.word;
-    document.getElementById('fcIpa').innerText  = target.ipa || '';
-    document.getElementById('fcBackLabel').innerText  = 'Nghĩa tiếng Việt';
-    document.getElementById('fcTtsBtn').style.display = 'flex';
-    document.getElementById('fcMeaning').innerText = target.vn;
-    document.getElementById('fcExample').innerText = target.example || '';
-    // Ở chế độ normal, mặt sau hiển thị nghĩa nên không cần phiên âm
-    document.getElementById('fcBackIpa').innerText = '';
-} else {
-    document.getElementById('fcPromptLabel').innerText = 'Nghĩa tiếng Việt';
-    document.getElementById('fcWord').innerText = target.vn;
-    document.getElementById('fcIpa').innerText  = '';
-    document.getElementById('fcBackLabel').innerText  = 'Từ tiếng Anh';
-    document.getElementById('fcTtsBtn').style.display = 'none';
-    document.getElementById('fcMeaning').innerText = target.word;
-    document.getElementById('fcExample').innerText = target.example || '';
-    document.getElementById('fcBackIpa').innerText = target.ipa || '';
-}
+        // Mặt trước: từ tiếng Anh + nút nghe
+        document.getElementById('fcPromptLabel').innerText = 'Từ tiếng Anh';
+        document.getElementById('fcWord').innerText = target.word;
+        document.getElementById('fcIpa').innerText  = target.ipa || '';
+        document.getElementById('fcTtsBtn').style.display = 'flex';
+        // Mặt sau: nghĩa tiếng Việt — không cần nút nghe (đã có ở mặt trước)
+        document.getElementById('fcBackLabel').innerText  = 'Nghĩa tiếng Việt';
+        document.getElementById('fcMeaning').innerText = target.vn;
+        document.getElementById('fcExample').innerText = target.example || '';
+        document.getElementById('fcBackIpa').innerText = '';
+        if (backTtsBtn) backTtsBtn.style.display = 'none';
+    } else {
+        // Mặt trước: nghĩa tiếng Việt — ẩn nút nghe (chưa lộ từ)
+        document.getElementById('fcPromptLabel').innerText = 'Nghĩa tiếng Việt';
+        document.getElementById('fcWord').innerText = target.vn;
+        document.getElementById('fcIpa').innerText  = '';
+        document.getElementById('fcTtsBtn').style.display = 'none';
+        // Mặt sau: từ tiếng Anh — hiện nút nghe để nghe phát âm sau khi lật
+        document.getElementById('fcBackLabel').innerText  = 'Từ tiếng Anh';
+        document.getElementById('fcMeaning').innerText = target.word;
+        document.getElementById('fcExample').innerText = target.example || '';
+        document.getElementById('fcBackIpa').innerText = target.ipa || '';
+        if (backTtsBtn) backTtsBtn.style.display = 'flex';
+    }
 }
 
 function flipCard() {
@@ -7643,6 +7687,12 @@ function flipCard() {
         // Lật về mặt trước
         card.classList.remove('flipped');
     }
+}
+
+function speakFCBack() {
+    if (!currentWord) return;
+    // Mặt sau reverse mode luôn chứa từ tiếng Anh
+    speak(currentWord.word, 'en-US');
 }
 
 function speakFC() {
