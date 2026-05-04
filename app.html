@@ -5388,90 +5388,138 @@ function _rebuildPhraseSet() {
     });
 }
 
+let _penListenerAttached = false; // chỉ attach 1 lần duy nhất
+
 function attachPhraseSelectionListener() {
+    if (_penListenerAttached) return; // tránh chồng listener khi tải bài nhiều lần
+    _penListenerAttached = true;
+
     const editor = document.getElementById('editor');
 
-    // ── DESKTOP: click chọn từ, mousedown→mouseup kéo chọn cụm ──
+    // Helper: lấy .editor-word từ event target (xử lý cả text node trên iOS)
+    const getWord = (target) => {
+        if (!target) return null;
+        const el = target.nodeType === 3 ? target.parentElement : target;
+        return el?.closest?.('.editor-word') || null;
+    };
+
+    // ── DESKTOP ──────────────────────────────────────────────────
     let _mouseDownWord = null;
+    let _mouseDragged  = false;
+
     editor.addEventListener('mousedown', (e) => {
         if (!window._highlightOn) return;
-        const w = e.target.closest?.('.editor-word');
-        _mouseDownWord = w || null;
+        _mouseDownWord = getWord(e.target);
+        _mouseDragged  = false;
     });
-    editor.addEventListener('click', (e) => {
-        if (!window._highlightOn) return;
-        const w = e.target.closest?.('.editor-word');
-        if (!w) return;
-        if (_mouseDownWord === w) {
-            // Single click → toggle từ đơn
-            editorWordDblClick(w);
-        }
-        _mouseDownWord = null;
-    });
-    editor.addEventListener('mouseup', (e) => {
-        if (!window._highlightOn) return;
-        if (!_mouseDownWord) return;
-        const w = e.target.closest?.('.editor-word');
-        if (w && w !== _mouseDownWord) {
-            // Kéo qua nhiều từ → chọn cụm
-            _penSelectPhrase(_mouseDownWord, w);
-            _mouseDownWord = null;
-            window.getSelection()?.removeAllRanges();
+
+    editor.addEventListener('mousemove', (e) => {
+        if (!window._highlightOn || !_mouseDownWord || e.buttons !== 1) return;
+        const cur = getWord(e.target);
+        if (cur && cur !== _mouseDownWord) {
+            _mouseDragged = true;
+            // Preview highlight khi kéo chuột
+            const spans = Array.from(editor.querySelectorAll('.editor-word'));
+            const fi = spans.indexOf(_mouseDownWord), ti = spans.indexOf(cur);
+            if (fi < 0 || ti < 0) return;
+            const [s, end] = fi < ti ? [fi, ti] : [ti, fi];
+            spans.forEach((sp, i) => {
+                if (i >= s && i <= end) sp.style.background = '#fde68a';
+                else if (!sp.classList.contains('is-bold') && !sp.classList.contains('is-phrase'))
+                    sp.style.background = '';
+            });
         }
     });
 
-    // ── MOBILE: touchstart chọn từ, touchmove+touchend kéo chọn cụm ──
+    editor.addEventListener('mouseup', (e) => {
+        if (!window._highlightOn || !_mouseDownWord) return;
+        editor.querySelectorAll('.editor-word').forEach(sp => { sp.style.background = ''; });
+        const endWord = getWord(e.target);
+        if (_mouseDragged && endWord && endWord !== _mouseDownWord) {
+            // Kéo → chọn cụm, không để click fire sau đó
+            _penSelectPhrase(_mouseDownWord, endWord);
+            window.getSelection()?.removeAllRanges();
+            e.stopPropagation();
+            // Dùng flag để click handler bỏ qua lần này
+            _mouseDownWord._skipClick = true;
+        }
+        _mouseDragged = false;
+    });
+
+    editor.addEventListener('click', (e) => {
+        if (!window._highlightOn) return;
+        const w = getWord(e.target);
+        if (!w) return;
+        if (w._skipClick) { w._skipClick = false; _mouseDownWord = null; return; }
+        // Single click → toggle từ đơn
+        editorWordDblClick(w);
+        _mouseDownWord = null;
+    });
+
+    // ── MOBILE ───────────────────────────────────────────────────
     let _touchStartWord = null;
-    let _touchMoved     = false;
+    let _touchStartX    = 0, _touchStartY = 0;
+    let _touchDragged   = false;
+    const DRAG_THRESHOLD = 8; // px — phân biệt tap vs kéo
 
     editor.addEventListener('touchstart', (e) => {
         if (!window._highlightOn) return;
         e.preventDefault();
-        _touchMoved = false;
-        const t  = e.changedTouches[0];
+        const t = e.changedTouches[0];
+        _touchStartX = t.clientX;
+        _touchStartY = t.clientY;
+        _touchDragged = false;
         const el = document.elementFromPoint(t.clientX, t.clientY);
-        _touchStartWord = el?.closest?.('.editor-word') || null;
+        _touchStartWord = el?.nodeType === 3
+            ? el.parentElement?.closest?.('.editor-word')
+            : el?.closest?.('.editor-word') || null;
     }, { passive: false });
 
     editor.addEventListener('touchmove', (e) => {
         if (!window._highlightOn || !_touchStartWord) return;
         e.preventDefault();
-        _touchMoved = true;
-        // Highlight preview: tô màu các từ đang đi qua trong lúc kéo
-        const t   = e.changedTouches[0];
+        const t  = e.changedTouches[0];
+        const dx = Math.abs(t.clientX - _touchStartX);
+        const dy = Math.abs(t.clientY - _touchStartY);
+        if (dx > DRAG_THRESHOLD || dy > DRAG_THRESHOLD) _touchDragged = true;
+        if (!_touchDragged) return;
+
         const el  = document.elementFromPoint(t.clientX, t.clientY);
-        const cur = el?.closest?.('.editor-word');
+        const cur = el?.nodeType === 3
+            ? el.parentElement?.closest?.('.editor-word')
+            : el?.closest?.('.editor-word') || null;
         if (!cur) return;
-        // Highlight tạm thời (chưa commit)
+
+        // Preview highlight
         const spans = Array.from(editor.querySelectorAll('.editor-word'));
         const fi = spans.indexOf(_touchStartWord), ti = spans.indexOf(cur);
         if (fi < 0 || ti < 0) return;
         const [s, end] = fi < ti ? [fi, ti] : [ti, fi];
         spans.forEach((sp, i) => {
             if (i >= s && i <= end) sp.style.background = '#fde68a';
-            else if (!sp.classList.contains('is-bold') && !sp.classList.contains('is-phrase')) sp.style.background = '';
+            else if (!sp.classList.contains('is-bold') && !sp.classList.contains('is-phrase'))
+                sp.style.background = '';
         });
     }, { passive: false });
 
     editor.addEventListener('touchend', (e) => {
         if (!window._highlightOn) return;
         e.preventDefault();
-        // Xóa preview highlight
         editor.querySelectorAll('.editor-word').forEach(sp => { sp.style.background = ''; });
 
-        const t   = e.changedTouches[0];
-        const el  = document.elementFromPoint(t.clientX, t.clientY);
-        const endWord = el?.closest?.('.editor-word');
+        const t = e.changedTouches[0];
+        const el = document.elementFromPoint(t.clientX, t.clientY);
+        const endWord = el?.nodeType === 3
+            ? el.parentElement?.closest?.('.editor-word')
+            : el?.closest?.('.editor-word') || null;
 
-        if (!_touchMoved || !endWord || endWord === _touchStartWord) {
-            // Tap đơn → toggle từ đơn
-            if (_touchStartWord) editorWordDblClick(_touchStartWord);
-        } else if (_touchStartWord && endWord) {
-            // Kéo → chọn cụm
+        if (_touchDragged && endWord && endWord !== _touchStartWord) {
             _penSelectPhrase(_touchStartWord, endWord);
+        } else if (_touchStartWord) {
+            editorWordDblClick(_touchStartWord);
         }
         _touchStartWord = null;
-        _touchMoved     = false;
+        _touchDragged   = false;
     }, { passive: false });
 }
 document.getElementById('fileInput').onchange = async e => {
@@ -5496,7 +5544,7 @@ document.getElementById('generateBtn').onclick = async () => {
     const phrases = Array.from(window._phraseSet || []);
 
     const sel = [...singleWords, ...phrases];
-    if(!sel.length) { showToast('💡 Hãy double-click để chọn từ, hoặc tô đậm cụm từ!'); return; }
+    if(!sel.length) { showToast('✏️ Bật bút highlight để chọn từ hoặc kéo chọn cụm từ!'); return; }
     document.getElementById('vocabContainer').classList.remove('hidden');
     document.getElementById('vocabList').innerHTML = `<div style="text-align:center;padding:32px;color:var(--primary);"><div style="font-size:2rem;margin-bottom:12px;"><span class="ldot">●</span><span class="ldot">●</span><span class="ldot">●</span></div><div style="font-weight:700;">AI đang phân tích...</div></div>`;
     const prompt = `Return a JSON array for these English words/phrases: [${sel.map(s=>`"${s}"`).join(', ')}].
