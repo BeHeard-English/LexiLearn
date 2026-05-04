@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Be Heard | Lexi Learning</title>
+    <title>Be Heard |Lexi Learning</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
@@ -5251,8 +5251,9 @@ async function switchTab(name) {
     if (name==='review')  { loadSRSDueCount(); if (!topicLists.length) loadTopicLists(); }
     if (name==='games')   { if (!topicLists.length) loadTopicLists(); updateGameWordCount(); }
     if (name==='shop')    renderShop();
-    // Ẩn bút highlight khi rời trang soạn bài
-    if (name !== 'lesson') showHighlightPen(false);
+    // Hiện/ẩn bút highlight theo tab
+    if (name === 'lesson') showHighlightPen(true);
+    else showHighlightPen(false);
 }
 
 // ── Mobile: flush khi trang vào background hoặc bị đóng ──────────────
@@ -11662,3 +11663,7 @@ async function confirmMergeTopics() {
     };
 })();
 </script>
+<button id="highlightPenBtn" onclick="toggleHighlightPen()" title="Bật/tắt bút highlight">
+    ✏️
+    <span class="pen-tooltip" id="penTooltip">Bật highlight</span>
+</button>
