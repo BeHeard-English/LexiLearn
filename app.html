@@ -351,6 +351,49 @@
         .editor-word.is-bold{font-weight:800;color:var(--primary);background:#fef08a;text-decoration:underline;}
         .editor-word.is-phrase{background:#bbf7d0;color:#065f46;text-decoration:underline;font-weight:800;}
         .editor-word.is-phrase:first-of-type,.editor-word.is-phrase:last-of-type{border-radius:4px;}
+        /* ── HIGHLIGHT PEN ── */
+        #highlightPenBtn {
+            position: fixed;
+            bottom: 88px; right: 18px;
+            width: 48px; height: 48px;
+            border-radius: 50%;
+            background: var(--card);
+            border: 2px solid var(--border);
+            box-shadow: 0 4px 16px rgba(0,0,0,.18);
+            font-size: 1.35rem;
+            cursor: pointer;
+            display: none;          /* chỉ show khi đang ở editor */
+            align-items: center; justify-content: center;
+            z-index: 900;
+            transition: background .2s, border-color .2s, transform .15s;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        #highlightPenBtn.active {
+            background: #fef08a;
+            border-color: #eab308;
+            transform: scale(1.1);
+            box-shadow: 0 4px 20px rgba(234,179,8,.4);
+        }
+        #highlightPenBtn .pen-tooltip {
+            position: absolute;
+            right: 56px; top: 50%;
+            transform: translateY(-50%);
+            background: #1c1917;
+            color: #fff;
+            font-size: .7rem;
+            font-weight: 700;
+            white-space: nowrap;
+            padding: 4px 10px;
+            border-radius: 8px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity .2s;
+        }
+        #highlightPenBtn:hover .pen-tooltip,
+        #highlightPenBtn.active .pen-tooltip { opacity: 1; }
+        /* Cursor khi bút đang bật */
+        body.highlight-mode-on #editor .editor-word { cursor: crosshair; }
         /* Hint tooltip */
         #editorPhraseHint{font-size:.72rem;color:var(--muted);margin-top:6px;text-align:center;}
         .editor-bar{padding:14px 20px;background:linear-gradient(135deg,var(--primary),var(--primary-mid));display:flex;justify-content:space-between;align-items:center;border-radius:0 0 18px 18px;}
@@ -5208,6 +5251,8 @@ async function switchTab(name) {
     if (name==='review')  { loadSRSDueCount(); if (!topicLists.length) loadTopicLists(); }
     if (name==='games')   { if (!topicLists.length) loadTopicLists(); updateGameWordCount(); }
     if (name==='shop')    renderShop();
+    // Ẩn bút highlight khi rời trang soạn bài
+    if (name !== 'lesson') showHighlightPen(false);
 }
 
 // ── Mobile: flush khi trang vào background hoặc bị đóng ──────────────
@@ -5233,11 +5278,13 @@ window.addEventListener('beforeunload', () => {
 document.getElementById('loadBtn').onclick = () => {
     const text = document.getElementById('rawInput').value.trim(); if(!text) return;
     window._phraseSet = new Set(); // reset phrase set khi load bài mới
+    window._highlightOn = false;
     document.getElementById('editor').innerHTML = text.split(/(\s+)/).map(w =>
-        w.trim()==='' ? w : `<span class="editor-word" ondblclick="editorWordDblClick(this)">${w}</span>`
+        w.trim()==='' ? w : `<span class="editor-word">${w}</span>`
     ).join('');
-    // Gắn listener nhận diện cụm từ sau khi editor có nội dung
+    // Gắn listener và hiện nút bút highlight
     attachPhraseSelectionListener();
+    showHighlightPen(true);
 };
 
 // ── Double-click: toggle từ đơn HOẶC bỏ từ khỏi cụm ─────────────────
@@ -5276,96 +5323,155 @@ function editorWordDblClick(span) {
     }
 }
 
-// ── Phrase selection (chuột + cảm ứng) ─────────────────────────────
-window._phraseSet = new Set();
+// ── Highlight Pen system ─────────────────────────────────────────
+window._phraseSet    = new Set();
+window._highlightOn  = false;   // trạng thái bút
+
+function toggleHighlightPen() {
+    window._highlightOn = !window._highlightOn;
+    const btn     = document.getElementById('highlightPenBtn');
+    const tooltip = document.getElementById('penTooltip');
+    if (window._highlightOn) {
+        btn.classList.add('active');
+        if (tooltip) tooltip.textContent = 'Tắt highlight';
+        document.body.classList.add('highlight-mode-on');
+    } else {
+        btn.classList.remove('active');
+        if (tooltip) tooltip.textContent = 'Bật highlight';
+        document.body.classList.remove('highlight-mode-on');
+    }
+}
+
+// Gọi khi render editor xong để show/hide nút bút
+function showHighlightPen(show) {
+    const btn = document.getElementById('highlightPenBtn');
+    if (btn) btn.style.display = show ? 'flex' : 'none';
+    if (!show) {
+        window._highlightOn = false;
+        btn && btn.classList.remove('active');
+        document.body.classList.remove('highlight-mode-on');
+    }
+}
+
+function _penSelectPhrase(fromEl, toEl) {
+    const editor = document.getElementById('editor');
+    const spans  = Array.from(editor.querySelectorAll('.editor-word'));
+    const fi = spans.indexOf(fromEl);
+    const ti = spans.indexOf(toEl);
+    if (fi < 0 || ti < 0 || fi === ti) return;
+    const [start, end] = fi < ti ? [fi, ti] : [ti, fi];
+    const inRange = spans.slice(start, end + 1);
+
+    // Nếu tất cả đã là cùng 1 phrase → bỏ chọn
+    const pids = new Set(inRange.map(s => s.dataset.phraseId).filter(Boolean));
+    if (pids.size === 1 && inRange.every(s => s.classList.contains('is-phrase'))) {
+        inRange.forEach(s => { s.classList.remove('is-bold','is-phrase'); delete s.dataset.phraseId; });
+        _rebuildPhraseSet();
+        return;
+    }
+
+    const phraseId = 'ph_' + Date.now();
+    inRange.forEach(s => { s.classList.add('is-bold','is-phrase'); s.dataset.phraseId = phraseId; });
+    window._phraseSet.add(inRange.map(s => s.innerText.trim()).join(' '));
+}
+
+function _rebuildPhraseSet() {
+    window._phraseSet = new Set();
+    const allPids = new Set(
+        Array.from(document.querySelectorAll('.editor-word.is-phrase'))
+             .map(s => s.dataset.phraseId).filter(Boolean)
+    );
+    allPids.forEach(p => {
+        const words = Array.from(document.querySelectorAll(`.editor-word[data-phrase-id="${p}"]`))
+                         .map(s => s.innerText.trim()).join(' ');
+        if (words) window._phraseSet.add(words);
+    });
+}
+
 function attachPhraseSelectionListener() {
     const editor = document.getElementById('editor');
 
-    // Flag để mouseup không tranh với dblclick
-    let _dblClickPending = false;
-
-    // Mobile double-tap tracking
-    // 500ms cho cảm ứng — rộng hơn 300ms mặc định để nhận tap nhanh trên điện thoại/tablet
-    const DBL_TAP_MS = 500;
-    let _lastTap = 0, _lastTapTarget = null;
-
-    const handle = (e) => {
-        // Nếu đây là mouseup của double-click → bỏ qua, để dblclick xử lý
-        if (_dblClickPending) { _dblClickPending = false; return; }
-
-        const sel = window.getSelection();
-        if (!sel || sel.isCollapsed || !sel.rangeCount) return;
-        const range = sel.getRangeAt(0);
-        const text  = sel.toString().trim();
-        if (!text || text.split(/\s+/).length < 2) return;
-
-        // Lấy tất cả spans nằm trong vùng chọn
-        const spans = Array.from(editor.querySelectorAll('.editor-word'));
-        const inRange = spans.filter(sp => {
-            const spRange = document.createRange();
-            spRange.selectNode(sp);
-            return range.compareBoundaryPoints(Range.END_TO_START, spRange) <= 0 &&
-                   range.compareBoundaryPoints(Range.START_TO_END, spRange) >= 0;
-        });
-        if (inRange.length < 2) return;
-
-        // Tạo phrase string
-        const phrase = inRange.map(sp => sp.innerText.trim()).join(' ');
-
-        // Nếu tất cả spans trong vùng chọn đã thuộc cùng 1 phrase → bỏ chọn
-        const existingIds = new Set(inRange.map(sp => sp.dataset.phraseId).filter(Boolean));
-        if (existingIds.size === 1 && inRange.every(sp => sp.classList.contains('is-phrase'))) {
-            const pid = [...existingIds][0];
-            inRange.forEach(sp => {
-                sp.classList.remove('is-bold', 'is-phrase');
-                delete sp.dataset.phraseId;
-            });
-            // Xóa phrase khỏi set — tìm theo phraseId
-            window._phraseSet.forEach(p => {
-                if (p === phrase) window._phraseSet.delete(p);
-            });
-            sel.removeAllRanges();
-            return;
+    // ── DESKTOP: click chọn từ, mousedown→mouseup kéo chọn cụm ──
+    let _mouseDownWord = null;
+    editor.addEventListener('mousedown', (e) => {
+        if (!window._highlightOn) return;
+        const w = e.target.closest?.('.editor-word');
+        _mouseDownWord = w || null;
+    });
+    editor.addEventListener('click', (e) => {
+        if (!window._highlightOn) return;
+        const w = e.target.closest?.('.editor-word');
+        if (!w) return;
+        if (_mouseDownWord === w) {
+            // Single click → toggle từ đơn
+            editorWordDblClick(w);
         }
+        _mouseDownWord = null;
+    });
+    editor.addEventListener('mouseup', (e) => {
+        if (!window._highlightOn) return;
+        if (!_mouseDownWord) return;
+        const w = e.target.closest?.('.editor-word');
+        if (w && w !== _mouseDownWord) {
+            // Kéo qua nhiều từ → chọn cụm
+            _penSelectPhrase(_mouseDownWord, w);
+            _mouseDownWord = null;
+            window.getSelection()?.removeAllRanges();
+        }
+    });
 
-        const phraseId = 'ph_' + Date.now();
+    // ── MOBILE: touchstart chọn từ, touchmove+touchend kéo chọn cụm ──
+    let _touchStartWord = null;
+    let _touchMoved     = false;
 
-        // Đánh dấu spans thuộc cụm này
-        inRange.forEach(sp => {
-            sp.classList.add('is-bold', 'is-phrase');
-            sp.dataset.phraseId = phraseId;
-        });
-        window._phraseSet.add(phrase);
-        sel.removeAllRanges();
-    };
-
-    // mouseup cho desktop — set flag trước dblclick
-    editor.addEventListener('dblclick', () => { _dblClickPending = true; });
-    editor.addEventListener('mouseup',  handle);
-
-    // touchstart: nhận diện double-tap ngay khi ngón chạm xuống lần 2
-    // → không cần chờ nhấc ngón, nhanh và chính xác hơn touchend
     editor.addEventListener('touchstart', (e) => {
-        const now   = Date.now();
-        const touch = e.changedTouches[0];
-        const el    = document.elementFromPoint(touch.clientX, touch.clientY);
-        const wordEl = el?.closest ? el.closest('.editor-word') : null;
-
-        if (wordEl && now - _lastTap < DBL_TAP_MS && _lastTapTarget === wordEl) {
-            _lastTap = 0; _lastTapTarget = null;
-            e.preventDefault(); // chặn browser zoom & selection trên iOS
-            editorWordDblClick(wordEl);
-            return;
-        }
-        _lastTap       = now;
-        _lastTapTarget = wordEl;
+        if (!window._highlightOn) return;
+        e.preventDefault();
+        _touchMoved = false;
+        const t  = e.changedTouches[0];
+        const el = document.elementFromPoint(t.clientX, t.clientY);
+        _touchStartWord = el?.closest?.('.editor-word') || null;
     }, { passive: false });
 
-    // touchend: chỉ xử lý kéo chọn cụm từ (phrase selection)
+    editor.addEventListener('touchmove', (e) => {
+        if (!window._highlightOn || !_touchStartWord) return;
+        e.preventDefault();
+        _touchMoved = true;
+        // Highlight preview: tô màu các từ đang đi qua trong lúc kéo
+        const t   = e.changedTouches[0];
+        const el  = document.elementFromPoint(t.clientX, t.clientY);
+        const cur = el?.closest?.('.editor-word');
+        if (!cur) return;
+        // Highlight tạm thời (chưa commit)
+        const spans = Array.from(editor.querySelectorAll('.editor-word'));
+        const fi = spans.indexOf(_touchStartWord), ti = spans.indexOf(cur);
+        if (fi < 0 || ti < 0) return;
+        const [s, end] = fi < ti ? [fi, ti] : [ti, fi];
+        spans.forEach((sp, i) => {
+            if (i >= s && i <= end) sp.style.background = '#fde68a';
+            else if (!sp.classList.contains('is-bold') && !sp.classList.contains('is-phrase')) sp.style.background = '';
+        });
+    }, { passive: false });
+
     editor.addEventListener('touchend', (e) => {
-        // Bỏ qua nếu vừa xử lý double-tap trong cửa sổ DBL_TAP_MS
-        if (Date.now() - _lastTap < DBL_TAP_MS) return;
-        handle(e);
+        if (!window._highlightOn) return;
+        e.preventDefault();
+        // Xóa preview highlight
+        editor.querySelectorAll('.editor-word').forEach(sp => { sp.style.background = ''; });
+
+        const t   = e.changedTouches[0];
+        const el  = document.elementFromPoint(t.clientX, t.clientY);
+        const endWord = el?.closest?.('.editor-word');
+
+        if (!_touchMoved || !endWord || endWord === _touchStartWord) {
+            // Tap đơn → toggle từ đơn
+            if (_touchStartWord) editorWordDblClick(_touchStartWord);
+        } else if (_touchStartWord && endWord) {
+            // Kéo → chọn cụm
+            _penSelectPhrase(_touchStartWord, endWord);
+        }
+        _touchStartWord = null;
+        _touchMoved     = false;
     }, { passive: false });
 }
 document.getElementById('fileInput').onchange = async e => {
