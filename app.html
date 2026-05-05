@@ -1514,7 +1514,7 @@
                         <input id="libSearch" class="lib-search" placeholder="Tìm từ vựng hoặc nghĩa...">
                     </div>
                     <select id="libSort" onchange="_libPage=1;renderLibrary();" style="padding:7px 12px;border:2px solid var(--border);border-radius:10px;font-family:inherit;font-size:.78rem;font-weight:700;color:var(--input-text);background:var(--input-bg);cursor:pointer;outline:none;transition:.2s;">
-                        <option value="default">🔤 Mặc định (A–Z)</option>
+                        <option value="srs_asc" selected>📅 SRS sớm nhất</option>
                         <option value="wrong_desc">❌ Sai nhiều nhất</option>
                         <option value="wrong_asc">✅ Sai ít nhất</option>
                         <option value="srs_asc">⏰ SRS sớm nhất</option>
@@ -5699,9 +5699,16 @@ async function saveVocabToDb(data) {
     });
     await batch.commit();
 
-    // Reload fullLibrary để loadRecentWords thấy ngay từ vừa thêm
-    const snap = await db.collection('users').doc(currentUser.uid).collection('vocabulary').get();
-    fullLibrary = snap.docs.map(d => ({ ...d.data(), _docId: d.id }));
+    // Cập nhật fullLibrary IN-MEMORY (không re-fetch Firestore) để tiết kiệm reads
+    data.forEach(item => {
+        const idx = fullLibrary.findIndex(w => w.word.toLowerCase() === item.word.toLowerCase());
+        if (idx >= 0) {
+            fullLibrary[idx] = { ...fullLibrary[idx], ...item };
+        } else {
+            // Từ mới: thêm vào cuối, gán createdAt giả (serverTimestamp chưa có trên client)
+            fullLibrary.push({ ...item, createdAt: { seconds: Math.floor(Date.now()/1000), nanoseconds: 0 } });
+        }
+    });
     _saveCache(fullLibrary);
 }
 
@@ -5776,15 +5783,12 @@ function renderLibrary() {
     else if(activeLibLevel!=='ALL')  list = list.filter(i=>i.level===activeLibLevel);
 
     // Sắp xếp
-    const sort = document.getElementById('libSort')?.value || 'default';
+    const sort = document.getElementById('libSort')?.value || 'srs_asc';
     if (sort === 'recent') {
-        // Fetch riêng từ Firestore theo createdAt desc — không dùng cache (cache không giữ timestamp)
         loadRecentWords();
-        return; // renderLibrary sẽ được gọi lại từ loadRecentWords sau khi fetch xong
+        return;
     }
-    if (sort === 'default') {
-        list = [...list].sort((a,b) => a.word.localeCompare(b.word));
-    } else if (sort === 'wrong_desc') {
+    if (sort === 'wrong_desc') {
         list = [...list].sort((a,b) => (b.incorrect_count||0) - (a.incorrect_count||0));
     } else if (sort === 'wrong_asc') {
         list = [...list].sort((a,b) => (a.incorrect_count||0) - (b.incorrect_count||0));
@@ -6749,7 +6753,8 @@ Do not output any markdown formatting or extra text, just the raw JSON array.`;
         if (!finalData.length) { showToast('❌ AI không trả về kết quả hợp lệ, vui lòng thử lại.'); return; }
 
         await saveVocabToDb(finalData);
-        await loadLibrary();
+        renderLibrary(); // cache already updated by saveVocabToDb
+
         closePasteWordsModal();
         const dupMsg = dupCount > 0 ? ` · ${dupCount} từ trùng đã bỏ qua` : '';
         showToast(`✅ Đã thêm ${finalData.length} từ mới${dupMsg}`);
@@ -7164,7 +7169,8 @@ Only raw JSON, no markdown.`;
             if (tlIdx >= 0) topicLists[tlIdx].wordIds = allIds;
             renderTopicLists();
             populateReviewVocabSelect();
-            await loadLibrary();
+            renderLibrary(); // cache already updated by saveVocabToDb
+
 
             showToast(`✅ Đã thêm ${finalData.length} từ vào danh sách!`);
             // If detail modal is open for this list, refresh it
@@ -7245,19 +7251,25 @@ async function openTopicListDetail(listId) {
     tl.wordIds = freshWordIds;
 
     // Kiểm tra nếu có từ trong wordIds không có trong fullLibrary (cache cũ)
-    // → fetch bổ sung từ Firestore để không bị mất từ khi hiển thị
     const libKeys = new Set(fullLibrary.map(w => (w.word || '').toLowerCase()));
     const missingIds = freshWordIds.filter(id => !libKeys.has(id));
     if (missingIds.length > 0) {
         try {
-            const extraSnaps = await Promise.all(
-                missingIds.map(id => db.collection('users').doc(currentUser.uid)
-                                       .collection('vocabulary').doc(id).get())
-            );
-            const extraWords = extraSnaps.filter(s => s.exists).map(s => s.data());
+            // Dùng 'in' query (tối đa 30 docs/query) thay vì N reads riêng
+            const chunks = [];
+            for (let i = 0; i < missingIds.length; i += 30)
+                chunks.push(missingIds.slice(i, i + 30));
+            const extraWords = [];
+            for (const chunk of chunks) {
+                const snap = await db.collection('users').doc(currentUser.uid)
+                    .collection('vocabulary')
+                    .where(firebase.firestore.FieldPath.documentId(), 'in', chunk)
+                    .get();
+                snap.docs.forEach(d => { if (d.exists) extraWords.push(d.data()); });
+            }
             if (extraWords.length) {
                 fullLibrary = [...fullLibrary, ...extraWords];
-                _saveCache(fullLibrary); // cập nhật cache để lần sau không cần fetch lại
+                _saveCache(fullLibrary);
             }
         } catch(e) { console.warn('openTopicListDetail: fetch missing words failed', e); }
     }
@@ -8125,13 +8137,15 @@ async function checkWeeklyStreakReward(userData) {
 
     let studiedDays = 0;
     try {
-        const snaps = await Promise.all(
-            weekKeys.map(k => db.collection('users').doc(currentUser.uid)
-                               .collection('activity').doc(k).get())
-        );
-        for (const snap of snaps) {
-            if (snap.exists && (snap.data().reviewed || 0) > 0) studiedDays++;
-        }
+        // 1 range query thay vì 7 reads riêng biệt
+        const weekSnap = await db.collection('users').doc(currentUser.uid)
+            .collection('activity')
+            .where('date', '>=', weekKeys[0])
+            .where('date', '<=', weekKeys[6])
+            .get();
+        weekSnap.docs.forEach(d => {
+            if ((d.data().reviewed || 0) > 0) studiedDays++;
+        });
     } catch(e) {
         console.warn('Weekly streak reward fetch error', e);
         return;
