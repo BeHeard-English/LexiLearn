@@ -2580,16 +2580,53 @@
                     <img id="cthImgPreview" class="cth-img-preview" style="display:none;" alt="preview">
                 </div>
 
-                <!-- Video upload section -->
+                <!-- Video section -->
                 <div id="cthVideoSection" style="display:none;">
-                    <div class="cth-img-drop" id="cthVideoDrop" onclick="document.getElementById('cthVideoFileInput').click()">
-                        <div style="font-size:1.8rem;margin-bottom:6px;">🎬</div>
-                        <div style="font-size:.82rem;font-weight:700;color:var(--muted);">Nhấn để chọn video</div>
-                        <div style="font-size:.72rem;color:var(--muted);margin-top:3px;">MP4 · Phát loop tự động · Không quảng cáo</div>
-                        <input type="file" id="cthVideoFileInput" accept="video/mp4" style="display:none" onchange="handleCthVideoUpload(this)">
+                    <!-- Sub-tabs: File tạm | Link URL -->
+                    <div style="display:flex;gap:6px;margin-bottom:10px;">
+                        <button id="cthVidTabFile" onclick="switchVideoSubTab('file')"
+                            style="flex:1;padding:6px;border-radius:8px;border:1.5px solid var(--primary);background:var(--primary);color:#fff;font-family:inherit;font-weight:700;font-size:.75rem;cursor:pointer;">
+                            📁 Tải file tạm
+                        </button>
+                        <button id="cthVidTabLink" onclick="switchVideoSubTab('link')"
+                            style="flex:1;padding:6px;border-radius:8px;border:1.5px solid var(--border);background:var(--card);color:var(--muted);font-family:inherit;font-weight:700;font-size:.75rem;cursor:pointer;">
+                            🔗 Link video
+                        </button>
                     </div>
-                    <video id="cthVideoPreview" style="display:none;width:100%;height:110px;object-fit:cover;border-radius:10px;margin-top:10px;" muted loop playsinline></video>
-                    <div style="font-size:.7rem;color:var(--muted);margin-top:6px;">💡 Video chỉ lưu trong phiên này — cần tải lại sau khi làm mới trang</div>
+
+                    <!-- Sub-tab: File tạm -->
+                    <div id="cthVidFilePanel">
+                        <div class="cth-img-drop" id="cthVideoDrop" onclick="document.getElementById('cthVideoFileInput').click()" style="cursor:pointer;">
+                            <div style="font-size:1.8rem;margin-bottom:6px;">🎬</div>
+                            <div style="font-size:.82rem;font-weight:700;color:var(--muted);" id="cthVideoDropLabel">Nhấn để chọn video</div>
+                            <div style="font-size:.72rem;color:var(--muted);margin-top:3px;">MP4 · Phát loop · Chỉ lưu trong phiên này</div>
+                            <input type="file" id="cthVideoFileInput" accept="video/mp4,video/*" style="display:none" onchange="handleCthVideoUpload(this)">
+                        </div>
+                        <video id="cthVideoPreview" style="display:none;width:100%;height:110px;object-fit:cover;border-radius:10px;margin-top:10px;" muted loop playsinline></video>
+                        <div style="font-size:.7rem;color:var(--muted);margin-top:6px;">⚠️ File sẽ mất khi làm mới trang. Dùng "Link video" để lưu bền vững.</div>
+                    </div>
+
+                    <!-- Sub-tab: Link video -->
+                    <div id="cthVidLinkPanel" style="display:none;">
+                        <input type="text" id="cthVideoLinkInput"
+                            placeholder="Dán link Google Drive / Cloudinary / link MP4 trực tiếp..."
+                            oninput="handleCthVideoLinkInput(this.value)"
+                            style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:.82rem;background:var(--input-bg);color:var(--text);box-sizing:border-box;outline:none;transition:.2s;"
+                            onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'"/>
+                        <div id="cthVideoLinkPreviewWrap" style="display:none;margin-top:8px;">
+                            <video id="cthVideoLinkPreview" style="width:100%;height:110px;object-fit:cover;border-radius:10px;" muted loop playsinline controls></video>
+                        </div>
+                        <div id="cthVideoLinkError" style="display:none;font-size:.73rem;color:var(--danger);font-weight:700;margin-top:6px;"></div>
+                        <div style="margin-top:10px;padding:10px 12px;background:var(--primary-light);border-radius:10px;">
+                            <div style="font-size:.73rem;font-weight:800;color:var(--primary);margin-bottom:4px;">📋 Cách lấy link Google Drive:</div>
+                            <ol style="font-size:.7rem;color:var(--muted);margin:0;padding-left:16px;line-height:1.8;">
+                                <li>Upload video lên Google Drive</li>
+                                <li>Chuột phải → <strong>Chia sẻ</strong> → Đặt thành <strong>"Bất kỳ ai có link"</strong></li>
+                                <li>Copy link → dán vào ô trên</li>
+                            </ol>
+                        </div>
+                        <div style="font-size:.7rem;color:var(--muted);margin-top:6px;">💡 Link được lưu vào Firestore — video hiện ngay khi mở app.</div>
+                    </div>
                 </div>
 
                 <!-- YouTube section -->
@@ -2786,7 +2823,7 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
-const db   = firebase.firestore();
+const db      = firebase.firestore();
 
 let currentUser      = null;
 let learningData     = [];
@@ -11230,17 +11267,31 @@ function applyCustomThemeEffect() {
         document.body.style.imageRendering       = 'high-quality';
         layer.innerHTML = `<div style="position:fixed;inset:0;background:${overlay};pointer-events:none;z-index:1;"></div>`;
         hideBgVolumeRow();
-    } else if (_customTheme.bgType === 'video' && _videoBlobUrl) {
+    } else if (_customTheme.bgType === 'video') {
+        // Link URL (lưu Firestore) ưu tiên hơn blob tạm
+        const videoSrc = (_customTheme.bgData && _customTheme.bgData !== 'blob')
+            ? _customTheme.bgData   // URL lưu trong Firestore
+            : _videoBlobUrl;        // blob tạm trong phiên
+        if (!videoSrc) { layer.innerHTML = ''; return; }
         layer.innerHTML = `
             <div style="position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;">
                 <video id="bgVideoEl" autoplay loop muted playsinline
                     style="position:absolute;top:50%;left:50%;width:100vw;height:56.25vw;min-height:100vh;min-width:177.77vh;transform:translate(-50%,-50%);object-fit:cover;">
-                    <source src="${_videoBlobUrl}" type="video/mp4">
+                    <source src="${videoSrc}">
                 </video>
             </div>
             <div style="position:fixed;inset:0;background:${overlay};pointer-events:none;z-index:1;"></div>`;
         const volSlider = document.getElementById('bgVolumeSlider');
-        if (volSlider) { volSlider.value = 0; document.getElementById('bgVolLabel').textContent = '0%'; document.getElementById('bgVolIcon').textContent = '🔇'; }
+        const savedVol = _customTheme.volume || 0;
+        if (volSlider) {
+            volSlider.value = savedVol;
+            document.getElementById('bgVolLabel').textContent = savedVol + '%';
+            document.getElementById('bgVolIcon').textContent = savedVol === 0 ? '🔇' : savedVol < 50 ? '🔉' : '🔊';
+        }
+        setTimeout(() => {
+            const vid = document.getElementById('bgVideoEl');
+            if (vid) { vid.volume = savedVol / 100; vid.muted = savedVol === 0; }
+        }, 300);
         showBgVolumeRow();
     } else if (_customTheme.bgType === 'youtube' && _customTheme.bgData) {
         const vid = _customTheme.bgData;
@@ -11284,7 +11335,24 @@ function ytPostMessage(func, args) {
 }
 
 // ── Video upload handler ───────────────────────────────────────────────
-let _videoBlobUrl = null;
+let _videoBlobUrl    = null;  // URL tạm (blob) — chỉ trong phiên
+let _videoLinkUrl    = null;  // URL link Google Drive / trực tiếp — lưu Firestore
+let _videoSubTab     = 'file'; // 'file' | 'link'
+
+function switchVideoSubTab(tab) {
+    _videoSubTab = tab;
+    document.getElementById('cthVidFilePanel').style.display = tab === 'file' ? 'block' : 'none';
+    document.getElementById('cthVidLinkPanel').style.display = tab === 'link' ? 'block' : 'none';
+    const btnFile = document.getElementById('cthVidTabFile');
+    const btnLink = document.getElementById('cthVidTabLink');
+    btnFile.style.background    = tab === 'file' ? 'var(--primary)' : 'var(--card)';
+    btnFile.style.color         = tab === 'file' ? '#fff' : 'var(--muted)';
+    btnFile.style.borderColor   = tab === 'file' ? 'var(--primary)' : 'var(--border)';
+    btnLink.style.background    = tab === 'link' ? 'var(--primary)' : 'var(--card)';
+    btnLink.style.color         = tab === 'link' ? '#fff' : 'var(--muted)';
+    btnLink.style.borderColor   = tab === 'link' ? 'var(--primary)' : 'var(--border)';
+}
+
 function handleCthVideoUpload(input) {
     const file = input.files[0];
     if (!file) return;
@@ -11295,7 +11363,45 @@ function handleCthVideoUpload(input) {
     preview.style.display = 'block';
     preview.play().catch(()=>{});
     const drop = document.getElementById('cthVideoDrop');
-    drop.innerHTML = `<div style="font-size:.82rem;font-weight:700;color:var(--success);">✅ ${file.name}</div><div style="font-size:.72rem;color:var(--muted);margin-top:3px;">Nhấn để đổi video</div><input type="file" id="cthVideoFileInput" accept="video/mp4" style="display:none" onchange="handleCthVideoUpload(this)">`;
+    drop.innerHTML = `<div style="font-size:.82rem;font-weight:700;color:var(--success);">✅ ${file.name}</div><div style="font-size:.72rem;color:var(--muted);margin-top:3px;">Nhấn để đổi video</div><input type="file" id="cthVideoFileInput" accept="video/mp4,video/*" style="display:none" onchange="handleCthVideoUpload(this)">`;
+    // Xoá link URL nếu đang dùng blob
+    _videoLinkUrl = null;
+}
+
+// Chuyển link Google Drive thành direct download URL
+function convertGDriveUrl(url) {
+    // Dạng: https://drive.google.com/file/d/FILE_ID/view?...
+    const m = url.match(/\/file\/d\/([^\/\?]+)/);
+    if (m) return `https://drive.google.com/uc?export=download&id=${m[1]}`;
+    // Dạng: https://drive.google.com/open?id=FILE_ID
+    const m2 = url.match(/[?&]id=([^&]+)/);
+    if (m2) return `https://drive.google.com/uc?export=download&id=${m2[1]}`;
+    return url; // trả nguyên nếu không phải GDrive
+}
+
+function handleCthVideoLinkInput(val) {
+    const errEl     = document.getElementById('cthVideoLinkError');
+    const prevWrap  = document.getElementById('cthVideoLinkPreviewWrap');
+    const prevVideo = document.getElementById('cthVideoLinkPreview');
+    errEl.style.display = 'none';
+
+    if (!val.trim()) {
+        prevWrap.style.display = 'none';
+        _videoLinkUrl = null;
+        return;
+    }
+
+    const directUrl = convertGDriveUrl(val.trim());
+    _videoLinkUrl = directUrl;
+    prevVideo.src = directUrl;
+    prevWrap.style.display = 'block';
+    prevVideo.load();
+    prevVideo.onerror = () => {
+        errEl.textContent = '⚠️ Không tải được video. Kiểm tra lại link hoặc quyền chia sẻ.';
+        errEl.style.display = 'block';
+        prevWrap.style.display = 'none';
+        _videoLinkUrl = null;
+    };
 }
 
 // ── Settings panel volume helpers ──────────────────────────────────────
@@ -11355,8 +11461,26 @@ function openCustomThemeModal() {
         p.src = ct.bgData; p.style.display = 'block';
     }
     // Video preview
-    if (ct.bgType === 'video' && _videoBlobUrl) {
+    if (ct.bgType === 'video') {
+        // Khôi phục link URL nếu đã lưu Firestore
+        if (ct.bgData && ct.bgData !== 'blob') {
+            _videoLinkUrl = ct.bgData;
+            _videoSubTab  = 'link';
+            const linkInput = document.getElementById('cthVideoLinkInput');
+            if (linkInput) linkInput.value = ct.bgData;
+            // Preview
+            const prevWrap  = document.getElementById('cthVideoLinkPreviewWrap');
+            const prevVideo = document.getElementById('cthVideoLinkPreview');
+            if (prevWrap && prevVideo) {
+                prevVideo.src = ct.bgData;
+                prevWrap.style.display = 'block';
+            }
+            setTimeout(() => switchVideoSubTab('link'), 50);
+        }
         const v = document.getElementById('cthVideoPreview');
+        if (!_videoBlobUrl && ct.bgData && ct.bgData !== 'blob') {
+            // không cần blob preview
+        } else
         v.src = _videoBlobUrl; v.style.display = 'block';
     }
     // YouTube preview
@@ -11464,7 +11588,7 @@ function showCthYtThumb(vid) {
 async function saveCustomTheme() {
     if (!currentUser) { showToast('⚠️ Cần đăng nhập!'); return; }
     const darkMode       = document.getElementById('cthModeDark').classList.contains('active');
-    const bgTab          = ['none','image','youtube'].find(t => document.getElementById('cthTab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.contains('active'));
+    const bgTab          = ['none','image','video','youtube'].find(t => document.getElementById('cthTab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.contains('active'));
     const overlayOpacity = parseInt(document.getElementById('cthOverlaySlider').value);
     const volume         = parseInt(document.getElementById('cthVolumeSlider').value);
 
@@ -11475,8 +11599,13 @@ async function saveCustomTheme() {
         if (drop._base64) bgData = drop._base64;
         else if (!bgData) { showToast('⚠️ Vui lòng chọn ảnh!'); return; }
     } else if (bgTab === 'video') {
-        if (!_videoBlobUrl) { showToast('⚠️ Vui lòng chọn file video MP4!'); return; }
-        bgData = 'blob'; // không lưu blob vào Firestore, chỉ dùng trong phiên
+        if (_videoSubTab === 'link') {
+            if (!_videoLinkUrl) { showToast('⚠️ Vui lòng dán link video hợp lệ!'); return; }
+            bgData = _videoLinkUrl; // lưu URL vào Firestore
+        } else {
+            if (!_videoBlobUrl) { showToast('⚠️ Vui lòng chọn file video MP4!'); return; }
+            bgData = 'blob'; // blob chỉ dùng trong phiên
+        }
     } else if (bgTab === 'youtube') {
         const url = document.getElementById('cthYtUrl').value.trim();
         const vid = extractYtVideoId(url);
