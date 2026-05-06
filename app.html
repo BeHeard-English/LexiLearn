@@ -1327,7 +1327,12 @@
                     <button id="downloadBtn" class="dl-btn">⬇ Tải CSV</button>
                 </div>
                 <div id="vocabList" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:#fafbff;"></div>
-                <div style="padding:14px;border-top:1px solid var(--border);">
+                <div style="padding:14px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px;">
+                    <button id="saveToLibBtn" onclick="saveAllVocabToLibrary()"
+                        style="width:100%;padding:12px;border-radius:12px;border:none;background:var(--primary);color:#fff;font-family:inherit;font-weight:800;font-size:.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:.2s;"
+                        onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+                        📚 Lưu vào thư viện
+                    </button>
                     <button id="showDragDropBtn" class="btn-primary btn-success wide">🎮 Tạo bài tập kéo thả</button>
                 </div>
             </div>
@@ -2625,7 +2630,7 @@
                                 <li>Copy link → dán vào ô trên</li>
                             </ol>
                         </div>
-                        <div style="font-size:.7rem;color:var(--muted);margin-top:6px;">💡 Link được lưu vào Firestore — video hiện ngay khi mở app.</div>
+                        <div style="font-size:.7rem;color:var(--muted);margin-top:6px;">💡 Link được lưu vào Firestore — video hiện ngay khi mở app.<br>⚠️ Google Drive: âm thanh do Drive player kiểm soát (không có thanh volume riêng).</div>
                     </div>
                 </div>
 
@@ -5612,10 +5617,8 @@ Only return the JSON array, no other text.`;
     const aiText = data.choices[0].message.content;
     learningData = JSON.parse(aiText.replace(/```json|```/g, '').trim());
     
-    renderVocabList(); 
-    await saveVocabToDb(learningData); 
-    await checkAndAwardBadges(await getUserXP()); // kiểm tra badge sau khi thêm từ
-    showToast('✅ Phân tích thành công!');
+    renderVocabList();
+    showToast('✅ Phân tích thành công! Kiểm tra và sửa từ nếu cần, sau đó bấm "Lưu vào thư viện".');
 } catch(e) { 
     console.error(e);
     showToast('❌ Lỗi kết nối Groq AI.'); 
@@ -5696,6 +5699,24 @@ function openVocabEdit(i) {
 function cancelVocabEdit(i) {
     document.getElementById('vview-'+i).style.display = 'block';
     document.getElementById('vedit-'+i).style.display = 'none';
+}
+
+async function saveAllVocabToLibrary() {
+    if (!learningData.length) { showToast('⚠️ Không có từ nào để lưu!'); return; }
+    const btn = document.getElementById('saveToLibBtn');
+    if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Đang lưu...'; }
+    try {
+        await saveVocabToDb(learningData);
+        await checkAndAwardBadges(await getUserXP());
+        if (btn) { btn.innerHTML = '✅ Đã lưu vào thư viện!'; btn.style.background = '#059669'; }
+        setTimeout(() => {
+            if (btn) { btn.innerHTML = '📚 Lưu vào thư viện'; btn.style.background = ''; btn.disabled = false; }
+        }, 2500);
+        showToast('✅ Đã lưu ' + learningData.length + ' từ vào thư viện!');
+    } catch(e) {
+        if (btn) { btn.innerHTML = '📚 Lưu vào thư viện'; btn.disabled = false; }
+        showToast('❌ Lưu thất bại: ' + e.message);
+    }
 }
 
 function saveVocabEdit(i) {
@@ -11268,31 +11289,47 @@ function applyCustomThemeEffect() {
         layer.innerHTML = `<div style="position:fixed;inset:0;background:${overlay};pointer-events:none;z-index:1;"></div>`;
         hideBgVolumeRow();
     } else if (_customTheme.bgType === 'video') {
-        // Link URL (lưu Firestore) ưu tiên hơn blob tạm
         const videoSrc = (_customTheme.bgData && _customTheme.bgData !== 'blob')
-            ? _customTheme.bgData   // URL lưu trong Firestore
-            : _videoBlobUrl;        // blob tạm trong phiên
+            ? _customTheme.bgData
+            : _videoBlobUrl;
         if (!videoSrc) { layer.innerHTML = ''; return; }
-        layer.innerHTML = `
-            <div style="position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;">
-                <video id="bgVideoEl" autoplay loop muted playsinline
-                    style="position:absolute;top:50%;left:50%;width:100vw;height:56.25vw;min-height:100vh;min-width:177.77vh;transform:translate(-50%,-50%);object-fit:cover;">
-                    <source src="${videoSrc}">
-                </video>
-            </div>
-            <div style="position:fixed;inset:0;background:${overlay};pointer-events:none;z-index:1;"></div>`;
-        const volSlider = document.getElementById('bgVolumeSlider');
-        const savedVol = _customTheme.volume || 0;
-        if (volSlider) {
-            volSlider.value = savedVol;
-            document.getElementById('bgVolLabel').textContent = savedVol + '%';
-            document.getElementById('bgVolIcon').textContent = savedVol === 0 ? '🔇' : savedVol < 50 ? '🔉' : '🔊';
+
+        const isGDrive = videoSrc.includes('drive.google.com');
+
+        if (isGDrive) {
+            // Google Drive → iframe (tự có controls, autoplay, loop trong Drive player)
+            layer.innerHTML = `
+                <div style="position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;">
+                    <iframe id="bgVideoEl" src="${videoSrc}"
+                        style="position:absolute;top:50%;left:50%;width:177.78vh;height:100vh;min-width:100vw;transform:translate(-50%,-50%);border:none;pointer-events:none;"
+                        allow="autoplay" allowfullscreen></iframe>
+                </div>
+                <div style="position:fixed;inset:0;background:${overlay};pointer-events:none;z-index:1;"></div>`;
+            // iframe không có volume control — ẩn thanh volume
+            hideBgVolumeRow();
+        } else {
+            // URL MP4 trực tiếp → video tag có full control
+            layer.innerHTML = `
+                <div style="position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;">
+                    <video id="bgVideoEl" autoplay loop muted playsinline
+                        style="position:absolute;top:50%;left:50%;width:100vw;height:56.25vw;min-height:100vh;min-width:177.77vh;transform:translate(-50%,-50%);object-fit:cover;">
+                        <source src="${videoSrc}">
+                    </video>
+                </div>
+                <div style="position:fixed;inset:0;background:${overlay};pointer-events:none;z-index:1;"></div>`;
+            const volSlider = document.getElementById('bgVolumeSlider');
+            const savedVol  = _customTheme.volume || 0;
+            if (volSlider) {
+                volSlider.value = savedVol;
+                document.getElementById('bgVolLabel').textContent = savedVol + '%';
+                document.getElementById('bgVolIcon').textContent  = savedVol === 0 ? '🔇' : savedVol < 50 ? '🔉' : '🔊';
+            }
+            setTimeout(() => {
+                const vid = document.getElementById('bgVideoEl');
+                if (vid) { vid.volume = savedVol / 100; vid.muted = savedVol === 0; }
+            }, 300);
+            showBgVolumeRow();
         }
-        setTimeout(() => {
-            const vid = document.getElementById('bgVideoEl');
-            if (vid) { vid.volume = savedVol / 100; vid.muted = savedVol === 0; }
-        }, 300);
-        showBgVolumeRow();
     } else if (_customTheme.bgType === 'youtube' && _customTheme.bgData) {
         const vid = _customTheme.bgData;
         _ytMuted = true;
@@ -11337,6 +11374,7 @@ function ytPostMessage(func, args) {
 // ── Video upload handler ───────────────────────────────────────────────
 let _videoBlobUrl    = null;  // URL tạm (blob) — chỉ trong phiên
 let _videoLinkUrl    = null;  // URL link Google Drive / trực tiếp — lưu Firestore
+let _videoLinkType   = 'direct'; // 'gdrive' | 'direct'
 let _videoSubTab     = 'file'; // 'file' | 'link'
 
 function switchVideoSubTab(tab) {
@@ -11368,40 +11406,51 @@ function handleCthVideoUpload(input) {
     _videoLinkUrl = null;
 }
 
-// Chuyển link Google Drive thành direct download URL
+// Google Drive: dùng /preview (iframe) vì Drive không cho stream video trực tiếp
 function convertGDriveUrl(url) {
-    // Dạng: https://drive.google.com/file/d/FILE_ID/view?...
-    const m = url.match(/\/file\/d\/([^\/\?]+)/);
-    if (m) return `https://drive.google.com/uc?export=download&id=${m[1]}`;
-    // Dạng: https://drive.google.com/open?id=FILE_ID
+    const m  = url.match(/\/file\/d\/([^\/\?]+)/);
+    if (m)  return { type: 'gdrive', embedUrl: `https://drive.google.com/file/d/${m[1]}/preview`, fileId: m[1] };
     const m2 = url.match(/[?&]id=([^&]+)/);
-    if (m2) return `https://drive.google.com/uc?export=download&id=${m2[1]}`;
-    return url; // trả nguyên nếu không phải GDrive
+    if (m2) return { type: 'gdrive', embedUrl: `https://drive.google.com/file/d/${m2[1]}/preview`, fileId: m2[1] };
+    return { type: 'direct', embedUrl: url }; // URL MP4 trực tiếp
 }
 
 function handleCthVideoLinkInput(val) {
-    const errEl     = document.getElementById('cthVideoLinkError');
-    const prevWrap  = document.getElementById('cthVideoLinkPreviewWrap');
-    const prevVideo = document.getElementById('cthVideoLinkPreview');
+    const errEl    = document.getElementById('cthVideoLinkError');
+    const prevWrap = document.getElementById('cthVideoLinkPreviewWrap');
     errEl.style.display = 'none';
 
     if (!val.trim()) {
         prevWrap.style.display = 'none';
+        prevWrap.innerHTML = '';
         _videoLinkUrl = null;
         return;
     }
 
-    const directUrl = convertGDriveUrl(val.trim());
-    _videoLinkUrl = directUrl;
-    prevVideo.src = directUrl;
+    const result = convertGDriveUrl(val.trim());
+    _videoLinkUrl = result.embedUrl;
+    _videoLinkType = result.type; // 'gdrive' | 'direct'
     prevWrap.style.display = 'block';
-    prevVideo.load();
-    prevVideo.onerror = () => {
-        errEl.textContent = '⚠️ Không tải được video. Kiểm tra lại link hoặc quyền chia sẻ.';
-        errEl.style.display = 'block';
-        prevWrap.style.display = 'none';
-        _videoLinkUrl = null;
-    };
+
+    if (result.type === 'gdrive') {
+        // Dùng iframe như YouTube
+        prevWrap.innerHTML = `<iframe src="${result.embedUrl}"
+            style="width:100%;height:110px;border-radius:10px;border:none;background:#000;"
+            allow="autoplay" allowfullscreen></iframe>
+            <div style="font-size:.68rem;color:var(--success);font-weight:700;margin-top:4px;">✅ Link Google Drive hợp lệ</div>`;
+    } else {
+        // URL MP4 trực tiếp — dùng video tag
+        prevWrap.innerHTML = `<video src="${result.embedUrl}"
+            style="width:100%;height:110px;object-fit:cover;border-radius:10px;"
+            muted playsinline controls></video>`;
+        const v = prevWrap.querySelector('video');
+        v.onerror = () => {
+            errEl.textContent = '⚠️ Không tải được video. Kiểm tra lại URL.';
+            errEl.style.display = 'block';
+            prevWrap.style.display = 'none';
+            _videoLinkUrl = null;
+        };
+    }
 }
 
 // ── Settings panel volume helpers ──────────────────────────────────────
@@ -11464,18 +11513,16 @@ function openCustomThemeModal() {
     if (ct.bgType === 'video') {
         // Khôi phục link URL nếu đã lưu Firestore
         if (ct.bgData && ct.bgData !== 'blob') {
-            _videoLinkUrl = ct.bgData;
-            _videoSubTab  = 'link';
+            _videoLinkUrl  = ct.bgData;
+            _videoLinkType = ct.bgData.includes('drive.google.com') ? 'gdrive' : 'direct';
+            _videoSubTab   = 'link';
             const linkInput = document.getElementById('cthVideoLinkInput');
             if (linkInput) linkInput.value = ct.bgData;
-            // Preview
-            const prevWrap  = document.getElementById('cthVideoLinkPreviewWrap');
-            const prevVideo = document.getElementById('cthVideoLinkPreview');
-            if (prevWrap && prevVideo) {
-                prevVideo.src = ct.bgData;
-                prevWrap.style.display = 'block';
-            }
-            setTimeout(() => switchVideoSubTab('link'), 50);
+            // Trigger preview
+            setTimeout(() => {
+                switchVideoSubTab('link');
+                handleCthVideoLinkInput(ct.bgData);
+            }, 80);
         }
         const v = document.getElementById('cthVideoPreview');
         if (!_videoBlobUrl && ct.bgData && ct.bgData !== 'blob') {
