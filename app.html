@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Be Heard |Lexi Learning</title>
+    <title>Be Heard | Lexi Learning</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
@@ -3312,6 +3312,11 @@ function clearThemeEffect() {
     if (_themeAnimFrame) { cancelAnimationFrame(_themeAnimFrame); _themeAnimFrame = null; }
     if (_themeResizeHandler) { window.removeEventListener('resize', _themeResizeHandler); _themeResizeHandler = null; }
     document.body.style.backgroundImage = '';
+    // Xoá video/iframe nền (tạo ngoài themeEffectLayer)
+    document.getElementById('bgVideoWrap')?.remove();
+    const sndBtn = document.getElementById('bgVideoSoundBtn');
+    if (sndBtn) sndBtn.style.display = 'none';
+    _videoSoundInited = false;
     const layer = document.getElementById('themeEffectLayer');
     if (layer) {
         layer.classList.remove('ocean-lite');
@@ -11351,42 +11356,62 @@ function applyCustomThemeEffect() {
         const isGDrive = videoSrc.includes('drive.google.com');
         const savedVol = _customTheme.volume !== undefined ? _customTheme.volume : 80;
 
+        // Xoá video/iframe cũ nếu còn
+        document.getElementById('bgVideoWrap')?.remove();
+
+        // Overlay layer
+        layer.innerHTML = `<div style="position:fixed;inset:0;background:${overlay};pointer-events:none;z-index:2;"></div>`;
+
         if (isGDrive) {
-            // Google Drive → iframe embed
-            // Iframe phải có pointer-events:auto để Drive player khởi động được
-            // Overlay nằm TRÊN nhưng pointer-events:none để không chặn click xuyên xuống
-            layer.innerHTML = `
-                <div style="position:fixed;inset:0;overflow:hidden;z-index:0;">
-                    <iframe id="bgVideoEl"
-                        src="${videoSrc}"
-                        style="position:absolute;top:50%;left:50%;width:177.78vh;height:100vh;min-width:100vw;transform:translate(-50%,-50%);border:none;"
-                        allow="autoplay; fullscreen"
-                        allowfullscreen></iframe>
-                </div>
-                <div style="position:fixed;inset:0;background:${overlay};pointer-events:none;z-index:1;"></div>`;
+            // Google Drive iframe — tạo ngoài themeEffectLayer để tránh overflow:hidden + pointer-events:none
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                const wrap = document.createElement('div');
+                wrap.id = 'bgVideoWrap';
+                wrap.style.cssText = 'position:fixed;inset:0;overflow:hidden;z-index:1;pointer-events:none;';
+                const iframe = document.createElement('iframe');
+                iframe.id = 'bgVideoEl';
+                iframe.src = videoSrc;
+                iframe.allow = 'autoplay; fullscreen';
+                iframe.allowFullscreen = true;
+                iframe.style.cssText = 'position:absolute;top:50%;left:50%;width:177.78vh;height:100vh;min-width:100vw;transform:translate(-50%,-50%);border:none;';
+                wrap.appendChild(iframe);
+                document.body.appendChild(wrap);
+            }));
             hideBgVolumeRow();
         } else {
-            // URL MP4 trực tiếp → <video> autoplay muted, bật tiếng sau tương tác
-            layer.innerHTML = `
-                <div style="position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;">
-                    <video id="bgVideoEl" autoplay loop muted playsinline
-                        style="position:absolute;top:50%;left:50%;width:100vw;height:56.25vw;min-height:100vh;min-width:177.77vh;transform:translate(-50%,-50%);object-fit:cover;">
-                        <source src="${videoSrc}">
-                    </video>
-                </div>
-                <div style="position:fixed;inset:0;background:${overlay};pointer-events:none;z-index:1;"></div>`;
+            // MP4 trực tiếp — tạo ngoài themeEffectLayer, gọi .play() rõ ràng
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                const wrap = document.createElement('div');
+                wrap.id = 'bgVideoWrap';
+                wrap.style.cssText = 'position:fixed;inset:0;overflow:hidden;z-index:1;pointer-events:none;';
 
-            // Cập nhật thanh volume UI
-            const volSlider = document.getElementById('bgVolumeSlider');
-            if (volSlider) {
-                volSlider.value = savedVol;
-                document.getElementById('bgVolLabel').textContent = savedVol + '%';
-                document.getElementById('bgVolIcon').textContent  = savedVol === 0 ? '🔇' : savedVol < 50 ? '🔉' : '🔊';
-            }
-            showBgVolumeRow();
+                const vid = document.createElement('video');
+                vid.id = 'bgVideoEl';
+                vid.loop = true;
+                vid.muted = true;       // bắt buộc muted để autoplay được
+                vid.playsInline = true;
+                vid.setAttribute('playsinline', '');
+                vid.style.cssText = 'position:absolute;top:50%;left:50%;width:100vw;height:56.25vw;min-height:100vh;min-width:177.77vh;transform:translate(-50%,-50%);object-fit:cover;';
+                vid.src = videoSrc;
 
-            // Bật tiếng sau tương tác đầu tiên của user (browser policy)
-            _initVideoSound(savedVol);
+                wrap.appendChild(vid);
+                document.body.appendChild(wrap);
+
+                // Gọi .play() rõ ràng sau khi element vào DOM
+                vid.play().catch(err => console.warn('bgVideo play error:', err));
+
+                // Cập nhật volume UI
+                const volSlider = document.getElementById('bgVolumeSlider');
+                if (volSlider) {
+                    volSlider.value = savedVol;
+                    document.getElementById('bgVolLabel').textContent = savedVol + '%';
+                    document.getElementById('bgVolIcon').textContent  = savedVol === 0 ? '🔇' : savedVol < 50 ? '🔉' : '🔊';
+                }
+                showBgVolumeRow();
+
+                // Bật tiếng sau tương tác đầu tiên
+                _initVideoSound(savedVol);
+            }));
         }
     } else if (_customTheme.bgType === 'youtube' && _customTheme.bgData) {
         const vid = _customTheme.bgData;
@@ -11537,7 +11562,14 @@ function setBgVolume(val) {
     }
     // Video element
     const vid = document.getElementById('bgVideoEl');
-    if (vid) { vid.volume = val / 100; vid.muted = val === 0; }
+    if (vid && vid.tagName === 'VIDEO') {
+        vid.muted  = val === 0;
+        vid.volume = val / 100;
+        if (vid.paused) vid.play().catch(() => {});
+        _videoSoundInited = true;
+        const btn = document.getElementById('bgVideoSoundBtn');
+        if (btn) { btn.style.opacity = '0'; setTimeout(() => btn.style.display = 'none', 400); }
+    }
 }
 function toggleBgMute() {
     const sl  = document.getElementById('bgVolumeSlider');
