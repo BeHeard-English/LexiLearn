@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Be Heard |Lexi Learning</title>
+    <title>Be Heard | Lexi Learning</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
@@ -3314,9 +3314,13 @@ function clearThemeEffect() {
     document.body.style.backgroundImage = '';
     // Xoá video/iframe nền (tạo ngoài themeEffectLayer)
     document.getElementById('bgVideoWrap')?.remove();
+    document.getElementById('ytBgWrap')?.remove();
+    document.getElementById('ytBgPlayBtn')?.remove();
     const sndBtn = document.getElementById('bgVideoSoundBtn');
     if (sndBtn) sndBtn.style.display = 'none';
     _videoSoundInited = false;
+    _ytIframe  = null;
+    _ytPlaying = true;
     const layer = document.getElementById('themeEffectLayer');
     if (layer) {
         layer.classList.remove('ocean-lite');
@@ -11210,7 +11214,21 @@ function _fallbackEvaluateSentence(userSentence, targetWord, viPrompt) {
 // ══════════════════════════════════════════
 // CUSTOM THEME SYSTEM
 // ══════════════════════════════════════════
-let _ytIframe = null;
+let _ytIframe  = null;
+let _ytPlaying = true;
+
+function toggleYtBgPlay() {
+    const btn = document.getElementById('ytBgPlayBtn');
+    if (_ytPlaying) {
+        ytPostMessage('pauseVideo', []);
+        _ytPlaying = false;
+        if (btn) btn.innerHTML = '▶️';
+    } else {
+        ytPostMessage('playVideo', []);
+        _ytPlaying = true;
+        if (btn) btn.innerHTML = '⏸';
+    }
+}
 let _ytMuted  = true;
 
 // ── Render custom theme section in shop ───────────────────────────────
@@ -11407,31 +11425,53 @@ function applyCustomThemeEffect() {
     } else if (_customTheme.bgType === 'youtube' && _customTheme.bgData) {
         const vid = _customTheme.bgData;
         _ytMuted = true;
-        const overlay = `rgba(0,0,0,${(_customTheme.overlayOpacity||45)/100})`;
-        // Placeholder trước, tạo iframe sau khi page painted → browser cho phép autoplay
-        layer.innerHTML = `<div style="position:fixed;inset:0;background:${overlay};pointer-events:none;z-index:1;"></div>`;
+        _ytPlaying = true;
+        const overlayColor = `rgba(0,0,0,${(_customTheme.overlayOpacity||45)/100})`;
+
+        // Overlay dim — pointer-events:none để click xuyên xuống iframe bên dưới
+        layer.innerHTML = `<div id="ytDimOverlay" style="position:fixed;inset:0;background:${overlayColor};pointer-events:none;z-index:1;"></div>`;
+
         const volSlider = document.getElementById('bgVolumeSlider');
         if (volSlider) { volSlider.value = 0; document.getElementById('bgVolLabel').textContent = '0%'; document.getElementById('bgVolIcon').textContent = '🔇'; }
         showBgVolumeRow();
-        // Dùng requestAnimationFrame x2 để chắc chắn page đã paint xong trước khi tạo iframe
+
         requestAnimationFrame(() => requestAnimationFrame(() => {
-            const wrap = document.getElementById('ytBgWrap');
-            if (!wrap) {
-                // Tạo wrap nếu chưa có
-                const wrapEl = document.createElement('div');
-                wrapEl.id = 'ytBgWrap';
-                wrapEl.style.cssText = 'position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;';
-                const iframe = document.createElement('iframe');
-                iframe.id  = 'ytBgIframe';
-                iframe.src = `https://www.youtube-nocookie.com/embed/${vid}?autoplay=1&mute=1&loop=1&playlist=${vid}&controls=0&disablekb=1&fs=0&modestbranding=1&rel=0&enablejsapi=1&playsinline=1&iv_load_policy=3`;
-                iframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture');
-                iframe.setAttribute('allowfullscreen', 'false');
-                iframe.setAttribute('frameborder', '0');
-                iframe.style.pointerEvents = 'auto';
-                wrapEl.appendChild(iframe);
-                layer.insertBefore(wrapEl, layer.firstChild);
-                _ytIframe = iframe;
+            // ── iframe YouTube (với controls=1 để có nút Skip Ads) ──
+            const wrapEl = document.createElement('div');
+            wrapEl.id = 'ytBgWrap';
+            // pointer-events:auto → click xuyên xuống iframe được
+            wrapEl.style.cssText = 'position:fixed;inset:0;overflow:hidden;z-index:0;';
+
+            const iframe = document.createElement('iframe');
+            iframe.id = 'ytBgIframe';
+            // controls=1 để hiện nút Skip Ads; enablejsapi=1 để dùng postMessage play/pause
+            iframe.src = `https://www.youtube-nocookie.com/embed/${vid}?autoplay=1&mute=1&loop=1&playlist=${vid}&controls=1&modestbranding=1&rel=0&enablejsapi=1&playsinline=1&iv_load_policy=3`;
+            iframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture');
+            iframe.setAttribute('frameborder', '0');
+            // iframe fill full screen, căn giữa
+            iframe.style.cssText = 'position:absolute;top:50%;left:50%;width:177.78vh;height:100vh;min-width:100vw;transform:translate(-50%,-50%);border:none;';
+            wrapEl.appendChild(iframe);
+            document.body.insertBefore(wrapEl, document.body.firstChild);
+            _ytIframe = iframe;
+
+            // ── Nút play/pause nổi ở góc dưới phải ──
+            let ytCtrl = document.getElementById('ytBgPlayBtn');
+            if (!ytCtrl) {
+                ytCtrl = document.createElement('button');
+                ytCtrl.id = 'ytBgPlayBtn';
+                ytCtrl.style.cssText = [
+                    'position:fixed','bottom:90px','right:74px','z-index:9500',
+                    'width:40px','height:40px','border-radius:50%',
+                    'background:rgba(0,0,0,.55)','border:none','color:#fff',
+                    'font-size:1rem','cursor:pointer','backdrop-filter:blur(6px)',
+                    'display:flex','align-items:center','justify-content:center',
+                    'transition:.2s','touch-action:manipulation',
+                ].join(';');
+                ytCtrl.title = 'Phát/Dừng video nền';
+                document.body.appendChild(ytCtrl);
             }
+            ytCtrl.innerHTML = '⏸';
+            ytCtrl.onclick = toggleYtBgPlay;
         }));
     } else {
         document.body.style.backgroundImage = '';
