@@ -1278,6 +1278,15 @@
     </div>
     <!-- Bg audio volume — hiện khi có nền YouTube/Video -->
     <div id="bgVolumeRow">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+            <button id="ytPlayPauseBtn" onclick="toggleYtPlayback()"
+                style="display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--card);color:var(--text);font-family:inherit;font-size:.8rem;font-weight:700;cursor:pointer;transition:.18s;"
+                onmouseover="this.style.borderColor='var(--primary-mid)';this.style.background='var(--primary-light)'"
+                onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--card)'">
+                <span id="ytPlayPauseBtnIcon">⏸</span>
+                <span id="ytPlayPauseBtnLabel">Tạm dừng</span>
+            </button>
+        </div>
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
             <div style="font-size:.8rem;font-weight:700;color:var(--text);">🎵 Âm lượng nền</div>
             <span style="font-size:.75rem;font-weight:800;color:var(--primary);" id="bgVolLabel">0%</span>
@@ -11205,8 +11214,9 @@ function _fallbackEvaluateSentence(userSentence, targetWord, viPrompt) {
 // ══════════════════════════════════════════
 // CUSTOM THEME SYSTEM
 // ══════════════════════════════════════════
-let _ytIframe = null;
-let _ytMuted  = true;
+let _ytIframe  = null;
+let _ytMuted   = true;
+let _ytPlaying = true;
 
 // ── Render custom theme section in shop ───────────────────────────────
 function renderCustomThemeSection() {
@@ -11414,12 +11424,19 @@ function applyCustomThemeEffect() {
                 iframe.style.pointerEvents = 'auto';
                 wrapEl.appendChild(iframe);
                 layer.insertBefore(wrapEl, layer.firstChild);
-                _ytIframe = iframe;
+                _ytIframe  = iframe;
+                _ytPlaying = true;
+                // Reset icon/label nút trong panel
+                const _icon  = document.getElementById('ytPlayPauseBtnIcon');
+                const _label = document.getElementById('ytPlayPauseBtnLabel');
+                if (_icon)  _icon.textContent  = '⏸';
+                if (_label) _label.textContent = 'Tạm dừng';
             }
         }));
     } else {
         document.body.style.backgroundImage = '';
         hideBgVolumeRow();
+
     }
 }
 
@@ -11427,6 +11444,23 @@ function applyCustomThemeEffect() {
 function ytPostMessage(func, args) {
     if (!_ytIframe) return;
     try { _ytIframe.contentWindow.postMessage(JSON.stringify({event:'command',func,args}), '*'); } catch(e){}
+}
+
+// ── YouTube play / pause toggle ───────────────────────────────────────
+function toggleYtPlayback() {
+    const icon  = document.getElementById('ytPlayPauseBtnIcon');
+    const label = document.getElementById('ytPlayPauseBtnLabel');
+    if (_ytPlaying) {
+        ytPostMessage('pauseVideo', []);
+        _ytPlaying = false;
+        if (icon)  icon.textContent  = '▶';
+        if (label) label.textContent = 'Tiếp tục phát';
+    } else {
+        ytPostMessage('playVideo', []);
+        _ytPlaying = true;
+        if (icon)  icon.textContent  = '⏸';
+        if (label) label.textContent = 'Tạm dừng';
+    }
 }
 
 // ── Video upload handler ───────────────────────────────────────────────
