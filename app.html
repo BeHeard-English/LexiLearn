@@ -11205,8 +11205,9 @@ function _fallbackEvaluateSentence(userSentence, targetWord, viPrompt) {
 // ══════════════════════════════════════════
 // CUSTOM THEME SYSTEM
 // ══════════════════════════════════════════
-let _ytIframe = null;
-let _ytMuted  = true;
+let _ytIframe  = null;
+let _ytMuted   = true;
+let _ytPlaying = true;
 
 // ── Render custom theme section in shop ───────────────────────────────
 function renderCustomThemeSection() {
@@ -11411,10 +11412,23 @@ function applyCustomThemeEffect() {
                 iframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture');
                 iframe.setAttribute('allowfullscreen', 'false');
                 iframe.setAttribute('frameborder', '0');
-                iframe.style.pointerEvents = 'auto';
+                iframe.style.pointerEvents = 'none';
                 wrapEl.appendChild(iframe);
+                // Click-catcher — nằm trên iframe, bắt click để pause/play video nền
+                const clickCatcher = document.createElement('div');
+                clickCatcher.id    = 'ytBgClickCatcher';
+                clickCatcher.title = 'Click để tạm dừng / phát video nền';
+                clickCatcher.style.cssText = 'position:absolute;inset:0;z-index:2;cursor:pointer;pointer-events:auto;';
+                clickCatcher.onclick = toggleYtPlayback;
+                wrapEl.appendChild(clickCatcher);
+                // Icon phản hồi pause / play hiện thoáng
+                const indicator = document.createElement('div');
+                indicator.id = 'ytBgIndicator';
+                indicator.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:2rem;pointer-events:none;opacity:0;transition:opacity .25s ease;z-index:3;background:rgba(0,0,0,.45);border-radius:50%;width:64px;height:64px;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);';
+                wrapEl.appendChild(indicator);
                 layer.insertBefore(wrapEl, layer.firstChild);
-                _ytIframe = iframe;
+                _ytIframe  = iframe;
+                _ytPlaying = true;
             }
         }));
     } else {
@@ -11427,6 +11441,27 @@ function applyCustomThemeEffect() {
 function ytPostMessage(func, args) {
     if (!_ytIframe) return;
     try { _ytIframe.contentWindow.postMessage(JSON.stringify({event:'command',func,args}), '*'); } catch(e){}
+}
+
+// ── YouTube play / pause toggle ───────────────────────────────────────
+function toggleYtPlayback() {
+    if (_ytPlaying) {
+        ytPostMessage('pauseVideo', []);
+        _ytPlaying = false;
+        showYtIndicator('⏸');
+    } else {
+        ytPostMessage('playVideo', []);
+        _ytPlaying = true;
+        showYtIndicator('▶');
+    }
+}
+function showYtIndicator(icon) {
+    const el = document.getElementById('ytBgIndicator');
+    if (!el) return;
+    el.textContent = icon;
+    el.style.opacity = '1';
+    clearTimeout(el._hideTimer);
+    el._hideTimer = setTimeout(() => { el.style.opacity = '0'; }, 900);
 }
 
 // ── Video upload handler ───────────────────────────────────────────────
