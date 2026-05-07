@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Be Heard | Lexi Learning</title>
+    <title>Be Heard |Lexi Learning</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
@@ -310,9 +310,6 @@
 
         /* MAIN */
         .main-wrap{max-width:1400px;margin:0 auto;padding:20px 16px;position:relative;z-index:2;}
-        /* Khi YouTube/GDrive nền đang chạy: click vào vùng trống sẽ xuyên xuống iframe */
-        body.video-bg-active .main-wrap { pointer-events: none; }
-        body.video-bg-active .main-wrap * { pointer-events: auto; }
         @media(min-width:768px){.main-wrap{padding:28px 24px;}}
         /* Khi đang chơi quiz trên mobile: bỏ padding để quiz chiếm full height */
         @media(max-width:767px){
@@ -1289,14 +1286,6 @@
             <span style="font-size:.85rem;cursor:pointer;" id="bgVolIcon" onclick="toggleBgMute()">🔇</span>
             <input type="range" id="bgVolumeSlider" min="0" max="100" value="0" oninput="onBgVolumeSlide(this.value)">
         </div>
-        <!-- Nút điều khiển video nền (ẩn mặc định, hiện theo loại nền) -->
-        <div id="bgVideoControls" style="display:none;margin-top:10px;display:none;gap:8px;">
-            <button id="bgPlayPauseBtn" onclick="bgVideoTogglePlay()"
-                style="flex:1;padding:8px 0;border-radius:10px;border:1.5px solid var(--border);background:var(--card);color:var(--text);font-family:inherit;font-weight:700;font-size:.82rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
-                🤍 Dừng / Phát
-            </button>
-
-        </div>
     </div>
 </div>
 
@@ -1338,12 +1327,7 @@
                     <button id="downloadBtn" class="dl-btn">⬇ Tải CSV</button>
                 </div>
                 <div id="vocabList" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:#fafbff;"></div>
-                <div style="padding:14px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px;">
-                    <button id="saveToLibBtn" onclick="saveAllVocabToLibrary()"
-                        style="width:100%;padding:12px;border-radius:12px;border:none;background:var(--primary);color:#fff;font-family:inherit;font-weight:800;font-size:.9rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:.2s;"
-                        onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
-                        📚 Lưu vào thư viện
-                    </button>
+                <div style="padding:14px;border-top:1px solid var(--border);">
                     <button id="showDragDropBtn" class="btn-primary btn-success wide">🎮 Tạo bài tập kéo thả</button>
                 </div>
             </div>
@@ -1530,7 +1514,7 @@
                         <input id="libSearch" class="lib-search" placeholder="Tìm từ vựng hoặc nghĩa...">
                     </div>
                     <select id="libSort" onchange="_libPage=1;renderLibrary();" style="padding:7px 12px;border:2px solid var(--border);border-radius:10px;font-family:inherit;font-size:.78rem;font-weight:700;color:var(--input-text);background:var(--input-bg);cursor:pointer;outline:none;transition:.2s;">
-                        <option value="srs_asc" selected>📅 SRS sớm nhất</option>
+                        <option value="default">🔤 Mặc định (A–Z)</option>
                         <option value="wrong_desc">❌ Sai nhiều nhất</option>
                         <option value="wrong_asc">✅ Sai ít nhất</option>
                         <option value="srs_asc">⏰ SRS sớm nhất</option>
@@ -2596,53 +2580,16 @@
                     <img id="cthImgPreview" class="cth-img-preview" style="display:none;" alt="preview">
                 </div>
 
-                <!-- Video section -->
+                <!-- Video upload section -->
                 <div id="cthVideoSection" style="display:none;">
-                    <!-- Sub-tabs: File tạm | Link URL -->
-                    <div style="display:flex;gap:6px;margin-bottom:10px;">
-                        <button id="cthVidTabFile" onclick="switchVideoSubTab('file')"
-                            style="flex:1;padding:6px;border-radius:8px;border:1.5px solid var(--primary);background:var(--primary);color:#fff;font-family:inherit;font-weight:700;font-size:.75rem;cursor:pointer;">
-                            📁 Tải file tạm
-                        </button>
-                        <button id="cthVidTabLink" onclick="switchVideoSubTab('link')"
-                            style="flex:1;padding:6px;border-radius:8px;border:1.5px solid var(--border);background:var(--card);color:var(--muted);font-family:inherit;font-weight:700;font-size:.75rem;cursor:pointer;">
-                            🔗 Link video
-                        </button>
+                    <div class="cth-img-drop" id="cthVideoDrop" onclick="document.getElementById('cthVideoFileInput').click()">
+                        <div style="font-size:1.8rem;margin-bottom:6px;">🎬</div>
+                        <div style="font-size:.82rem;font-weight:700;color:var(--muted);">Nhấn để chọn video</div>
+                        <div style="font-size:.72rem;color:var(--muted);margin-top:3px;">MP4 · Phát loop tự động · Không quảng cáo</div>
+                        <input type="file" id="cthVideoFileInput" accept="video/mp4" style="display:none" onchange="handleCthVideoUpload(this)">
                     </div>
-
-                    <!-- Sub-tab: File tạm -->
-                    <div id="cthVidFilePanel">
-                        <div class="cth-img-drop" id="cthVideoDrop" onclick="document.getElementById('cthVideoFileInput').click()" style="cursor:pointer;">
-                            <div style="font-size:1.8rem;margin-bottom:6px;">🎬</div>
-                            <div style="font-size:.82rem;font-weight:700;color:var(--muted);" id="cthVideoDropLabel">Nhấn để chọn video</div>
-                            <div style="font-size:.72rem;color:var(--muted);margin-top:3px;">MP4 · Phát loop · Chỉ lưu trong phiên này</div>
-                            <input type="file" id="cthVideoFileInput" accept="video/mp4,video/*" style="display:none" onchange="handleCthVideoUpload(this)">
-                        </div>
-                        <video id="cthVideoPreview" style="display:none;width:100%;height:110px;object-fit:cover;border-radius:10px;margin-top:10px;" muted loop playsinline></video>
-                        <div style="font-size:.7rem;color:var(--muted);margin-top:6px;">⚠️ File sẽ mất khi làm mới trang. Dùng "Link video" để lưu bền vững.</div>
-                    </div>
-
-                    <!-- Sub-tab: Link video -->
-                    <div id="cthVidLinkPanel" style="display:none;">
-                        <input type="text" id="cthVideoLinkInput"
-                            placeholder="Dán link Google Drive / Cloudinary / link MP4 trực tiếp..."
-                            oninput="handleCthVideoLinkInput(this.value)"
-                            style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-family:inherit;font-size:.82rem;background:var(--input-bg);color:var(--text);box-sizing:border-box;outline:none;transition:.2s;"
-                            onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--border)'"/>
-                        <div id="cthVideoLinkPreviewWrap" style="display:none;margin-top:8px;">
-                            <video id="cthVideoLinkPreview" style="width:100%;height:110px;object-fit:cover;border-radius:10px;" muted loop playsinline controls></video>
-                        </div>
-                        <div id="cthVideoLinkError" style="display:none;font-size:.73rem;color:var(--danger);font-weight:700;margin-top:6px;"></div>
-                        <div style="margin-top:10px;padding:10px 12px;background:var(--primary-light);border-radius:10px;">
-                            <div style="font-size:.73rem;font-weight:800;color:var(--primary);margin-bottom:4px;">📋 Cách lấy link Google Drive:</div>
-                            <ol style="font-size:.7rem;color:var(--muted);margin:0;padding-left:16px;line-height:1.8;">
-                                <li>Upload video lên Google Drive</li>
-                                <li>Chuột phải → <strong>Chia sẻ</strong> → Đặt thành <strong>"Bất kỳ ai có link"</strong></li>
-                                <li>Copy link → dán vào ô trên</li>
-                            </ol>
-                        </div>
-                        <div style="font-size:.7rem;color:var(--muted);margin-top:6px;">💡 Link được lưu vào Firestore — video hiện ngay khi mở app.<br>⚠️ Google Drive: âm thanh do Drive player kiểm soát (không có thanh volume riêng).</div>
-                    </div>
+                    <video id="cthVideoPreview" style="display:none;width:100%;height:110px;object-fit:cover;border-radius:10px;margin-top:10px;" muted loop playsinline></video>
+                    <div style="font-size:.7rem;color:var(--muted);margin-top:6px;">💡 Video chỉ lưu trong phiên này — cần tải lại sau khi làm mới trang</div>
                 </div>
 
                 <!-- YouTube section -->
@@ -2839,7 +2786,7 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
-const db      = firebase.firestore();
+const db   = firebase.firestore();
 
 let currentUser      = null;
 let learningData     = [];
@@ -3323,13 +3270,6 @@ function clearThemeEffect() {
     if (_themeAnimFrame) { cancelAnimationFrame(_themeAnimFrame); _themeAnimFrame = null; }
     if (_themeResizeHandler) { window.removeEventListener('resize', _themeResizeHandler); _themeResizeHandler = null; }
     document.body.style.backgroundImage = '';
-    // Xoá video/iframe nền (tạo ngoài themeEffectLayer)
-    document.getElementById('bgVideoWrap')?.remove();
-    document.getElementById('ytBgWrap')?.remove();
-
-    _videoSoundInited = false;
-    _ytIframe  = null;
-    _ytPlaying = true;
     const layer = document.getElementById('themeEffectLayer');
     if (layer) {
         layer.classList.remove('ocean-lite');
@@ -5635,8 +5575,10 @@ Only return the JSON array, no other text.`;
     const aiText = data.choices[0].message.content;
     learningData = JSON.parse(aiText.replace(/```json|```/g, '').trim());
     
-    renderVocabList();
-    showToast('✅ Phân tích thành công! Kiểm tra và sửa từ nếu cần, sau đó bấm "Lưu vào thư viện".');
+    renderVocabList(); 
+    await saveVocabToDb(learningData); 
+    await checkAndAwardBadges(await getUserXP()); // kiểm tra badge sau khi thêm từ
+    showToast('✅ Phân tích thành công!');
 } catch(e) { 
     console.error(e);
     showToast('❌ Lỗi kết nối Groq AI.'); 
@@ -5646,110 +5588,23 @@ Only return the JSON array, no other text.`;
 
 function lvClass(l){ return {A1:'level-A1',A2:'level-A2',B1:'level-B1',B2:'level-B2',C1:'level-C1',C2:'level-C2'}[l]||'level-B1'; }
 
-function _vocabItemHtml(item, i) {
-    const e = s => (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/`/g,'&#96;');
-    const LEVELS = ['A1','A2','B1','B2','C1','C2'];
-    return `
-        <div class="vocab-item" id="vitem-${i}" style="animation:fadeIn .3s ease ${i*.06}s both;">
-            <div id="vview-${i}">
-                <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
-                    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-                        <span style="font-weight:800;font-size:1rem;color:var(--primary);">${e(item.word)}</span>
-                        <button class="tts-btn" onclick="speak(learningData[${i}].word,'en-US')" title="Phát âm">
-                            <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M12 6v12m-3.536-9.536a5 5 0 000 7.072"/></svg>
-                        </button>
-                        <button onclick="openVocabEdit(${i})" style="background:var(--primary-light);border:none;border-radius:6px;padding:3px 8px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;font-size:.72rem;font-weight:700;color:var(--primary);">
-                            <svg xmlns="http://www.w3.org/2000/svg" style="width:11px;height:11px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-                            Sửa
-                        </button>
-                    </div>
-                    <span class="level-badge ${lvClass(item.level)}">${item.level}</span>
-                </div>
-                <div style="font-family:monospace;font-size:.8rem;color:var(--muted);margin-bottom:4px;">${e(item.ipa||'')}</div>
-                <div style="font-weight:700;font-size:.88rem;color:#334155;margin-bottom:4px;">${e(item.vn||'')}</div>
-                <div style="font-size:.8rem;color:#94a3b8;font-style:italic;">${e(item.example||'')}</div>
-            </div>
-            <div id="vedit-${i}" style="display:none;">
-                <div style="display:grid;gap:8px;">
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                        <div>
-                            <label style="font-size:.7rem;font-weight:700;color:var(--muted);">TỪ TIẾNG ANH</label>
-                            <input id="ve-word-${i}" value="${e(item.word)}" style="width:100%;margin-top:3px;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:.88rem;font-weight:700;background:var(--bg);color:var(--text);box-sizing:border-box;"/>
-                        </div>
-                        <div>
-                            <label style="font-size:.7rem;font-weight:700;color:var(--muted);">IPA</label>
-                            <input id="ve-ipa-${i}" value="${e(item.ipa||'')}" style="width:100%;margin-top:3px;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:monospace;font-size:.85rem;background:var(--bg);color:var(--text);box-sizing:border-box;"/>
-                        </div>
-                    </div>
-                    <div>
-                        <label style="font-size:.7rem;font-weight:700;color:var(--muted);">NGHĨA TIẾNG VIỆT</label>
-                        <input id="ve-vn-${i}" value="${e(item.vn||'')}" style="width:100%;margin-top:3px;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:.88rem;background:var(--bg);color:var(--text);box-sizing:border-box;"/>
-                    </div>
-                    <div>
-                        <label style="font-size:.7rem;font-weight:700;color:var(--muted);">CÂU VÍ DỤ</label>
-                        <input id="ve-ex-${i}" value="${e(item.example||'')}" style="width:100%;margin-top:3px;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:.82rem;background:var(--bg);color:var(--text);box-sizing:border-box;"/>
-                    </div>
-                    <div>
-                        <label style="font-size:.7rem;font-weight:700;color:var(--muted);">CẤP ĐỘ</label>
-                        <select id="ve-lvl-${i}" style="margin-top:3px;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:.85rem;background:var(--bg);color:var(--text);cursor:pointer;">
-                            ${LEVELS.map(l=>`<option value="${l}"${item.level===l?' selected':''}>${l}</option>`).join('')}
-                        </select>
-                    </div>
-                    <div style="display:flex;gap:8px;justify-content:flex-end;">
-                        <button onclick="cancelVocabEdit(${i})" style="padding:7px 16px;border-radius:9px;border:1.5px solid var(--border);background:var(--card);color:var(--muted);font-family:inherit;font-weight:700;font-size:.8rem;cursor:pointer;">Huỷ</button>
-                        <button onclick="saveVocabEdit(${i})" style="padding:7px 18px;border-radius:9px;border:none;background:var(--primary);color:#fff;font-family:inherit;font-weight:800;font-size:.8rem;cursor:pointer;">✓ Lưu</button>
-                    </div>
-                </div>
-            </div>
-        </div>`;
-}
-
 function renderVocabList() {
-    document.getElementById('vocabList').innerHTML = learningData.map((item,i) => _vocabItemHtml(item,i)).join('');
+    document.getElementById('vocabList').innerHTML = learningData.map((item,i) => `
+        <div class="vocab-item" style="animation:fadeIn .3s ease ${i*.06}s both;">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="font-weight:800;font-size:1rem;color:var(--primary);">${item.word}</span>
+                    <button class="tts-btn" onclick="speak('${item.word.replace(/'/g,"\\'")}','en-US')" title="Phát âm">
+                        <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M12 6v12m-3.536-9.536a5 5 0 000 7.072"/></svg>
+                    </button>
+                </div>
+                <span class="level-badge ${lvClass(item.level)}">${item.level}</span>
+            </div>
+            <div style="font-family:monospace;font-size:.8rem;color:var(--muted);margin-bottom:4px;">${item.ipa}</div>
+            <div style="font-weight:700;font-size:.88rem;color:#334155;margin-bottom:4px;">${item.vn}</div>
+            <div style="font-size:.8rem;color:#94a3b8;font-style:italic;">${item.example}</div>
+        </div>`).join('');
 }
-
-function openVocabEdit(i) {
-    document.getElementById('vview-'+i).style.display = 'none';
-    document.getElementById('vedit-'+i).style.display = 'block';
-    setTimeout(() => document.getElementById('ve-word-'+i)?.focus(), 50);
-}
-
-function cancelVocabEdit(i) {
-    document.getElementById('vview-'+i).style.display = 'block';
-    document.getElementById('vedit-'+i).style.display = 'none';
-}
-
-async function saveAllVocabToLibrary() {
-    if (!learningData.length) { showToast('⚠️ Không có từ nào để lưu!'); return; }
-    const btn = document.getElementById('saveToLibBtn');
-    if (btn) { btn.disabled = true; btn.innerHTML = '⏳ Đang lưu...'; }
-    try {
-        await saveVocabToDb(learningData);
-        await checkAndAwardBadges(await getUserXP());
-        if (btn) { btn.innerHTML = '✅ Đã lưu vào thư viện!'; btn.style.background = '#059669'; }
-        setTimeout(() => {
-            if (btn) { btn.innerHTML = '📚 Lưu vào thư viện'; btn.style.background = ''; btn.disabled = false; }
-        }, 2500);
-        showToast('✅ Đã lưu ' + learningData.length + ' từ vào thư viện!');
-    } catch(e) {
-        if (btn) { btn.innerHTML = '📚 Lưu vào thư viện'; btn.disabled = false; }
-        showToast('❌ Lưu thất bại: ' + e.message);
-    }
-}
-
-function saveVocabEdit(i) {
-    const word = (document.getElementById('ve-word-'+i)?.value||'').trim();
-    const ipa  = (document.getElementById('ve-ipa-' +i)?.value||'').trim();
-    const vn   = (document.getElementById('ve-vn-'  +i)?.value||'').trim();
-    const ex   = (document.getElementById('ve-ex-'  +i)?.value||'').trim();
-    const lvl  =  document.getElementById('ve-lvl-' +i)?.value || 'A1';
-    if (!word) { showToast('⚠️ Từ tiếng Anh không được để trống!'); return; }
-    learningData[i] = { ...learningData[i], word, ipa, vn, example: ex, level: lvl };
-    const card = document.getElementById('vitem-'+i);
-    if (card) card.outerHTML = _vocabItemHtml(learningData[i], i);
-    showToast('✅ Đã cập nhật!');
-}
-
 
 async function saveVocabToDb(data) {
     if(!currentUser) return;
@@ -5775,16 +5630,9 @@ async function saveVocabToDb(data) {
     });
     await batch.commit();
 
-    // Cập nhật fullLibrary IN-MEMORY (không re-fetch Firestore) để tiết kiệm reads
-    data.forEach(item => {
-        const idx = fullLibrary.findIndex(w => w.word.toLowerCase() === item.word.toLowerCase());
-        if (idx >= 0) {
-            fullLibrary[idx] = { ...fullLibrary[idx], ...item };
-        } else {
-            // Từ mới: thêm vào cuối, gán createdAt giả (serverTimestamp chưa có trên client)
-            fullLibrary.push({ ...item, createdAt: { seconds: Math.floor(Date.now()/1000), nanoseconds: 0 } });
-        }
-    });
+    // Reload fullLibrary để loadRecentWords thấy ngay từ vừa thêm
+    const snap = await db.collection('users').doc(currentUser.uid).collection('vocabulary').get();
+    fullLibrary = snap.docs.map(d => ({ ...d.data(), _docId: d.id }));
     _saveCache(fullLibrary);
 }
 
@@ -5859,12 +5707,15 @@ function renderLibrary() {
     else if(activeLibLevel!=='ALL')  list = list.filter(i=>i.level===activeLibLevel);
 
     // Sắp xếp
-    const sort = document.getElementById('libSort')?.value || 'srs_asc';
+    const sort = document.getElementById('libSort')?.value || 'default';
     if (sort === 'recent') {
+        // Fetch riêng từ Firestore theo createdAt desc — không dùng cache (cache không giữ timestamp)
         loadRecentWords();
-        return;
+        return; // renderLibrary sẽ được gọi lại từ loadRecentWords sau khi fetch xong
     }
-    if (sort === 'wrong_desc') {
+    if (sort === 'default') {
+        list = [...list].sort((a,b) => a.word.localeCompare(b.word));
+    } else if (sort === 'wrong_desc') {
         list = [...list].sort((a,b) => (b.incorrect_count||0) - (a.incorrect_count||0));
     } else if (sort === 'wrong_asc') {
         list = [...list].sort((a,b) => (a.incorrect_count||0) - (b.incorrect_count||0));
@@ -6829,8 +6680,7 @@ Do not output any markdown formatting or extra text, just the raw JSON array.`;
         if (!finalData.length) { showToast('❌ AI không trả về kết quả hợp lệ, vui lòng thử lại.'); return; }
 
         await saveVocabToDb(finalData);
-        renderLibrary(); // cache already updated by saveVocabToDb
-
+        await loadLibrary();
         closePasteWordsModal();
         const dupMsg = dupCount > 0 ? ` · ${dupCount} từ trùng đã bỏ qua` : '';
         showToast(`✅ Đã thêm ${finalData.length} từ mới${dupMsg}`);
@@ -7245,8 +7095,7 @@ Only raw JSON, no markdown.`;
             if (tlIdx >= 0) topicLists[tlIdx].wordIds = allIds;
             renderTopicLists();
             populateReviewVocabSelect();
-            renderLibrary(); // cache already updated by saveVocabToDb
-
+            await loadLibrary();
 
             showToast(`✅ Đã thêm ${finalData.length} từ vào danh sách!`);
             // If detail modal is open for this list, refresh it
@@ -7327,25 +7176,19 @@ async function openTopicListDetail(listId) {
     tl.wordIds = freshWordIds;
 
     // Kiểm tra nếu có từ trong wordIds không có trong fullLibrary (cache cũ)
+    // → fetch bổ sung từ Firestore để không bị mất từ khi hiển thị
     const libKeys = new Set(fullLibrary.map(w => (w.word || '').toLowerCase()));
     const missingIds = freshWordIds.filter(id => !libKeys.has(id));
     if (missingIds.length > 0) {
         try {
-            // Dùng 'in' query (tối đa 30 docs/query) thay vì N reads riêng
-            const chunks = [];
-            for (let i = 0; i < missingIds.length; i += 30)
-                chunks.push(missingIds.slice(i, i + 30));
-            const extraWords = [];
-            for (const chunk of chunks) {
-                const snap = await db.collection('users').doc(currentUser.uid)
-                    .collection('vocabulary')
-                    .where(firebase.firestore.FieldPath.documentId(), 'in', chunk)
-                    .get();
-                snap.docs.forEach(d => { if (d.exists) extraWords.push(d.data()); });
-            }
+            const extraSnaps = await Promise.all(
+                missingIds.map(id => db.collection('users').doc(currentUser.uid)
+                                       .collection('vocabulary').doc(id).get())
+            );
+            const extraWords = extraSnaps.filter(s => s.exists).map(s => s.data());
             if (extraWords.length) {
                 fullLibrary = [...fullLibrary, ...extraWords];
-                _saveCache(fullLibrary);
+                _saveCache(fullLibrary); // cập nhật cache để lần sau không cần fetch lại
             }
         } catch(e) { console.warn('openTopicListDetail: fetch missing words failed', e); }
     }
@@ -8213,15 +8056,13 @@ async function checkWeeklyStreakReward(userData) {
 
     let studiedDays = 0;
     try {
-        // 1 range query thay vì 7 reads riêng biệt
-        const weekSnap = await db.collection('users').doc(currentUser.uid)
-            .collection('activity')
-            .where('date', '>=', weekKeys[0])
-            .where('date', '<=', weekKeys[6])
-            .get();
-        weekSnap.docs.forEach(d => {
-            if ((d.data().reviewed || 0) > 0) studiedDays++;
-        });
+        const snaps = await Promise.all(
+            weekKeys.map(k => db.collection('users').doc(currentUser.uid)
+                               .collection('activity').doc(k).get())
+        );
+        for (const snap of snaps) {
+            if (snap.exists && (snap.data().reviewed || 0) > 0) studiedDays++;
+        }
     } catch(e) {
         console.warn('Weekly streak reward fetch error', e);
         return;
@@ -11223,20 +11064,7 @@ function _fallbackEvaluateSentence(userSentence, targetWord, viPrompt) {
 // ══════════════════════════════════════════
 // CUSTOM THEME SYSTEM
 // ══════════════════════════════════════════
-let _ytIframe  = null;
-let _ytPlaying = true;
-
-// skipYtAd: không cần nữa, user bấm trực tiếp trên iframe (main-wrap pointer-events:none trên vùng trống)
-
-function toggleYtBgPlay() {
-    if (_ytPlaying) {
-        ytPostMessage('pauseVideo', []);
-        _ytPlaying = false;
-    } else {
-        ytPostMessage('playVideo', []);
-        _ytPlaying = true;
-    }
-}
+let _ytIframe = null;
 let _ytMuted  = true;
 
 // ── Render custom theme section in shop ───────────────────────────────
@@ -11271,33 +11099,6 @@ function renderCustomThemeSection() {
 }
 
 // ── Apply custom theme effect ─────────────────────────────────────────
-// Bật tiếng video sau tương tác đầu tiên (browser autoplay policy)
-let _videoSoundInited = false;
-function _initVideoSound(targetVol) {
-    if (_videoSoundInited) {
-        const vid = document.getElementById('bgVideoEl');
-        if (vid && vid.tagName === 'VIDEO') {
-            vid.volume = targetVol / 100;
-            vid.muted  = targetVol === 0;
-        }
-        return;
-    }
-    // Bật tiếng khi user tương tác lần đầu (không có nút nổi)
-    const unlock = () => {
-        const vid = document.getElementById('bgVideoEl');
-        if (vid && vid.tagName === 'VIDEO') {
-            vid.muted  = targetVol === 0;
-            vid.volume = targetVol / 100;
-            vid.play().catch(() => {});
-        }
-        _videoSoundInited = true;
-        document.removeEventListener('click',      unlock);
-        document.removeEventListener('touchstart', unlock);
-    };
-    document.addEventListener('click',      unlock, { once: true });
-    document.addEventListener('touchstart', unlock, { once: true });
-}
-
 function applyCustomThemeEffect() {
     clearThemeEffect();
     const root  = document.documentElement;
@@ -11346,99 +11147,46 @@ function applyCustomThemeEffect() {
         document.body.style.imageRendering       = 'high-quality';
         layer.innerHTML = `<div style="position:fixed;inset:0;background:${overlay};pointer-events:none;z-index:1;"></div>`;
         hideBgVolumeRow();
-    } else if (_customTheme.bgType === 'video') {
-        const videoSrc = (_customTheme.bgData && _customTheme.bgData !== 'blob')
-            ? _customTheme.bgData
-            : _videoBlobUrl;
-        if (!videoSrc) { layer.innerHTML = ''; return; }
-
-        _videoSoundInited = false;
-        document.getElementById('bgVideoWrap')?.remove();
-
-        const isGDrive = videoSrc.includes('drive.google.com');
-        const savedVol = _customTheme.volume !== undefined ? _customTheme.volume : 80;
-
-        // Overlay dim
-        layer.innerHTML = `<div style="position:fixed;inset:0;background:${overlay};pointer-events:none;"></div>`;
-
-        // Tạo wrapper video — z-index 0 để nằm dưới app content nhưng trên background
-        const wrap = document.createElement('div');
-        wrap.id = 'bgVideoWrap';
-        wrap.style.cssText = 'position:fixed;inset:0;overflow:hidden;z-index:0;pointer-events:none;';
-
-        if (isGDrive) {
-            const iframe = document.createElement('iframe');
-            iframe.id  = 'bgVideoEl';
-            iframe.src = videoSrc;
-            iframe.setAttribute('allow', 'autoplay; fullscreen');
-            iframe.setAttribute('allowfullscreen', '');
-            iframe.style.cssText = 'position:absolute;top:50%;left:50%;width:177.78vh;height:100vh;min-width:100vw;transform:translate(-50%,-50%);border:none;';
-            wrap.appendChild(iframe);
-            document.body.insertBefore(wrap, document.body.firstChild);
-            showBgVolumeRow('gdrive');
-
-        } else {
-            const vid = document.createElement('video');
-            vid.id = 'bgVideoEl';
-            vid.loop      = true;
-            vid.muted     = true;
-            vid.autoplay  = true;
-            vid.playsInline = true;
-            vid.setAttribute('playsinline', '');
-            vid.setAttribute('autoplay', '');
-            vid.style.cssText = 'position:absolute;top:50%;left:50%;width:100vw;height:56.25vw;min-height:100vh;min-width:177.77vh;transform:translate(-50%,-50%);object-fit:cover;display:block;';
-            wrap.appendChild(vid);
-            document.body.insertBefore(wrap, document.body.firstChild);
-            // Set src SAU khi đã vào DOM để trigger load + autoplay
-            vid.src = videoSrc;
-            vid.load();
-            const tryPlay = () => vid.play().catch(e => console.warn('bgVideo:', e));
-            vid.addEventListener('canplay', tryPlay, { once: true });
-            tryPlay();
-
-            const volSlider = document.getElementById('bgVolumeSlider');
-            if (volSlider) {
-                volSlider.value = savedVol;
-                document.getElementById('bgVolLabel').textContent = savedVol + '%';
-                document.getElementById('bgVolIcon').textContent = savedVol === 0 ? '🔇' : savedVol < 50 ? '🔉' : '🔊';
-            }
-            showBgVolumeRow('video');
-            _initVideoSound(savedVol);
-        }
+    } else if (_customTheme.bgType === 'video' && _videoBlobUrl) {
+        layer.innerHTML = `
+            <div style="position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;">
+                <video id="bgVideoEl" autoplay loop muted playsinline
+                    style="position:absolute;top:50%;left:50%;width:100vw;height:56.25vw;min-height:100vh;min-width:177.77vh;transform:translate(-50%,-50%);object-fit:cover;">
+                    <source src="${_videoBlobUrl}" type="video/mp4">
+                </video>
+            </div>
+            <div style="position:fixed;inset:0;background:${overlay};pointer-events:none;z-index:1;"></div>`;
+        const volSlider = document.getElementById('bgVolumeSlider');
+        if (volSlider) { volSlider.value = 0; document.getElementById('bgVolLabel').textContent = '0%'; document.getElementById('bgVolIcon').textContent = '🔇'; }
+        showBgVolumeRow();
     } else if (_customTheme.bgType === 'youtube' && _customTheme.bgData) {
         const vid = _customTheme.bgData;
         _ytMuted = true;
-        _ytPlaying = true;
-        const overlayColor = `rgba(0,0,0,${(_customTheme.overlayOpacity||45)/100})`;
-
-        // Overlay dim — pointer-events:none để click xuyên xuống iframe bên dưới
-        layer.innerHTML = `<div id="ytDimOverlay" style="position:fixed;inset:0;background:${overlayColor};pointer-events:none;z-index:1;"></div>`;
-
+        const overlay = `rgba(0,0,0,${(_customTheme.overlayOpacity||45)/100})`;
+        // Placeholder trước, tạo iframe sau khi page painted → browser cho phép autoplay
+        layer.innerHTML = `<div style="position:fixed;inset:0;background:${overlay};pointer-events:none;z-index:1;"></div>`;
         const volSlider = document.getElementById('bgVolumeSlider');
         if (volSlider) { volSlider.value = 0; document.getElementById('bgVolLabel').textContent = '0%'; document.getElementById('bgVolIcon').textContent = '🔇'; }
-        showBgVolumeRow('youtube');
-
+        showBgVolumeRow();
+        // Dùng requestAnimationFrame x2 để chắc chắn page đã paint xong trước khi tạo iframe
         requestAnimationFrame(() => requestAnimationFrame(() => {
-            // ── iframe YouTube (với controls=1 để có nút Skip Ads) ──
-            const wrapEl = document.createElement('div');
-            wrapEl.id = 'ytBgWrap';
-            // pointer-events:auto → click xuyên xuống iframe được
-            wrapEl.style.cssText = 'position:fixed;inset:0;overflow:hidden;z-index:0;';
-
-            const iframe = document.createElement('iframe');
-            iframe.id = 'ytBgIframe';
-            // controls=1 để hiện nút Skip Ads; enablejsapi=1 để dùng postMessage play/pause
-            iframe.src = `https://www.youtube-nocookie.com/embed/${vid}?autoplay=1&mute=1&loop=1&playlist=${vid}&controls=1&modestbranding=1&rel=0&enablejsapi=1&playsinline=1&iv_load_policy=3`;
-            iframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture');
-            iframe.setAttribute('frameborder', '0');
-            // iframe fill full screen, căn giữa
-            iframe.style.cssText = 'position:absolute;top:50%;left:50%;width:177.78vh;height:100vh;min-width:100vw;transform:translate(-50%,-50%);border:none;';
-            wrapEl.appendChild(iframe);
-            document.body.insertBefore(wrapEl, document.body.firstChild);
-            _ytIframe = iframe;
-
-            // ── Nút play/pause nổi ở góc dưới phải ──
-
+            const wrap = document.getElementById('ytBgWrap');
+            if (!wrap) {
+                // Tạo wrap nếu chưa có
+                const wrapEl = document.createElement('div');
+                wrapEl.id = 'ytBgWrap';
+                wrapEl.style.cssText = 'position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;';
+                const iframe = document.createElement('iframe');
+                iframe.id  = 'ytBgIframe';
+                iframe.src = `https://www.youtube-nocookie.com/embed/${vid}?autoplay=1&mute=1&loop=1&playlist=${vid}&controls=0&disablekb=1&fs=0&modestbranding=1&rel=0&enablejsapi=1&playsinline=1&iv_load_policy=3`;
+                iframe.setAttribute('allow', 'autoplay; encrypted-media; picture-in-picture');
+                iframe.setAttribute('allowfullscreen', 'false');
+                iframe.setAttribute('frameborder', '0');
+                iframe.style.pointerEvents = 'auto';
+                wrapEl.appendChild(iframe);
+                layer.insertBefore(wrapEl, layer.firstChild);
+                _ytIframe = iframe;
+            }
         }));
     } else {
         document.body.style.backgroundImage = '';
@@ -11453,25 +11201,7 @@ function ytPostMessage(func, args) {
 }
 
 // ── Video upload handler ───────────────────────────────────────────────
-let _videoBlobUrl    = null;  // URL tạm (blob) — chỉ trong phiên
-let _videoLinkUrl    = null;  // URL link Google Drive / trực tiếp — lưu Firestore
-let _videoLinkType   = 'direct'; // 'gdrive' | 'direct'
-let _videoSubTab     = 'file'; // 'file' | 'link'
-
-function switchVideoSubTab(tab) {
-    _videoSubTab = tab;
-    document.getElementById('cthVidFilePanel').style.display = tab === 'file' ? 'block' : 'none';
-    document.getElementById('cthVidLinkPanel').style.display = tab === 'link' ? 'block' : 'none';
-    const btnFile = document.getElementById('cthVidTabFile');
-    const btnLink = document.getElementById('cthVidTabLink');
-    btnFile.style.background    = tab === 'file' ? 'var(--primary)' : 'var(--card)';
-    btnFile.style.color         = tab === 'file' ? '#fff' : 'var(--muted)';
-    btnFile.style.borderColor   = tab === 'file' ? 'var(--primary)' : 'var(--border)';
-    btnLink.style.background    = tab === 'link' ? 'var(--primary)' : 'var(--card)';
-    btnLink.style.color         = tab === 'link' ? '#fff' : 'var(--muted)';
-    btnLink.style.borderColor   = tab === 'link' ? 'var(--primary)' : 'var(--border)';
-}
-
+let _videoBlobUrl = null;
 function handleCthVideoUpload(input) {
     const file = input.files[0];
     if (!file) return;
@@ -11482,90 +11212,17 @@ function handleCthVideoUpload(input) {
     preview.style.display = 'block';
     preview.play().catch(()=>{});
     const drop = document.getElementById('cthVideoDrop');
-    drop.innerHTML = `<div style="font-size:.82rem;font-weight:700;color:var(--success);">✅ ${file.name}</div><div style="font-size:.72rem;color:var(--muted);margin-top:3px;">Nhấn để đổi video</div><input type="file" id="cthVideoFileInput" accept="video/mp4,video/*" style="display:none" onchange="handleCthVideoUpload(this)">`;
-    // Xoá link URL nếu đang dùng blob
-    _videoLinkUrl = null;
-}
-
-// Google Drive: dùng /preview (iframe) vì Drive không cho stream video trực tiếp
-function convertGDriveUrl(url) {
-    const m  = url.match(/\/file\/d\/([^\/\?]+)/);
-    if (m)  return { type: 'gdrive', embedUrl: `https://drive.google.com/file/d/${m[1]}/preview`, fileId: m[1] };
-    const m2 = url.match(/[?&]id=([^&]+)/);
-    if (m2) return { type: 'gdrive', embedUrl: `https://drive.google.com/file/d/${m2[1]}/preview`, fileId: m2[1] };
-    return { type: 'direct', embedUrl: url }; // URL MP4 trực tiếp
-}
-
-function handleCthVideoLinkInput(val) {
-    const errEl    = document.getElementById('cthVideoLinkError');
-    const prevWrap = document.getElementById('cthVideoLinkPreviewWrap');
-    errEl.style.display = 'none';
-
-    if (!val.trim()) {
-        prevWrap.style.display = 'none';
-        prevWrap.innerHTML = '';
-        _videoLinkUrl = null;
-        return;
-    }
-
-    const result = convertGDriveUrl(val.trim());
-    _videoLinkUrl = result.embedUrl;
-    _videoLinkType = result.type; // 'gdrive' | 'direct'
-    prevWrap.style.display = 'block';
-
-    if (result.type === 'gdrive') {
-        // Dùng iframe như YouTube
-        prevWrap.innerHTML = `<iframe src="${result.embedUrl}"
-            style="width:100%;height:110px;border-radius:10px;border:none;background:#000;"
-            allow="autoplay" allowfullscreen></iframe>
-            <div style="font-size:.68rem;color:var(--success);font-weight:700;margin-top:4px;">✅ Link Google Drive hợp lệ</div>`;
-    } else {
-        // URL MP4 trực tiếp — dùng video tag
-        prevWrap.innerHTML = `<video src="${result.embedUrl}"
-            style="width:100%;height:110px;object-fit:cover;border-radius:10px;"
-            muted playsinline controls></video>`;
-        const v = prevWrap.querySelector('video');
-        v.onerror = () => {
-            errEl.textContent = '⚠️ Không tải được video. Kiểm tra lại URL.';
-            errEl.style.display = 'block';
-            prevWrap.style.display = 'none';
-            _videoLinkUrl = null;
-        };
-    }
+    drop.innerHTML = `<div style="font-size:.82rem;font-weight:700;color:var(--success);">✅ ${file.name}</div><div style="font-size:.72rem;color:var(--muted);margin-top:3px;">Nhấn để đổi video</div><input type="file" id="cthVideoFileInput" accept="video/mp4" style="display:none" onchange="handleCthVideoUpload(this)">`;
 }
 
 // ── Settings panel volume helpers ──────────────────────────────────────
-function showBgVolumeRow(type) {
+function showBgVolumeRow() {
     const row = document.getElementById('bgVolumeRow');
     if (row) row.classList.add('show');
-    // Cho phép click xuyên qua vùng trống xuống iframe
-    if (type === 'youtube' || type === 'gdrive') {
-        document.body.classList.add('video-bg-active');
-    }
-    const ctrlWrap = document.getElementById('bgVideoControls');
-    const skipBtn  = document.getElementById('bgSkipAdsBtn');
-    const playBtn  = document.getElementById('bgPlayPauseBtn');
-    if (!ctrlWrap) return;
-    ctrlWrap.style.display = 'flex';
-    if (playBtn) {
-        playBtn.style.display = (type === 'youtube' || type === 'gdrive') ? 'flex' : 'none';
-        playBtn.innerHTML = '🤍 Dừng / Phát';
-    }
 }
 function hideBgVolumeRow() {
     const row = document.getElementById('bgVolumeRow');
     if (row) row.classList.remove('show');
-    const ctrlWrap = document.getElementById('bgVideoControls');
-    if (ctrlWrap) ctrlWrap.style.display = 'none';
-    document.body.classList.remove('video-bg-active');
-}
-function bgVideoTogglePlay() {
-    if (_ytIframe) {
-        toggleYtBgPlay();
-    } else {
-        const w = document.getElementById('bgVideoWrap');
-        if (w) w.style.display = w.style.display === 'none' ? 'block' : 'none';
-    }
 }
 function onBgVolumeSlide(val) {
     val = parseInt(val);
@@ -11584,12 +11241,7 @@ function setBgVolume(val) {
     }
     // Video element
     const vid = document.getElementById('bgVideoEl');
-    if (vid && vid.tagName === 'VIDEO') {
-        vid.muted  = val === 0;
-        vid.volume = val / 100;
-        if (vid.paused) vid.play().catch(() => {});
-        _videoSoundInited = true;
-    }
+    if (vid) { vid.volume = val / 100; vid.muted = val === 0; }
 }
 function toggleBgMute() {
     const sl  = document.getElementById('bgVolumeSlider');
@@ -11620,24 +11272,8 @@ function openCustomThemeModal() {
         p.src = ct.bgData; p.style.display = 'block';
     }
     // Video preview
-    if (ct.bgType === 'video') {
-        // Khôi phục link URL nếu đã lưu Firestore
-        if (ct.bgData && ct.bgData !== 'blob') {
-            _videoLinkUrl  = ct.bgData;
-            _videoLinkType = ct.bgData.includes('drive.google.com') ? 'gdrive' : 'direct';
-            _videoSubTab   = 'link';
-            const linkInput = document.getElementById('cthVideoLinkInput');
-            if (linkInput) linkInput.value = ct.bgData;
-            // Trigger preview
-            setTimeout(() => {
-                switchVideoSubTab('link');
-                handleCthVideoLinkInput(ct.bgData);
-            }, 80);
-        }
+    if (ct.bgType === 'video' && _videoBlobUrl) {
         const v = document.getElementById('cthVideoPreview');
-        if (!_videoBlobUrl && ct.bgData && ct.bgData !== 'blob') {
-            // không cần blob preview
-        } else
         v.src = _videoBlobUrl; v.style.display = 'block';
     }
     // YouTube preview
@@ -11745,7 +11381,7 @@ function showCthYtThumb(vid) {
 async function saveCustomTheme() {
     if (!currentUser) { showToast('⚠️ Cần đăng nhập!'); return; }
     const darkMode       = document.getElementById('cthModeDark').classList.contains('active');
-    const bgTab          = ['none','image','video','youtube'].find(t => document.getElementById('cthTab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.contains('active'));
+    const bgTab          = ['none','image','youtube'].find(t => document.getElementById('cthTab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.contains('active'));
     const overlayOpacity = parseInt(document.getElementById('cthOverlaySlider').value);
     const volume         = parseInt(document.getElementById('cthVolumeSlider').value);
 
@@ -11756,13 +11392,8 @@ async function saveCustomTheme() {
         if (drop._base64) bgData = drop._base64;
         else if (!bgData) { showToast('⚠️ Vui lòng chọn ảnh!'); return; }
     } else if (bgTab === 'video') {
-        if (_videoSubTab === 'link') {
-            if (!_videoLinkUrl) { showToast('⚠️ Vui lòng dán link video hợp lệ!'); return; }
-            bgData = _videoLinkUrl; // lưu URL vào Firestore
-        } else {
-            if (!_videoBlobUrl) { showToast('⚠️ Vui lòng chọn file video MP4!'); return; }
-            bgData = 'blob'; // blob chỉ dùng trong phiên
-        }
+        if (!_videoBlobUrl) { showToast('⚠️ Vui lòng chọn file video MP4!'); return; }
+        bgData = 'blob'; // không lưu blob vào Firestore, chỉ dùng trong phiên
     } else if (bgTab === 'youtube') {
         const url = document.getElementById('cthYtUrl').value.trim();
         const vid = extractYtVideoId(url);
