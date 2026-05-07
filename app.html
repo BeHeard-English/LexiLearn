@@ -1286,6 +1286,17 @@
             <span style="font-size:.85rem;cursor:pointer;" id="bgVolIcon" onclick="toggleBgMute()">🔇</span>
             <input type="range" id="bgVolumeSlider" min="0" max="100" value="0" oninput="onBgVolumeSlide(this.value)">
         </div>
+        <!-- Nút điều khiển video nền (ẩn mặc định, hiện theo loại nền) -->
+        <div id="bgVideoControls" style="display:none;margin-top:10px;display:none;gap:8px;">
+            <button id="bgPlayPauseBtn" onclick="bgVideoTogglePlay()"
+                style="flex:1;padding:8px 0;border-radius:10px;border:1.5px solid var(--border);background:var(--card);color:var(--text);font-family:inherit;font-weight:700;font-size:.82rem;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
+                🤍 Dừng / Phát
+            </button>
+            <button id="bgSkipAdsBtn" onclick="skipYtAd()"
+                style="flex:1;padding:8px 0;border-radius:10px;border:1.5px solid var(--border);background:var(--card);color:var(--text);font-family:inherit;font-weight:700;font-size:.82rem;cursor:pointer;display:none;align-items:center;justify-content:center;gap:6px;">
+                ⏭ Skip Ads
+            </button>
+        </div>
     </div>
 </div>
 
@@ -3315,7 +3326,7 @@ function clearThemeEffect() {
     // Xoá video/iframe nền (tạo ngoài themeEffectLayer)
     document.getElementById('bgVideoWrap')?.remove();
     document.getElementById('ytBgWrap')?.remove();
-    document.getElementById('ytBgPlayBtn')?.remove();
+
     const sndBtn = document.getElementById('bgVideoSoundBtn');
     if (sndBtn) sndBtn.style.display = 'none';
     _videoSoundInited = false;
@@ -11217,6 +11228,34 @@ function _fallbackEvaluateSentence(userSentence, targetWord, viPrompt) {
 let _ytIframe  = null;
 let _ytPlaying = true;
 
+// Skip ads: tắt pointer-events app 150ms → click xuyên xuống iframe YouTube
+function skipYtAd() {
+    const appEl = document.getElementById('app') || document.querySelector('.app-container') || document.body.children[document.body.children.length - 1];
+    if (!appEl) return;
+
+    // Tính vị trí nút Skip Ads của YouTube — thường ở bottom-right
+    // YouTube đặt skip button ~210px từ phải, ~60px từ dưới (trên desktop)
+    // Trên mobile: ~110px từ phải, ~80px từ dưới
+    const isMobile = window.innerWidth < 768;
+    const x = window.innerWidth  - (isMobile ? 110 : 210);
+    const y = window.innerHeight - (isMobile ? 80  : 60);
+
+    // Tắt pointer-events toàn bộ lớp app để click đến iframe
+    const els = document.querySelectorAll('#app, .nav-bar, .top-nav, [class*="container"], [class*="section"], main, header, nav, footer, #highlightPenBtn, #ytBgPlayBtn, #ytSkipAdsBtn');
+    els.forEach(el => { el._oldPE = el.style.pointerEvents; el.style.pointerEvents = 'none'; });
+
+    // Dispatch click + touch tại vị trí skip button
+    ['pointerdown','pointerup','click'].forEach(type => {
+        const evt = new PointerEvent(type, { bubbles: true, cancelable: true, clientX: x, clientY: y, view: window });
+        document.elementFromPoint(x, y)?.dispatchEvent(evt);
+    });
+
+    // Khôi phục pointer-events sau 200ms
+    setTimeout(() => {
+        els.forEach(el => { el.style.pointerEvents = el._oldPE || ''; delete el._oldPE; });
+    }, 200);
+}
+
 function toggleYtBgPlay() {
     const btn = document.getElementById('ytBgPlayBtn');
     if (_ytPlaying) {
@@ -11393,7 +11432,8 @@ function applyCustomThemeEffect() {
             iframe.style.cssText = 'position:absolute;top:50%;left:50%;width:177.78vh;height:100vh;min-width:100vw;transform:translate(-50%,-50%);border:none;';
             wrap.appendChild(iframe);
             document.body.insertBefore(wrap, document.body.firstChild);
-            hideBgVolumeRow();
+            showBgVolumeRow('gdrive');
+
         } else {
             const vid = document.createElement('video');
             vid.id = 'bgVideoEl';
@@ -11419,7 +11459,7 @@ function applyCustomThemeEffect() {
                 document.getElementById('bgVolLabel').textContent = savedVol + '%';
                 document.getElementById('bgVolIcon').textContent = savedVol === 0 ? '🔇' : savedVol < 50 ? '🔉' : '🔊';
             }
-            showBgVolumeRow();
+            showBgVolumeRow('video');
             _initVideoSound(savedVol);
         }
     } else if (_customTheme.bgType === 'youtube' && _customTheme.bgData) {
@@ -11433,7 +11473,7 @@ function applyCustomThemeEffect() {
 
         const volSlider = document.getElementById('bgVolumeSlider');
         if (volSlider) { volSlider.value = 0; document.getElementById('bgVolLabel').textContent = '0%'; document.getElementById('bgVolIcon').textContent = '🔇'; }
-        showBgVolumeRow();
+        showBgVolumeRow('youtube');
 
         requestAnimationFrame(() => requestAnimationFrame(() => {
             // ── iframe YouTube (với controls=1 để có nút Skip Ads) ──
@@ -11472,6 +11512,18 @@ function applyCustomThemeEffect() {
             }
             ytCtrl.innerHTML = '🤍';
             ytCtrl.onclick = toggleYtBgPlay;
+
+            // Nút Skip Ads — tạm tắt pointer-events app để click xuyên xuống iframe
+            let skipBtn = document.getElementById('ytSkipAdsBtn');
+            if (!skipBtn) {
+                skipBtn = document.createElement('button');
+                skipBtn.id = 'ytSkipAdsBtn';
+                skipBtn.style.cssText = 'position:fixed;bottom:90px;right:120px;z-index:9500;height:40px;padding:0 14px;border-radius:20px;background:rgba(0,0,0,.55);border:none;color:#fff;font-size:.78rem;font-weight:700;cursor:pointer;backdrop-filter:blur(6px);display:flex;align-items:center;gap:5px;white-space:nowrap;touch-action:manipulation;';
+                skipBtn.innerHTML = '⏭ Skip';
+                skipBtn.title = 'Bấm để skip quảng cáo';
+                document.body.appendChild(skipBtn);
+            }
+            skipBtn.onclick = skipYtAd;
         }));
     } else {
         document.body.style.backgroundImage = '';
@@ -11568,13 +11620,33 @@ function handleCthVideoLinkInput(val) {
 }
 
 // ── Settings panel volume helpers ──────────────────────────────────────
-function showBgVolumeRow() {
+function showBgVolumeRow(type) {
     const row = document.getElementById('bgVolumeRow');
     if (row) row.classList.add('show');
+    const ctrlWrap = document.getElementById('bgVideoControls');
+    const skipBtn  = document.getElementById('bgSkipAdsBtn');
+    const playBtn  = document.getElementById('bgPlayPauseBtn');
+    if (!ctrlWrap) return;
+    ctrlWrap.style.display = 'flex';
+    if (skipBtn) skipBtn.style.display = type === 'youtube' ? 'flex' : 'none';
+    if (playBtn) {
+        playBtn.style.display = (type === 'youtube' || type === 'gdrive') ? 'flex' : 'none';
+        playBtn.innerHTML = '🤍 Dừng / Phát';
+    }
 }
 function hideBgVolumeRow() {
     const row = document.getElementById('bgVolumeRow');
     if (row) row.classList.remove('show');
+    const ctrlWrap = document.getElementById('bgVideoControls');
+    if (ctrlWrap) ctrlWrap.style.display = 'none';
+}
+function bgVideoTogglePlay() {
+    if (_ytIframe) {
+        toggleYtBgPlay();
+    } else {
+        const w = document.getElementById('bgVideoWrap');
+        if (w) w.style.display = w.style.display === 'none' ? 'block' : 'none';
+    }
 }
 function onBgVolumeSlide(val) {
     val = parseInt(val);
