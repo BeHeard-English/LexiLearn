@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Be Heard |Lexi Learning</title>
+    <title>Be Heard | Lexi Learning</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
@@ -5588,23 +5588,92 @@ Only return the JSON array, no other text.`;
 
 function lvClass(l){ return {A1:'level-A1',A2:'level-A2',B1:'level-B1',B2:'level-B2',C1:'level-C1',C2:'level-C2'}[l]||'level-B1'; }
 
-function renderVocabList() {
-    document.getElementById('vocabList').innerHTML = learningData.map((item,i) => `
-        <div class="vocab-item" style="animation:fadeIn .3s ease ${i*.06}s both;">
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
-                <div style="display:flex;align-items:center;gap:8px;">
-                    <span style="font-weight:800;font-size:1rem;color:var(--primary);">${item.word}</span>
-                    <button class="tts-btn" onclick="speak('${item.word.replace(/'/g,"\\'")}','en-US')" title="Phát âm">
-                        <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M12 6v12m-3.536-9.536a5 5 0 000 7.072"/></svg>
-                    </button>
+function _vocabItemHtml(item, i) {
+    const e = s => (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/`/g,'&#96;');
+    const LEVELS = ['A1','A2','B1','B2','C1','C2'];
+    return `
+        <div class="vocab-item" id="vitem-${i}" style="animation:fadeIn .3s ease ${i*.06}s both;">
+            <div id="vview-${i}">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
+                    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                        <span style="font-weight:800;font-size:1rem;color:var(--primary);">${e(item.word)}</span>
+                        <button class="tts-btn" onclick="speak(learningData[${i}].word,'en-US')" title="Phát âm">
+                            <svg xmlns="http://www.w3.org/2000/svg" style="width:14px;height:14px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M12 6v12m-3.536-9.536a5 5 0 000 7.072"/></svg>
+                        </button>
+                        <button onclick="openVocabEdit(${i})" style="background:var(--primary-light);border:none;border-radius:6px;padding:3px 8px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;font-size:.72rem;font-weight:700;color:var(--primary);">
+                            <svg xmlns="http://www.w3.org/2000/svg" style="width:11px;height:11px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                            Sửa
+                        </button>
+                    </div>
+                    <span class="level-badge ${lvClass(item.level)}">${item.level}</span>
                 </div>
-                <span class="level-badge ${lvClass(item.level)}">${item.level}</span>
+                <div style="font-family:monospace;font-size:.8rem;color:var(--muted);margin-bottom:4px;">${e(item.ipa||'')}</div>
+                <div style="font-weight:700;font-size:.88rem;color:#334155;margin-bottom:4px;">${e(item.vn||'')}</div>
+                <div style="font-size:.8rem;color:#94a3b8;font-style:italic;">${e(item.example||'')}</div>
             </div>
-            <div style="font-family:monospace;font-size:.8rem;color:var(--muted);margin-bottom:4px;">${item.ipa}</div>
-            <div style="font-weight:700;font-size:.88rem;color:#334155;margin-bottom:4px;">${item.vn}</div>
-            <div style="font-size:.8rem;color:#94a3b8;font-style:italic;">${item.example}</div>
-        </div>`).join('');
+            <div id="vedit-${i}" style="display:none;">
+                <div style="display:grid;gap:8px;">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                        <div>
+                            <label style="font-size:.7rem;font-weight:700;color:var(--muted);">TỪ TIẾNG ANH</label>
+                            <input id="ve-word-${i}" value="${e(item.word)}" style="width:100%;margin-top:3px;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:.88rem;font-weight:700;background:var(--bg);color:var(--text);box-sizing:border-box;"/>
+                        </div>
+                        <div>
+                            <label style="font-size:.7rem;font-weight:700;color:var(--muted);">IPA</label>
+                            <input id="ve-ipa-${i}" value="${e(item.ipa||'')}" style="width:100%;margin-top:3px;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:monospace;font-size:.85rem;background:var(--bg);color:var(--text);box-sizing:border-box;"/>
+                        </div>
+                    </div>
+                    <div>
+                        <label style="font-size:.7rem;font-weight:700;color:var(--muted);">NGHĨA TIẾNG VIỆT</label>
+                        <input id="ve-vn-${i}" value="${e(item.vn||'')}" style="width:100%;margin-top:3px;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:.88rem;background:var(--bg);color:var(--text);box-sizing:border-box;"/>
+                    </div>
+                    <div>
+                        <label style="font-size:.7rem;font-weight:700;color:var(--muted);">CÂU VÍ DỤ</label>
+                        <input id="ve-ex-${i}" value="${e(item.example||'')}" style="width:100%;margin-top:3px;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:.82rem;background:var(--bg);color:var(--text);box-sizing:border-box;"/>
+                    </div>
+                    <div>
+                        <label style="font-size:.7rem;font-weight:700;color:var(--muted);">CẤP ĐỘ</label>
+                        <select id="ve-lvl-${i}" style="margin-top:3px;padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-family:inherit;font-size:.85rem;background:var(--bg);color:var(--text);cursor:pointer;">
+                            ${LEVELS.map(l=>`<option value="${l}"${item.level===l?' selected':''}>${l}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div style="display:flex;gap:8px;justify-content:flex-end;">
+                        <button onclick="cancelVocabEdit(${i})" style="padding:7px 16px;border-radius:9px;border:1.5px solid var(--border);background:var(--card);color:var(--muted);font-family:inherit;font-weight:700;font-size:.8rem;cursor:pointer;">Huỷ</button>
+                        <button onclick="saveVocabEdit(${i})" style="padding:7px 18px;border-radius:9px;border:none;background:var(--primary);color:#fff;font-family:inherit;font-weight:800;font-size:.8rem;cursor:pointer;">✓ Lưu</button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
 }
+
+function renderVocabList() {
+    document.getElementById('vocabList').innerHTML = learningData.map((item,i) => _vocabItemHtml(item,i)).join('');
+}
+
+function openVocabEdit(i) {
+    document.getElementById('vview-'+i).style.display = 'none';
+    document.getElementById('vedit-'+i).style.display = 'block';
+    setTimeout(() => document.getElementById('ve-word-'+i)?.focus(), 50);
+}
+
+function cancelVocabEdit(i) {
+    document.getElementById('vview-'+i).style.display = 'block';
+    document.getElementById('vedit-'+i).style.display = 'none';
+}
+
+function saveVocabEdit(i) {
+    const word = (document.getElementById('ve-word-'+i)?.value||'').trim();
+    const ipa  = (document.getElementById('ve-ipa-' +i)?.value||'').trim();
+    const vn   = (document.getElementById('ve-vn-'  +i)?.value||'').trim();
+    const ex   = (document.getElementById('ve-ex-'  +i)?.value||'').trim();
+    const lvl  =  document.getElementById('ve-lvl-' +i)?.value || 'A1';
+    if (!word) { showToast('⚠️ Từ tiếng Anh không được để trống!'); return; }
+    learningData[i] = { ...learningData[i], word, ipa, vn, example: ex, level: lvl };
+    const card = document.getElementById('vitem-'+i);
+    if (card) card.outerHTML = _vocabItemHtml(learningData[i], i);
+    showToast('✅ Đã cập nhật!');
+}
+
 
 async function saveVocabToDb(data) {
     if(!currentUser) return;
