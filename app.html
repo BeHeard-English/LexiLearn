@@ -5603,13 +5603,13 @@ document.getElementById('generateBtn').onclick = async () => {
 Return a JSON array where EVERY object has ALL of these fields — no exceptions:
 [{
   "word": "exact word or phrase as given",
-  "ipa": "/standard IPA in slashes/ — REQUIRED for every single word, empty string only for multi-word phrases",
+  "ipa": "/standard IPA in slashes/ — REQUIRED for ALL entries, both single words and multi-word phrases",
   "vn": "accurate Vietnamese meaning",
   "level": "A1 | A2 | B1 | B2 | C1 | C2",
   "example": "A natural English sentence clearly illustrating the meaning"
 }]
 Rules:
-- ipa MUST NOT be empty for any single English word — this is mandatory
+- ipa MUST NOT be empty for ANY entry — provide IPA for both single words and multi-word phrases
 - example MUST be a complete, natural sentence
 - Output ONLY the raw JSON array`;
     try {
@@ -5654,10 +5654,9 @@ function lvClass(l){ return {A1:'level-A1',A2:'level-A2',B1:'level-B1',B2:'level
 // ── Chuẩn hóa entry từ AI — đảm bảo không thiếu trường ──────────────────────
 function normalizeVocabEntry(item) {
     const w = (item.word || '').trim();
-    const isPhrase = w.includes(' ');
-    // IPA: bắt buộc với từ đơn, để '' với cụm từ
+    // IPA: bắt buộc với mọi entry — cả từ đơn lẫn cụm từ
     let ipa = (item.ipa || '').trim();
-    if (!ipa && !isPhrase && w) ipa = `[${w}]`; // placeholder nếu AI bỏ sót
+    if (!ipa && w) ipa = `[${w}]`; // placeholder nếu AI bỏ sót
     // level
     const validLevels = ['A1','A2','B1','B2','C1','C2'];
     const level = validLevels.includes(item.level) ? item.level : 'B1';
@@ -6830,13 +6829,13 @@ async function processPasteWords() {
 Return a JSON array where EVERY object has ALL of these fields — no exceptions:
 [{
   "word": "exact word or phrase as given",
-  "ipa": "/standard IPA in slashes/ — REQUIRED for every single word, empty string only for multi-word phrases",
+  "ipa": "/standard IPA in slashes/ — REQUIRED for ALL entries, both single words and multi-word phrases",
   "vn": "(keep the provided Vietnamese meaning exactly — do NOT change it)",
   "level": "A1 | A2 | B1 | B2 | C1 | C2",
   "example": "A natural English sentence clearly illustrating the meaning"
 }]
 Rules:
-- ipa MUST NOT be empty for any single English word
+- ipa MUST NOT be empty for ANY entry — provide IPA for both single words and multi-word phrases
 - example MUST be a complete, natural sentence
 - Output ONLY the raw JSON array`;
 
@@ -6847,7 +6846,7 @@ Rules:
                     model: 'llama-3.3-70b-versatile',
                     max_tokens: 4000,
                     messages: [
-                        { role: 'system', content: 'You are an expert English–Vietnamese lexicographer. For EVERY entry you MUST return ALL six fields fully populated — NEVER omit or leave any field empty or null. The \"ipa\" field is MANDATORY for every single word: always provide the standard IPA transcription enclosed in /forward slashes/. For multi-word phrases use an empty string for ipa. Output ONLY the raw JSON array.' },
+                        { role: 'system', content: 'You are an expert English–Vietnamese lexicographer. For EVERY entry you MUST return ALL six fields fully populated — NEVER omit or leave any field empty or null. The \"ipa\" field is MANDATORY for ALL entries — both single words and multi-word phrases. Always provide IPA in /forward slashes/. Never use an empty string for ipa. Output ONLY the raw JSON array.' },
                         { role: 'user', content: prompt }
                     ],
                     temperature: 0
@@ -7201,13 +7200,13 @@ async function processPasteForTopicList(listId, text) {
 Return a JSON array where EVERY object has ALL of these fields — no exceptions:
 [{
   "word": "exact word or phrase as given",
-  "ipa": "/standard IPA in slashes/ — REQUIRED for every single word, empty string only for multi-word phrases",
+  "ipa": "/standard IPA in slashes/ — REQUIRED for ALL entries, both single words and multi-word phrases",
   "vn": "(keep the provided Vietnamese meaning exactly — do NOT change it)",
   "level": "A1 | A2 | B1 | B2 | C1 | C2",
   "example": "A natural English sentence clearly illustrating the meaning"
 }]
 Rules:
-- ipa MUST NOT be empty for any single English word
+- ipa MUST NOT be empty for ANY entry — provide IPA for both single words and multi-word phrases
 - example MUST be a complete, natural sentence
 - Output ONLY the raw JSON array`;
         const aiRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -7216,7 +7215,7 @@ Rules:
                 model:'llama-3.3-70b-versatile',
                 max_tokens:2400,
                 messages:[
-                    { role:'system', content:'You are an expert English–Vietnamese lexicographer. For EVERY entry you MUST return ALL six fields fully populated — NEVER omit or leave any field empty or null. The \"ipa\" field is MANDATORY for every single word: always provide the standard IPA transcription enclosed in /forward slashes/. For multi-word phrases use an empty string for ipa. Output ONLY the raw JSON array.' },
+                    { role:'system', content:'You are an expert English–Vietnamese lexicographer. For EVERY entry you MUST return ALL six fields fully populated — NEVER omit or leave any field empty or null. The \"ipa\" field is MANDATORY for ALL entries — both single words and multi-word phrases. Always provide IPA in /forward slashes/. Never use an empty string for ipa. Output ONLY the raw JSON array.' },
                     { role:'user', content:prompt }
                 ],
                 temperature:0
@@ -7282,13 +7281,13 @@ async function processFileForTopicList(listId, file) {
 Return a JSON array where EVERY object has ALL of these fields — no exceptions:
 [{
   "word": "exact word or phrase as given",
-  "ipa": "/standard IPA in slashes/ — REQUIRED for every single word, empty string only for multi-word phrases",
+  "ipa": "/standard IPA in slashes/ — REQUIRED for ALL entries, both single words and multi-word phrases",
   "vn": "(keep the provided Vietnamese meaning exactly — do NOT change it)",
   "level": "A1 | A2 | B1 | B2 | C1 | C2",
   "example": "A natural English sentence clearly illustrating the meaning"
 }]
 Rules:
-- ipa MUST NOT be empty for any single English word
+- ipa MUST NOT be empty for ANY entry — provide IPA for both single words and multi-word phrases
 - example MUST be a complete, natural sentence
 - Output ONLY the raw JSON array`;
             const aiRes  = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -7297,7 +7296,7 @@ Rules:
                     model:'llama-3.3-70b-versatile',
                     max_tokens:2400,
                     messages:[
-                        { role:'system', content:'You are an expert English–Vietnamese lexicographer. For EVERY entry you MUST return ALL six fields fully populated — NEVER omit or leave any field empty or null. The \"ipa\" field is MANDATORY for every single word: always provide the standard IPA transcription enclosed in /forward slashes/. For multi-word phrases use an empty string for ipa. Output ONLY the raw JSON array.' },
+                        { role:'system', content:'You are an expert English–Vietnamese lexicographer. For EVERY entry you MUST return ALL six fields fully populated — NEVER omit or leave any field empty or null. The \"ipa\" field is MANDATORY for ALL entries — both single words and multi-word phrases. Always provide IPA in /forward slashes/. Never use an empty string for ipa. Output ONLY the raw JSON array.' },
                         { role:'user', content:prompt }
                     ],
                     temperature:0
@@ -7670,13 +7669,13 @@ document.getElementById('libFileInput').onchange = async (e) => {
 Return a JSON array where EVERY object has ALL of these fields — no exceptions:
 [{
   "word": "exact word or phrase as given",
-  "ipa": "/standard IPA in slashes/ — REQUIRED for every single word, empty string only for multi-word phrases",
+  "ipa": "/standard IPA in slashes/ — REQUIRED for ALL entries, both single words and multi-word phrases",
   "vn": "(keep the provided Vietnamese meaning exactly — do NOT change it)",
   "level": "A1 | A2 | B1 | B2 | C1 | C2",
   "example": "A natural English sentence clearly illustrating the meaning"
 }]
 Rules:
-- ipa MUST NOT be empty for any single English word
+- ipa MUST NOT be empty for ANY entry — provide IPA for both single words and multi-word phrases
 - example MUST be a complete, natural sentence
 - Output ONLY the raw JSON array`;
 
@@ -7692,7 +7691,7 @@ Rules:
         messages: [
             {
                 role: "system",
-                content: "You are an expert English–Vietnamese lexicographer. For EVERY entry you MUST return ALL six fields fully populated — NEVER omit or leave any field empty or null. The \"ipa\" field is MANDATORY for every single word: always provide the standard IPA transcription enclosed in /forward slashes/. For multi-word phrases use an empty string for ipa. Output ONLY the raw JSON array."
+                content: "You are an expert English–Vietnamese lexicographer. For EVERY entry you MUST return ALL six fields fully populated — NEVER omit or leave any field empty or null. The \"ipa\" field is MANDATORY for ALL entries — both single words and multi-word phrases. Always provide IPA in /forward slashes/. Never use an empty string for ipa. Output ONLY the raw JSON array."
             },
             {
                 role: "user",
