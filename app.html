@@ -5599,9 +5599,19 @@ document.getElementById('generateBtn').onclick = async () => {
     if(!sel.length) { showToast('✏️ Bật bút highlight để chọn từ hoặc kéo chọn cụm từ!'); return; }
     document.getElementById('vocabContainer').classList.remove('hidden');
     document.getElementById('vocabList').innerHTML = `<div style="text-align:center;padding:32px;color:var(--primary);"><div style="font-size:2rem;margin-bottom:12px;"><span class="ldot">●</span><span class="ldot">●</span><span class="ldot">●</span></div><div style="font-weight:700;">AI đang phân tích...</div></div>`;
-    const prompt = `Return a JSON array for these English words/phrases: [${sel.map(s=>`"${s}"`).join(', ')}].
-For each item return: {"word":"exact word or phrase","ipa":"IPA (for single words only, empty string for phrases)","vn":"Vietnamese meaning","level":"A1/A2/B1/B2/C1/C2","example":"English example sentence using this word/phrase"}.
-Only return the JSON array, no other text.`;
+    const prompt = `Analyze these English words/phrases: [${sel.map(s=>`"${s}"`).join(', ')}]
+Return a JSON array where EVERY object has ALL of these fields — no exceptions:
+[{
+  "word": "exact word or phrase as given",
+  "ipa": "/standard IPA in slashes/ — REQUIRED for every single word, empty string only for multi-word phrases",
+  "vn": "accurate Vietnamese meaning",
+  "level": "A1 | A2 | B1 | B2 | C1 | C2",
+  "example": "A natural English sentence clearly illustrating the meaning"
+}]
+Rules:
+- ipa MUST NOT be empty for any single English word — this is mandatory
+- example MUST be a complete, natural sentence
+- Output ONLY the raw JSON array`;
     try {
     const res = await fetch(`https://api.groq.com/openai/v1/chat/completions`, {
         method: 'POST',
@@ -5611,20 +5621,24 @@ Only return the JSON array, no other text.`;
         },
         body: JSON.stringify({
             model: "llama-3.3-70b-versatile",
-            max_tokens: 800,
+            max_tokens: 1800,
             messages: [
+                {
+                    role: "system",
+                    content: "You are an expert English–Vietnamese lexicographer. For EVERY entry you MUST return ALL six fields fully populated — NEVER omit or leave any field empty or null. The \"ipa\" field is MANDATORY for every single word: always provide the standard IPA transcription enclosed in /forward slashes/ (e.g. /ˈwɜːrd/). For multi-word phrases or idioms where IPA is not applicable, use an empty string. The \"example\" must be a natural, grammatically correct English sentence. Output ONLY the raw JSON array."
+                },
                 {
                     role: "user",
                     content: prompt
                 }
             ],
-            temperature: 0.2
+            temperature: 0
         })
     });
 
     const data = await res.json();
     const aiText = data.choices[0].message.content;
-    learningData = JSON.parse(aiText.replace(/```json|```/g, '').trim());
+    learningData = normalizeVocabArray(JSON.parse(aiText.replace(/```json|```/g, '').trim()));
     
     renderVocabList();
     showToast('✅ Phân tích thành công! Kiểm tra và sửa từ nếu cần, sau đó bấm "Lưu vào thư viện".');
@@ -5636,6 +5650,24 @@ Only return the JSON array, no other text.`;
 };
 
 function lvClass(l){ return {A1:'level-A1',A2:'level-A2',B1:'level-B1',B2:'level-B2',C1:'level-C1',C2:'level-C2'}[l]||'level-B1'; }
+
+// ── Chuẩn hóa entry từ AI — đảm bảo không thiếu trường ──────────────────────
+function normalizeVocabEntry(item) {
+    const w = (item.word || '').trim();
+    const isPhrase = w.includes(' ');
+    // IPA: bắt buộc với từ đơn, để '' với cụm từ
+    let ipa = (item.ipa || '').trim();
+    if (!ipa && !isPhrase && w) ipa = `[${w}]`; // placeholder nếu AI bỏ sót
+    // level
+    const validLevels = ['A1','A2','B1','B2','C1','C2'];
+    const level = validLevels.includes(item.level) ? item.level : 'B1';
+    // example
+    const example = (item.example || '').trim() || '';
+    return { ...item, word: w, ipa, vn: (item.vn || '').trim(), level, example };
+}
+function normalizeVocabArray(arr) {
+    return Array.isArray(arr) ? arr.map(normalizeVocabEntry) : arr;
+}
 
 function _vocabItemHtml(item, i) {
     const e = s => (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/`/g,'&#96;');
@@ -6794,15 +6826,32 @@ async function processPasteWords() {
             }
 
             const wordsPromptData = batch.map(w => `"${w.word}": "${w.vn}"`).join(', ');
-            const prompt = `I have a list of English words and their Vietnamese meanings: { ${wordsPromptData} }.
-Return a JSON array exactly matching this structure:
-[{"word":"string","ipa":"string","vn":"(keep the provided Vietnamese meaning exactly)","level":"A1-C2","example":"English sentence"}]
-Do not output any markdown formatting or extra text, just the raw JSON array.`;
+            const prompt = `Given these English words/phrases and their Vietnamese meanings: { ${wordsPromptData} }
+Return a JSON array where EVERY object has ALL of these fields — no exceptions:
+[{
+  "word": "exact word or phrase as given",
+  "ipa": "/standard IPA in slashes/ — REQUIRED for every single word, empty string only for multi-word phrases",
+  "vn": "(keep the provided Vietnamese meaning exactly — do NOT change it)",
+  "level": "A1 | A2 | B1 | B2 | C1 | C2",
+  "example": "A natural English sentence clearly illustrating the meaning"
+}]
+Rules:
+- ipa MUST NOT be empty for any single English word
+- example MUST be a complete, natural sentence
+- Output ONLY the raw JSON array`;
 
             const aiRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key}` },
-                body: JSON.stringify({ model: 'llama-3.3-70b-versatile', max_tokens: 4000, messages: [{ role: 'user', content: prompt }] })
+                body: JSON.stringify({
+                    model: 'llama-3.3-70b-versatile',
+                    max_tokens: 4000,
+                    messages: [
+                        { role: 'system', content: 'You are an expert English–Vietnamese lexicographer. For EVERY entry you MUST return ALL six fields fully populated — NEVER omit or leave any field empty or null. The \"ipa\" field is MANDATORY for every single word: always provide the standard IPA transcription enclosed in /forward slashes/. For multi-word phrases use an empty string for ipa. Output ONLY the raw JSON array.' },
+                        { role: 'user', content: prompt }
+                    ],
+                    temperature: 0
+                })
             });
             const data = await aiRes.json();
             let jsonStr = data.choices[0].message.content.replace(/```json|```/g, '').trim();
@@ -6811,7 +6860,7 @@ Do not output any markdown formatting or extra text, just the raw JSON array.`;
             if (lastBracket >= 0) jsonStr = jsonStr.slice(0, lastBracket + 1);
             try {
                 const batchResult = JSON.parse(jsonStr);
-                finalData = [...finalData, ...batchResult];
+                finalData = [...finalData, ...normalizeVocabArray(batchResult)];
             } catch(e) {
                 showToast(`❌ Lỗi batch ${batchNum}/${totalBatch}, bỏ qua và tiếp tục...`);
             }
@@ -7148,16 +7197,34 @@ async function processPasteForTopicList(listId, text) {
 
     showToast(`✨ AI đang phân tích ${newWords.length} từ...`);
     try {
-        const prompt = `I have a list of English words and their Vietnamese meanings: { ${newWords.map(w=>`"${w.word}":"${w.vn}"`).join(', ')} }.
-Return a JSON array: [{"word":"string","ipa":"string","vn":"(keep provided Vietnamese)","level":"A1-C2","example":"English sentence"}]
-Only raw JSON, no markdown.`;
+        const prompt = `Given these English words/phrases and their Vietnamese meanings: { ${newWords.map(w=>`"${w.word}":"${w.vn}"`).join(', ')} }
+Return a JSON array where EVERY object has ALL of these fields — no exceptions:
+[{
+  "word": "exact word or phrase as given",
+  "ipa": "/standard IPA in slashes/ — REQUIRED for every single word, empty string only for multi-word phrases",
+  "vn": "(keep the provided Vietnamese meaning exactly — do NOT change it)",
+  "level": "A1 | A2 | B1 | B2 | C1 | C2",
+  "example": "A natural English sentence clearly illustrating the meaning"
+}]
+Rules:
+- ipa MUST NOT be empty for any single English word
+- example MUST be a complete, natural sentence
+- Output ONLY the raw JSON array`;
         const aiRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
             method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`},
-            body: JSON.stringify({ model:'llama-3.3-70b-versatile', max_tokens:2400, messages:[{ role:'user', content:prompt }] })
+            body: JSON.stringify({
+                model:'llama-3.3-70b-versatile',
+                max_tokens:2400,
+                messages:[
+                    { role:'system', content:'You are an expert English–Vietnamese lexicographer. For EVERY entry you MUST return ALL six fields fully populated — NEVER omit or leave any field empty or null. The \"ipa\" field is MANDATORY for every single word: always provide the standard IPA transcription enclosed in /forward slashes/. For multi-word phrases use an empty string for ipa. Output ONLY the raw JSON array.' },
+                    { role:'user', content:prompt }
+                ],
+                temperature:0
+            })
         });
         const aiData = await aiRes.json();
         let finalData;
-        try { finalData = JSON.parse(aiData.choices[0].message.content.replace(/```json|```/g,'').trim()); }
+        try { finalData = normalizeVocabArray(JSON.parse(aiData.choices[0].message.content.replace(/```json|```/g,'').trim())); }
         catch(e) { showToast('❌ AI trả về định dạng không hợp lệ.'); return; }
 
         await saveVocabToDb(finalData);
@@ -7211,16 +7278,34 @@ async function processFileForTopicList(listId, file) {
             if (!newWords.length) { showToast('💡 Tất cả từ đã có trong danh sách!'); return; }
 
             showToast(`✨ AI đang phân tích ${newWords.length} từ...`);
-            const prompt = `I have a list of English words and their Vietnamese meanings: { ${newWords.map(w=>`"${w.word}":"${w.vn}"`).join(', ')} }.
-Return a JSON array: [{"word":"string","ipa":"string","vn":"(keep provided Vietnamese)","level":"A1-C2","example":"English sentence"}]
-Only raw JSON, no markdown.`;
+            const prompt = `Given these English words/phrases and their Vietnamese meanings: { ${newWords.map(w=>`"${w.word}":"${w.vn}"`).join(', ')} }
+Return a JSON array where EVERY object has ALL of these fields — no exceptions:
+[{
+  "word": "exact word or phrase as given",
+  "ipa": "/standard IPA in slashes/ — REQUIRED for every single word, empty string only for multi-word phrases",
+  "vn": "(keep the provided Vietnamese meaning exactly — do NOT change it)",
+  "level": "A1 | A2 | B1 | B2 | C1 | C2",
+  "example": "A natural English sentence clearly illustrating the meaning"
+}]
+Rules:
+- ipa MUST NOT be empty for any single English word
+- example MUST be a complete, natural sentence
+- Output ONLY the raw JSON array`;
             const aiRes  = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`},
-                body: JSON.stringify({ model:'llama-3.3-70b-versatile', max_tokens:2400, messages:[{ role:'user', content:prompt }] })
+                body: JSON.stringify({
+                    model:'llama-3.3-70b-versatile',
+                    max_tokens:2400,
+                    messages:[
+                        { role:'system', content:'You are an expert English–Vietnamese lexicographer. For EVERY entry you MUST return ALL six fields fully populated — NEVER omit or leave any field empty or null. The \"ipa\" field is MANDATORY for every single word: always provide the standard IPA transcription enclosed in /forward slashes/. For multi-word phrases use an empty string for ipa. Output ONLY the raw JSON array.' },
+                        { role:'user', content:prompt }
+                    ],
+                    temperature:0
+                })
             });
             const aiData = await aiRes.json();
             let finalData;
-            try { finalData = JSON.parse(aiData.choices[0].message.content.replace(/```json|```/g,'').trim()); }
+            try { finalData = normalizeVocabArray(JSON.parse(aiData.choices[0].message.content.replace(/```json|```/g,'').trim())); }
             catch(e) { showToast('❌ AI trả về định dạng không hợp lệ.'); return; }
 
             // Save words to main vocabulary collection as well
@@ -7581,10 +7666,19 @@ document.getElementById('libFileInput').onchange = async (e) => {
             // 4. Gọi AI xử lý CEFR, IPA và Ví dụ
             const wordsPromptData = newWords.map(w => `"${w.word}": "${w.vn}"`).join(', ');
             
-            const prompt = `I have a list of English words and their Vietnamese meanings: { ${wordsPromptData} }. 
-            Return a JSON array exactly matching this structure:
-            [{"word":"string","ipa":"string","vn":"(keep the provided Vietnamese meaning)","level":"A1-C2","example":"English sentence"}]
-            Do not output any markdown formatting or extra text, just the raw JSON array.`;
+            const prompt = `Given these English words/phrases and their Vietnamese meanings: { ${wordsPromptData} }
+Return a JSON array where EVERY object has ALL of these fields — no exceptions:
+[{
+  "word": "exact word or phrase as given",
+  "ipa": "/standard IPA in slashes/ — REQUIRED for every single word, empty string only for multi-word phrases",
+  "vn": "(keep the provided Vietnamese meaning exactly — do NOT change it)",
+  "level": "A1 | A2 | B1 | B2 | C1 | C2",
+  "example": "A natural English sentence clearly illustrating the meaning"
+}]
+Rules:
+- ipa MUST NOT be empty for any single English word
+- example MUST be a complete, natural sentence
+- Output ONLY the raw JSON array`;
 
             const aiRes = await fetch(`https://api.groq.com/openai/v1/chat/completions`, {
     method: 'POST',
@@ -7597,10 +7691,15 @@ document.getElementById('libFileInput').onchange = async (e) => {
         max_tokens: 2400,
         messages: [
             {
+                role: "system",
+                content: "You are an expert English–Vietnamese lexicographer. For EVERY entry you MUST return ALL six fields fully populated — NEVER omit or leave any field empty or null. The \"ipa\" field is MANDATORY for every single word: always provide the standard IPA transcription enclosed in /forward slashes/. For multi-word phrases use an empty string for ipa. Output ONLY the raw JSON array."
+            },
+            {
                 role: "user",
                 content: prompt
             }
-        ]
+        ],
+        temperature: 0
     })
 });
 
@@ -7608,7 +7707,7 @@ const data = await aiRes.json();
 let jsonStr = data.choices[0].message.content.replace(/```json|```/g, '').trim();
 let finalData;
 try {
-    finalData = JSON.parse(jsonStr);
+    finalData = normalizeVocabArray(JSON.parse(jsonStr));
 } catch(e) {
     console.error("JSON parse error", e, jsonStr);
     showToast('❌ AI trả về định dạng không hợp lệ, vui lòng thử lại.');
