@@ -10146,17 +10146,41 @@ Return ONLY a JSON object, no markdown:
                 });
                 const data = await res.json();
                 if (data.choices && data.choices[0]) {
-                    const raw = data.choices[0].message.content.trim().replace(/```json|```/g, '');
+                    // Chuẩn hóa: bỏ markdown fence, smart quotes
+                    const raw = data.choices[0].message.content.trim()
+                        .replace(/```json|```/gi, '')
+                        .replace(/[“”]/g, '"')
+                        .trim();
+                    let vnTranslation = '';
                     try {
+                        // Tầng 1: parse trực tiếp
                         const parsed = JSON.parse(raw);
-                        exampleText = (parsed.en || '').replace(/^"|"$/g, '');
-                        const vnTranslation = parsed.vn || '';
-                        _cacheSentence(target.word, exampleText, vnTranslation); // lưu cả en + vn
+                        exampleText   = (parsed.en || '').trim();
+                        vnTranslation = (parsed.vn || '').trim();
                     } catch {
-                        // fallback nếu AI không trả đúng JSON
-                        exampleText = raw.replace(/^"|"$/g, '');
-                        _cacheSentence(target.word, exampleText);
+                        // Tầng 2: tìm object JSON trong chuỗi (AI thêm text thừa trước/sau)
+                        const jsonMatch = raw.match(/\{[\s\S]*?\}/);
+                        if (jsonMatch) {
+                            try {
+                                const parsed = JSON.parse(jsonMatch[0]);
+                                exampleText   = (parsed.en || '').trim();
+                                vnTranslation = (parsed.vn || '').trim();
+                            } catch { /* tiếp tục xuống tầng 3 */ }
+                        }
+                        // Tầng 3: regex lấy value của "en" trực tiếp
+                        if (!exampleText) {
+                            const enMatch = raw.match(/"en"\s*:\s*"([^"]+)"/);
+                            const vnMatch = raw.match(/"vn"\s*:\s*"([^"]+)"/);
+                            if (enMatch) exampleText   = enMatch[1].trim();
+                            if (vnMatch) vnTranslation = vnMatch[1].trim();
+                        }
+                        // Tầng 4: nếu vẫn không lấy được → dùng raw nhưng
+                        // chỉ khi raw trông giống câu văn, không phải JSON
+                        if (!exampleText) {
+                            exampleText = raw.startsWith('{') ? '' : raw.replace(/^"|"$/g, '');
+                        }
                     }
+                    if (exampleText) _cacheSentence(target.word, exampleText, vnTranslation);
                 }
             } catch(e) {
                 console.error("Lỗi tạo câu AI:", e);
