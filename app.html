@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Be Heard |Lexi Learning</title>
+    <title>Be Heard | Lexi Learning</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
@@ -1335,10 +1335,10 @@
             </div>
             <div class="card" style="display:flex;flex-direction:column;min-height:340px;">
                 <div id="editor" style="flex:1;padding:24px;font-size:1.1rem;line-height:1.9;color:var(--text);min-height:280px;">
-                    <div class="empty-state"><div class="icon">📝</div><p>Nội dung bài học sẽ hiện ở đây</p><p style="font-size:.8rem;margin-top:6px;font-weight:500;">Double-click vào từ để đánh dấu từ khó</p></div>
+                    <div class="empty-state"><div class="icon">📝</div><p>Nội dung bài học sẽ hiện ở đây</p><p style="font-size:.8rem;margin-top:6px;font-weight:500;">Dán nội dung vào, bật bút ✏️ rồi chọn từ cần trích xuất</p></div>
                 </div>
                 <div class="editor-bar">
-                    <span class="editor-hint">✌️ Double-click: từ đơn &nbsp;|&nbsp; 🖱️ Tô đậm: cụm từ</span>
+                    <span class="editor-hint">✏️ Bật bút → Click: từ đơn &nbsp;|&nbsp; Kéo: cụm từ</span>
                     <button id="generateBtn" class="analyze-btn">✨ Phân tích AI</button>
                 </div>
             </div>
@@ -5610,7 +5610,7 @@ document.getElementById('generateBtn').onclick = async () => {
     const phrases = Array.from(window._phraseSet || []);
 
     const sel = [...singleWords, ...phrases];
-    if(!sel.length) { showToast('✏️ Bật bút highlight để chọn từ hoặc kéo chọn cụm từ!'); return; }
+    if(!sel.length) { showToast('✏️ Bật bút rồi click vào từ đơn hoặc kéo để chọn cụm từ!'); return; }
     document.getElementById('vocabContainer').classList.remove('hidden');
     document.getElementById('vocabList').innerHTML = `<div style="text-align:center;padding:32px;color:var(--primary);"><div style="font-size:2rem;margin-bottom:12px;"><span class="ldot">●</span><span class="ldot">●</span><span class="ldot">●</span></div><div style="font-weight:700;">AI đang phân tích...</div></div>`;
     const prompt = `Analyze these English words/phrases: [${sel.map(s=>`"${s}"`).join(', ')}]
