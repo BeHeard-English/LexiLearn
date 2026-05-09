@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Be Heard | Lexi Learning</title>
+    <title>Be Heard |Lexi Learning</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app-compat.js"></script>
@@ -439,7 +439,7 @@
         @keyframes fbPop{0%{transform:scale(.85);opacity:0;}70%{transform:scale(1.08);}100%{transform:scale(1);opacity:1;}}
         .fb-blank.pop{animation:fbPop .25s ease both;}
         /* Ghost for drag on mobile */
-        .fb-drag-ghost{position:fixed;pointer-events:none;z-index:9999;padding:8px 16px;background:var(--primary);color:#fff;border-radius:10px;font-weight:700;font-size:.88rem;transform:translate(-50%,-50%);box-shadow:0 8px 24px rgba(3,19,131,.35);transition:none;white-space:nowrap;}
+        .fb-drag-ghost{position:fixed;pointer-events:none;z-index:9999;padding:8px 16px;background:var(--primary);color:#fff;border-radius:10px;font-weight:700;font-size:.88rem;transform:translateX(-50%);box-shadow:0 8px 24px rgba(3,19,131,.35);transition:none;white-space:nowrap;}
 
         /* REVIEW BUTTONS */
         .count-btn,.level-btn,.mode-btn{padding:8px 18px;border-radius:10px;font-weight:700;font-size:.85rem;border:2px solid var(--border);background:var(--card);color:var(--muted);cursor:pointer;transition:.2s;}
@@ -10330,56 +10330,91 @@ function fbDrop(e) {
 }
 
 /* ── Mobile touch drag ─────────────────────────────────────── */
-let _fbGhost = null;
-let _fbTouchChip = null;
+let _fbGhost      = null;
+let _fbTouchChip  = null;
+let _fbTouchStartX = 0;
+let _fbTouchStartY = 0;
+let _fbIsDragging  = false;
+const FB_DRAG_THRESHOLD = 8;   // px — di chuyển ít hơn này = tap
+const FB_DROP_MARGIN    = 28;  // px — vùng drop rộng hơn rect thực
 
 function fbTouchStart(e) {
     if (_fbAnswered) return;
     e.preventDefault();
-    _fbTouchChip = e.currentTarget;
-    const word = _fbTouchChip.textContent;
-    _fbGhost = document.createElement('div');
-    _fbGhost.className = 'fb-drag-ghost';
-    _fbGhost.textContent = word;
-    document.body.appendChild(_fbGhost);
     const t = e.touches[0];
-    _fbGhost.style.left = t.clientX + 'px';
-    _fbGhost.style.top  = t.clientY + 'px';
-    _fbTouchChip.classList.add('dragging');
+    _fbTouchChip   = e.currentTarget;
+    _fbTouchStartX = t.clientX;
+    _fbTouchStartY = t.clientY;
+    _fbIsDragging  = false;
+    // Phản hồi ngay khi chạm
+    _fbTouchChip.classList.add('selected');
 }
+
 function fbTouchMove(e) {
     e.preventDefault();
-    if (!_fbGhost) return;
-    const t = e.touches[0];
-    _fbGhost.style.left = t.clientX + 'px';
-    _fbGhost.style.top  = t.clientY + 'px';
-    // Highlight blank if finger is over it
-    const blank = document.getElementById('fbBlank');
-    if (blank) {
-        const r = blank.getBoundingClientRect();
-        const over = t.clientX >= r.left && t.clientX <= r.right && t.clientY >= r.top && t.clientY <= r.bottom;
-        blank.classList.toggle('highlight', over);
-    }
-}
-function fbTouchEnd(e) {
-    e.preventDefault();
-    if (_fbGhost) { _fbGhost.remove(); _fbGhost = null; }
     if (!_fbTouchChip) return;
-    _fbTouchChip.classList.remove('dragging');
+    const t = e.touches[0];
+    const dx = t.clientX - _fbTouchStartX;
+    const dy = t.clientY - _fbTouchStartY;
 
-    const t = e.changedTouches[0];
-    const blank = document.getElementById('fbBlank');
-    if (blank) {
-        blank.classList.remove('highlight');
-        const r = blank.getBoundingClientRect();
-        const dropped = t.clientX >= r.left && t.clientX <= r.right && t.clientY >= r.top && t.clientY <= r.bottom;
-        if (dropped) {
-            fillBlankWith(_fbTouchChip.textContent);
-            _fbTouchChip = null;
-            return;
+    if (!_fbIsDragging && (Math.abs(dx) > FB_DRAG_THRESHOLD || Math.abs(dy) > FB_DRAG_THRESHOLD)) {
+        // Vượt ngưỡng → chính thức kéo
+        _fbIsDragging = true;
+        _fbTouchChip.classList.remove('selected');
+        _fbTouchChip.classList.add('dragging');
+        // Tạo ghost lúc bắt đầu kéo
+        _fbGhost = document.createElement('div');
+        _fbGhost.className = 'fb-drag-ghost';
+        _fbGhost.textContent = _fbTouchChip.textContent;
+        document.body.appendChild(_fbGhost);
+    }
+
+    if (_fbIsDragging && _fbGhost) {
+        // Đặt ghost phía TRÊN ngón tay để không bị che
+        _fbGhost.style.left = t.clientX + 'px';
+        _fbGhost.style.top  = (t.clientY - 52) + 'px';
+        // Highlight blank khi ngón gần chỗ trống (vùng rộng hơn rect)
+        const blank = document.getElementById('fbBlank');
+        if (blank) {
+            const r = blank.getBoundingClientRect();
+            const over = t.clientX >= r.left  - FB_DROP_MARGIN
+                      && t.clientX <= r.right  + FB_DROP_MARGIN
+                      && t.clientY >= r.top    - FB_DROP_MARGIN
+                      && t.clientY <= r.bottom + FB_DROP_MARGIN;
+            blank.classList.toggle('highlight', over);
         }
     }
-    _fbTouchChip = null;
+}
+
+function fbTouchEnd(e) {
+    e.preventDefault();
+    if (!_fbTouchChip) return;
+
+    const t = e.changedTouches[0];
+
+    // Dọn ghost
+    if (_fbGhost) { _fbGhost.remove(); _fbGhost = null; }
+    _fbTouchChip.classList.remove('dragging', 'selected');
+
+    if (_fbIsDragging) {
+        // ── Kéo thả: kiểm tra drop trên blank ──────────────────
+        const blank = document.getElementById('fbBlank');
+        if (blank) {
+            blank.classList.remove('highlight');
+            const r = blank.getBoundingClientRect();
+            const dropped = t.clientX >= r.left  - FB_DROP_MARGIN
+                         && t.clientX <= r.right  + FB_DROP_MARGIN
+                         && t.clientY >= r.top    - FB_DROP_MARGIN
+                         && t.clientY <= r.bottom + FB_DROP_MARGIN;
+            if (dropped) fillBlankWith(_fbTouchChip.dataset.word || _fbTouchChip.textContent);
+        }
+    } else {
+        // ── Tap (chạm nhẹ): hoạt động như click ────────────────
+        clickChip(_fbTouchChip);
+    }
+
+    _fbTouchChip  = null;
+    _fbIsDragging = false;
 }
 
 /* ── Shared fill helper ───────────────────────────────────── */
