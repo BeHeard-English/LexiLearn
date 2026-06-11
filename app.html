@@ -8072,6 +8072,20 @@ let _gameSessionXP = 0;
 async function grantGameXP(btn) {
     _gameSessionXP += 5;
     await addXP(5);
+    // Ghi nhận hoạt động học → tính streak + tiến độ 7 ngày
+    if (currentUser) {
+        const todayK = todayKey();
+        try {
+            await db.collection('users').doc(currentUser.uid)
+                .collection('activity').doc(todayK).set({
+                    date: todayK,
+                    reviewed: firebase.firestore.FieldValue.increment(1),
+                    correct:  firebase.firestore.FieldValue.increment(1),
+                }, { merge: true });
+            if (typeof _streakStudiedSet !== 'undefined') _streakStudiedSet.add(todayK);
+            updateStreakDisplay();
+        } catch(e) { console.warn('Game activity write error', e); }
+    }
 
     // Cập nhật badge đếm tổng XP trong session
     const badge = document.getElementById('gameXpCount');
@@ -8124,6 +8138,21 @@ window.addEventListener('message', async function(e) {
     if (!document.getElementById('gameModal')?.classList.contains('open')) return;
     _gameSessionXP += 5;
     await addXP(5);
+    // Ghi nhận hoạt động học → tính streak + tiến độ 7 ngày
+    // Ghi thẳng vào Firestore (không qua queue vì ngoài review session)
+    if (currentUser) {
+        const todayK = todayKey();
+        try {
+            await db.collection('users').doc(currentUser.uid)
+                .collection('activity').doc(todayK).set({
+                    date: todayK,
+                    reviewed: firebase.firestore.FieldValue.increment(1),
+                    correct:  firebase.firestore.FieldValue.increment(1),
+                }, { merge: true });
+            if (typeof _streakStudiedSet !== 'undefined') _streakStudiedSet.add(todayK);
+            updateStreakDisplay();
+        } catch(e) { console.warn('Game activity write error', e); }
+    }
     const badge = document.getElementById('gameXpCount');
     if (badge) badge.textContent = _gameSessionXP;
     // Hiệu ứng +5 bay lên trên nút XP
