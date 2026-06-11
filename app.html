@@ -2135,7 +2135,7 @@
                         <span class="game-tag">👥 1-2 người</span>
                         <span class="game-tag">🏆 Thi đấu</span>
                     </div>
-                    <button class="game-play-btn" style="background:linear-gradient(135deg,#15803d,#22c55e);" onclick="openGame('https://beheard-english.github.io/BeHeard/','🔗 Matching')">
+                    <button class="game-play-btn" style="background:linear-gradient(135deg,#15803d,#22c55e);" onclick="openMatchingGame()">
                         <svg xmlns="http://www.w3.org/2000/svg" style="width:18px;height:18px" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                         Chơi ngay
                     </button>
@@ -8068,6 +8068,55 @@ function openGame(url, name) {
 }
 
 let _gameSessionXP = 0;
+
+// ── Mở game Matching nội bộ (game1.html) — truyền từ tới hạn qua postMessage ──
+function openMatchingGame() {
+    if (!currentUser) { showToast('⚠️ Vui lòng đăng nhập để sử dụng Games!'); return; }
+    const list = getGameVocab();
+    if (list.length < 2) { showToast('⚠️ Cần tối thiểu 2 từ để chơi Matching!'); return; }
+
+    _gameUrl = 'game1.html';
+    document.getElementById('gameModalTitle').textContent = '🔗 Matching';
+    document.getElementById('gameModal').classList.add('open');
+    _gameSessionXP = 0;
+    const xpCount = document.getElementById('gameXpCount');
+    if (xpCount) xpCount.textContent = '0';
+    document.body.style.overflow = 'hidden';
+
+    const frame   = document.getElementById('gameFrame');
+    const overlay = document.getElementById('gameLoadingOverlay');
+    const errPanel = document.getElementById('gameErrorPanel');
+    if (errPanel) errPanel.style.display = 'none';
+
+    frame.style.display   = 'none';
+    overlay.style.display = 'flex';
+
+    // Chuyển fullLibrary → pairs [{ en, vi }] theo thứ tự ưu tiên từ getGameVocab()
+    const pairs = list.map(i => ({ en: i.word, vi: i.vn || '' }))
+                      .filter(p => p.en && p.vi);
+
+    // Load game1.html
+    frame.src = 'game1.html?t=' + Date.now();
+
+    // Đợi game1 gửi GAME_READY rồi truyền dữ liệu
+    function onReady(e) {
+        if (!e.data || e.data.type !== 'GAME_READY') return;
+        window.removeEventListener('message', onReady);
+        clearTimeout(loadTimeout);
+        overlay.style.display = 'none';
+        frame.style.display   = 'block';
+        // Gửi danh sách từ vào game
+        frame.contentWindow.postMessage({ type: 'INIT_PAIRS', pairs: pairs }, '*');
+    }
+    window.addEventListener('message', onReady);
+
+    const loadTimeout = setTimeout(() => {
+        window.removeEventListener('message', onReady);
+        overlay.style.display = 'none';
+        if (errPanel) errPanel.style.display = 'flex';
+        showToast('⚠️ Không thể tải game Matching. Kiểm tra file game1.html!');
+    }, 10000);
+}
 
 async function grantGameXP(btn) {
     _gameSessionXP += 5;
