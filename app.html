@@ -7876,14 +7876,31 @@ function getGameVocab() {
         const ids = tl ? (tl.wordIds || []) : [];
         return fullLibrary.filter(i => ids.includes((i.word || '').toLowerCase()));
     }
-    // Thu vien tong hop: loai bo tu da thuoc (correct_count >= 10)
+    // Thư viện tổng hợp: loại bỏ từ đã thuộc, sắp xếp từ tới hạn lên đầu
     const notMastered = fullLibrary.filter(i => (i.correct_count || 0) < 10);
     const allActive = document.querySelector('#gameLevelFilter [data-gf="ALL"]')?.classList.contains('active');
-    if (allActive) return notMastered;
-    const activeLevels = [...document.querySelectorAll('#gameLevelFilter [data-gf]:not([data-gf="ALL"]).active')]
-        .map(b => b.dataset.gf);
-    if (!activeLevels.length) return notMastered;
-    return notMastered.filter(i => activeLevels.includes(i.level));
+    const pool = allActive || true
+        ? notMastered
+        : (() => {
+            const activeLevels = [...document.querySelectorAll('#gameLevelFilter [data-gf]:not([data-gf="ALL"]).active')]
+                .map(b => b.dataset.gf);
+            return activeLevels.length ? notMastered.filter(i => activeLevels.includes(i.level)) : notMastered;
+        })();
+
+    // Sắp xếp: từ tới hạn (isDue) lên đầu, trong mỗi nhóm sort theo ngày gần nhất
+    const now = new Date();
+    return [...pool].sort((a, b) => {
+        const da = a.srs_next_review ? _toDate(a.srs_next_review) : null;
+        const db_ = b.srs_next_review ? _toDate(b.srs_next_review) : null;
+        const aDue = !da || isNaN(da) || da <= now;
+        const bDue = !db_ || isNaN(db_) || db_ <= now;
+        if (aDue && !bDue) return -1;
+        if (!aDue && bDue) return 1;
+        // Cùng nhóm: từ nào đến hạn sớm hơn lên trước
+        const aTime = da ? da.getTime() : 0;
+        const bTime = db_ ? db_.getTime() : 0;
+        return aTime - bTime;
+    });
 }
 function updateGameWordCount() {
     const count = getGameVocab().length;
@@ -8197,9 +8214,11 @@ window.addEventListener('message', async function(e) {
         // 1. Cập nhật SRS cho từ vừa đúng (nếu game gửi kèm từ)
         if (wordKey) {
             const item = fullLibrary.find(i => i.word.toLowerCase() === wordKey);
+            console.log('[Game SRS] word received:', wordKey, '| found in library:', !!item, item ? '| srs_next_review:' + JSON.stringify(item.srs_next_review) : '');
             if (item) {
                 const srs = srsUpdate(item, true);
                 const newCorrect = (item.correct_count || 0) + 1;
+                console.log('[Game SRS] updating SRS:', srs, 'correct_count ->', newCorrect);
                 // Cập nhật local ngay
                 _syncSRS(wordKey, srs, { correct_count: newCorrect });
                 // Ghi thẳng Firestore (ngoài review session)
@@ -8213,7 +8232,11 @@ window.addEventListener('message', async function(e) {
                             srs_reps:      srs.srs_reps,
                             srs_next_review: srs.srs_next_review,
                         }, { merge: true });
-                } catch(err) { console.warn('Game SRS write error', err); }
+                    console.log('[Game SRS] Firestore write OK for:', wordKey);
+                } catch(err) { console.warn('[Game SRS] Firestore write ERROR:', err); }
+            } else {
+                console.warn('[Game SRS] word NOT found in fullLibrary. wordKey:', wordKey,
+                    '| library sample:', fullLibrary.slice(0,3).map(i=>i.word));
             }
         }
 
