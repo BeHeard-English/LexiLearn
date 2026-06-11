@@ -2108,7 +2108,7 @@
                 </div>
             </div>
 
-            <!-- Game 4: Matching -->
+            <!-- Game 4: Nối Từ Vựng -->
             <div class="game-card">
                 <div class="game-card-thumb" style="background:linear-gradient(135deg,#0c1a0c 0%,#14532d 50%,#0c1a0c 100%);">
                     <div class="game-card-thumb-fallback">
@@ -6419,6 +6419,10 @@ async function startReviewQuiz() {
     if (vocabSource !== 'all') {
         if (vocabSource === 'mastered') {
             pool = fullLibrary.filter(i => (i.correct_count||0) >= 10 && levels.includes(i.level));
+        } else if (vocabSource === 'wrong_words') {
+            pool = fullLibrary
+                .filter(i => (i.incorrect_count||0) > 0 && levels.includes(i.level))
+                .sort((a, b) => (b.incorrect_count||0) - (a.incorrect_count||0));
         } else {
             const tl = topicLists.find(t => t.id === vocabSource);
             const ids = tl ? (tl.wordIds || []) : [];
@@ -6994,6 +6998,7 @@ function populateReviewVocabSelect() {
     const options = `
         <option value="all">📚 Thư viện tổng hợp (tất cả)</option>
         <option value="mastered">⭐ Danh sách từ đã thuộc</option>
+        <option value="wrong_words">❌ Từ vựng hay sai</option>
         ${topicLists.map(tl => `<option value="${tl.id}">${tl.icon || '📋'} ${tl.name}</option>`).join('')}
     `;
     const reviewSel = document.getElementById('reviewVocabSource');
@@ -7827,6 +7832,11 @@ function getGameVocab() {
         if (_gameVocabSource === 'mastered') {
             return fullLibrary.filter(i => (i.correct_count || 0) >= 10);
         }
+        if (_gameVocabSource === 'wrong_words') {
+            return fullLibrary
+                .filter(i => (i.incorrect_count || 0) > 0)
+                .sort((a, b) => (b.incorrect_count || 0) - (a.incorrect_count || 0));
+        }
         const tl = topicLists.find(t => t.id === _gameVocabSource);
         const ids = tl ? (tl.wordIds || []) : [];
         return fullLibrary.filter(i => ids.includes((i.word || '').toLowerCase()));
@@ -7845,7 +7855,9 @@ function updateGameWordCount() {
     document.getElementById('gameWordCount').textContent = count;
     const label = document.getElementById('gameWordCountLabel');
     if (label) {
-        label.textContent = (_gameVocabSource === 'all') ? 'từ chưa thuộc' : 'từ sẵn sàng';
+        if (_gameVocabSource === 'all') label.textContent = 'từ chưa thuộc';
+        else if (_gameVocabSource === 'wrong_words') label.textContent = 'từ hay sai';
+        else label.textContent = 'từ sẵn sàng';
     }
 }
 
