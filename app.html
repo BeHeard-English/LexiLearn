@@ -8116,6 +8116,28 @@ function openGameNewTab() {
 }
 
 // ══════════════════════════════════════════
+// GAME XP — lắng nghe postMessage từ iframe game
+// ══════════════════════════════════════════
+window.addEventListener('message', async function(e) {
+    if (!e.data || e.data.type !== 'CORRECT_ANSWER') return;
+    // Chỉ xử lý khi modal game đang mở
+    if (!document.getElementById('gameModal')?.classList.contains('open')) return;
+    _gameSessionXP += 5;
+    await addXP(5);
+    const badge = document.getElementById('gameXpCount');
+    if (badge) badge.textContent = _gameSessionXP;
+    // Hiệu ứng +5 bay lên trên nút XP
+    const btn = document.getElementById('gameXpBtn');
+    if (btn) {
+        const pop = document.createElement('span');
+        pop.className = 'gm-xp-pop';
+        pop.textContent = '+5';
+        btn.appendChild(pop);
+        setTimeout(() => pop.remove(), 700);
+    }
+});
+
+// ══════════════════════════════════════════
 // FLASHCARD MODE
 // ══════════════════════════════════════════
 let _fcFlipped = false;
