@@ -8138,10 +8138,35 @@ window.addEventListener('message', async function(e) {
     if (!document.getElementById('gameModal')?.classList.contains('open')) return;
     _gameSessionXP += 5;
     await addXP(5);
-    // Ghi nhận hoạt động học → tính streak + tiến độ 7 ngày
-    // Ghi thẳng vào Firestore (không qua queue vì ngoài review session)
+
     if (currentUser) {
         const todayK = todayKey();
+        const wordKey = (e.data.word || '').toLowerCase();
+
+        // 1. Cập nhật SRS cho từ vừa đúng (nếu game gửi kèm từ)
+        if (wordKey) {
+            const item = fullLibrary.find(i => i.word.toLowerCase() === wordKey);
+            if (item) {
+                const srs = srsUpdate(item, true);
+                const newCorrect = (item.correct_count || 0) + 1;
+                // Cập nhật local ngay
+                _syncSRS(wordKey, srs, { correct_count: newCorrect });
+                // Ghi thẳng Firestore (ngoài review session)
+                try {
+                    await db.collection('users').doc(currentUser.uid)
+                        .collection('vocabulary').doc(wordKey)
+                        .set({
+                            correct_count: firebase.firestore.FieldValue.increment(1),
+                            srs_interval:  srs.srs_interval,
+                            srs_ease:      srs.srs_ease,
+                            srs_reps:      srs.srs_reps,
+                            srs_next_review: srs.srs_next_review,
+                        }, { merge: true });
+                } catch(err) { console.warn('Game SRS write error', err); }
+            }
+        }
+
+        // 2. Ghi activity → streak + biểu đồ 7 ngày
         try {
             await db.collection('users').doc(currentUser.uid)
                 .collection('activity').doc(todayK).set({
@@ -8151,11 +8176,12 @@ window.addEventListener('message', async function(e) {
                 }, { merge: true });
             if (typeof _streakStudiedSet !== 'undefined') _streakStudiedSet.add(todayK);
             updateStreakDisplay();
-        } catch(e) { console.warn('Game activity write error', e); }
+        } catch(err) { console.warn('Game activity write error', err); }
     }
+
+    // 3. Cập nhật badge + hiệu ứng
     const badge = document.getElementById('gameXpCount');
     if (badge) badge.textContent = _gameSessionXP;
-    // Hiệu ứng +5 bay lên trên nút XP
     const btn = document.getElementById('gameXpBtn');
     if (btn) {
         const pop = document.createElement('span');
