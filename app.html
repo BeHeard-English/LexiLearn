@@ -8095,16 +8095,14 @@ function openMatchingGame() {
     const pairs = list.map(i => ({ en: i.word, vi: i.vn || '' }))
                       .filter(p => p.en && p.vi);
 
-    // Load game1.html
-    frame.src = 'game1.html?t=' + Date.now();
-
-    // Đợi game1 gửi GAME_READY rồi truyền dữ liệu
+    // Đăng ký listener TRƯỚC khi load frame
     function onReady(e) {
         if (!e.data || e.data.type !== 'GAME_READY') return;
         window.removeEventListener('message', onReady);
         clearTimeout(loadTimeout);
         overlay.style.display = 'none';
         frame.style.display   = 'block';
+        if (errPanel) errPanel.style.display = 'none';
         // Gửi danh sách từ vào game
         frame.contentWindow.postMessage({ type: 'INIT_PAIRS', pairs: pairs }, '*');
     }
@@ -8116,6 +8114,10 @@ function openMatchingGame() {
         if (errPanel) errPanel.style.display = 'flex';
         showToast('⚠️ Không thể tải game Matching. Kiểm tra file game1.html!');
     }, 10000);
+
+    // Load game1.html SAU khi listener đã sẵn sàng
+    frame.removeAttribute('srcdoc');
+    frame.src = 'game1.html?t=' + Date.now();
 }
 
 async function grantGameXP(btn) {
