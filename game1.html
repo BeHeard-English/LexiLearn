@@ -423,12 +423,14 @@ window.addEventListener('message', function(e) {
 
   // Nhận danh sách từ tới hạn
   if (e.data.type === 'INIT_PAIRS' && Array.isArray(e.data.pairs)) {
+    clearInterval(_readyInterval); // dừng ping
     allPairs = e.data.pairs; // [{ en, vi }, ...]
     showSetup();
   }
 
   // app-2 yêu cầu chạy ngay (bỏ qua setup)
   if (e.data.type === 'START_GAME' && Array.isArray(e.data.pairs)) {
+    clearInterval(_readyInterval); // dừng ping
     allPairs = e.data.pairs;
     gameMode = e.data.mode || 1;
     totalRounds = e.data.rounds || 3;
@@ -445,7 +447,10 @@ function showSetup() {
 }
 
 // Thông báo với app-2 rằng game đã sẵn sàng nhận dữ liệu
-window.parent.postMessage({ type: 'GAME_READY' }, '*');
+// Gửi lặp lại mỗi 300ms cho đến khi nhận được INIT_PAIRS (tránh race condition)
+let _readyInterval = setInterval(() => {
+    try { window.parent.postMessage({ type: 'GAME_READY' }, '*'); } catch(e){}
+}, 300);
 
 // ═══════════════════════════════════════════════
 // AUDIO
