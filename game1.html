@@ -658,6 +658,7 @@ function checkMatch1P() {
   } else {
     g1SelectedLeft.classList.add('matched-wrong'); g1SelectedRight.classList.add('matched-wrong');
     playWrong();
+    try { window.parent.postMessage({ type: 'WRONG_ANSWER' }, '*'); } catch(e){}
     const prevL = g1SelectedLeft, prevR = g1SelectedRight;
     setTimeout(() => { prevL.classList.remove('selected','matched-wrong'); prevR.classList.remove('selected','matched-wrong'); }, 400);
   }
@@ -779,6 +780,7 @@ function checkMatch2P(p) {
   } else {
     sel.left.classList.add('matched-wrong'); sel.right.classList.add('matched-wrong');
     playWrong();
+    try { window.parent.postMessage({ type: 'WRONG_ANSWER' }, '*'); } catch(e){}
     const prevL = sel.left, prevR = sel.right;
     setTimeout(() => {
       if (prevL) prevL.classList.remove(selClass,'matched-wrong');
@@ -900,7 +902,8 @@ function goSetup() {
   g2GameActive = false; stopConfetti();
   if (g2TimerIntervals) g2TimerIntervals.forEach(t => { if(t) clearInterval(t); });
   document.getElementById('result-winner-banner')?.classList.remove('show');
-  showScreen('setup-screen');
+  // Thoát game -> báo app-2 đóng modal, quay về Thư viện
+  try { window.parent.postMessage({ type: 'EXIT_GAME' }, '*'); } catch(e){}
 }
 function replayGame() { startGame(); }
 function closeOverlay() { document.getElementById('round-overlay').classList.remove('show'); }
