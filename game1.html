@@ -559,6 +559,17 @@ function shuffle(arr) {
   return a;
 }
 
+// Lấy N nghĩa "mồi" từ các từ khác (không thuộc round hiện tại), tạo thử thách
+function getDecoyMeanings(currentPairs, count) {
+  const currentVis = new Set(currentPairs.map(p => p.vi));
+  const candidates = allPairs
+    .map(p => p.vi)
+    .filter(vi => vi && !currentVis.has(vi));
+  // Loại trùng lặp
+  const unique = [...new Set(candidates)];
+  return shuffle(unique).slice(0, count);
+}
+
 // ═══════════════════════════════════════════════
 // 1 PLAYER
 // ═══════════════════════════════════════════════
@@ -583,8 +594,9 @@ function loadRound1P() {
   colR.innerHTML = '<div class="col-label">Tiếng Việt</div>';
   document.getElementById('g1-svg').innerHTML = '';
 
-  // Cột phải xáo trộn (để không lộ thứ tự), cột trái giữ nguyên
-  const rights = shuffle(g1CurrentPairs.map(p => p.vi));
+  // Cột phải: thêm 2 nghĩa "mồi" + xáo trộn toàn bộ (để không lộ thứ tự)
+  const decoys = getDecoyMeanings(g1CurrentPairs, 2);
+  const rights = shuffle([...g1CurrentPairs.map(p => p.vi), ...decoys]);
   g1CurrentPairs.forEach((pair, i) => {
     const c = makeCard(pair.en, 'word-card');
     c.dataset.idx = i; c.dataset.side = 'left';
@@ -711,7 +723,8 @@ function renderPlayer2P(p, pairs) {
   colL.innerHTML = ''; colR.innerHTML = '';
   const svgEl = document.getElementById(`p${p}-svg`);
   if (svgEl) svgEl.innerHTML = '';
-  const rights = shuffle(pairs.map(pr => pr.vi));
+  const decoys = getDecoyMeanings(pairs, 2);
+  const rights = shuffle([...pairs.map(pr => pr.vi), ...decoys]);
   pairs.forEach((pair, i) => {
     const c = makeCard(pair.en, 'word-card-sm');
     c.dataset.idx = i; c.dataset.side = 'left';
