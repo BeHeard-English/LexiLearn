@@ -7876,16 +7876,9 @@ function getGameVocab() {
         const ids = tl ? (tl.wordIds || []) : [];
         return fullLibrary.filter(i => ids.includes((i.word || '').toLowerCase()));
     }
-    // Thư viện tổng hợp: loại bỏ từ đã thuộc, sắp xếp từ tới hạn lên đầu
-    const notMastered = fullLibrary.filter(i => (i.correct_count || 0) < 10);
-    const allActive = document.querySelector('#gameLevelFilter [data-gf="ALL"]')?.classList.contains('active');
-    const pool = allActive || true
-        ? notMastered
-        : (() => {
-            const activeLevels = [...document.querySelectorAll('#gameLevelFilter [data-gf]:not([data-gf="ALL"]).active')]
-                .map(b => b.dataset.gf);
-            return activeLevels.length ? notMastered.filter(i => activeLevels.includes(i.level)) : notMastered;
-        })();
+    // Thư viện tổng hợp: sắp xếp từ tới hạn (theo SRS) lên đầu, không loại bỏ từ đã thuộc
+    // Vì một từ đã thuộc (correct_count cao) vẫn có thể tới hạn ôn lại theo SRS
+    const pool = fullLibrary;
 
     // Sắp xếp: từ tới hạn (isDue) lên đầu, trong mỗi nhóm sort theo ngày gần nhất
     const now = new Date();
@@ -7903,13 +7896,16 @@ function getGameVocab() {
     });
 }
 function updateGameWordCount() {
-    const count = getGameVocab().length;
-    document.getElementById('gameWordCount').textContent = count;
+    const vocab = getGameVocab();
     const label = document.getElementById('gameWordCountLabel');
-    if (label) {
-        if (_gameVocabSource === 'all') label.textContent = 'từ chưa thuộc';
-        else if (_gameVocabSource === 'wrong_words') label.textContent = 'từ hay sai';
-        else label.textContent = 'từ sẵn sàng';
+    if (_gameVocabSource === 'all') {
+        // Hiển thị số từ tới hạn thực sự (theo SRS), không phải tổng số từ
+        const dueCount = vocab.filter(isDue).length;
+        document.getElementById('gameWordCount').textContent = dueCount;
+        if (label) label.textContent = 'từ tới hạn';
+    } else {
+        document.getElementById('gameWordCount').textContent = vocab.length;
+        if (label) label.textContent = (_gameVocabSource === 'wrong_words') ? 'từ hay sai' : 'từ sẵn sàng';
     }
 }
 
