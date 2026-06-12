@@ -8210,6 +8210,28 @@ function openGameNewTab() {
 }
 
 // ══════════════════════════════════════════
+// GAME EXIT — đóng modal, quay về Thư viện
+// ══════════════════════════════════════════
+window.addEventListener('message', function(e) {
+    if (!e.data || e.data.type !== 'EXIT_GAME') return;
+    if (!document.getElementById('gameModal')?.classList.contains('open')) return;
+    closeGameModal();
+    switchTab('library');
+});
+
+// ══════════════════════════════════════════
+// GAME WRONG ANSWER — trừ coin để tránh chọn lụi
+// ══════════════════════════════════════════
+window.addEventListener('message', async function(e) {
+    if (!e.data || e.data.type !== 'WRONG_ANSWER') return;
+    if (!document.getElementById('gameModal')?.classList.contains('open')) return;
+    if (!currentUser) return;
+    // Trừ 5 coin (không trừ XP), không cho coin xuống dưới 0
+    const deduct = Math.min(5, _userCoins);
+    if (deduct > 0) await addCoins(-deduct, true);
+});
+
+// ══════════════════════════════════════════
 // GAME XP — lắng nghe postMessage từ iframe game
 // ══════════════════════════════════════════
 window.addEventListener('message', async function(e) {
