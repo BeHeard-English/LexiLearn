@@ -8214,7 +8214,7 @@ function openGameNewTab() {
 // ══════════════════════════════════════════
 window.addEventListener('message', function(e) {
     if (!e.data || e.data.type !== 'EXIT_GAME') return;
-    if (!document.getElementById('gameModal')?.classList.contains('open')) return;
+    console.log('[EXIT_GAME] received. Modal open?', document.getElementById('gameModal')?.classList.contains('open'));
     closeGameModal();
     switchTab('library');
 });
