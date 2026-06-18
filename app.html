@@ -6541,9 +6541,16 @@ async function startReviewQuiz() {
         return true;
     });
 
-    // SRS: due words first
-    const due    = shuffle(pool.filter(i=> isDue(i)));
-    const notDue = shuffle(pool.filter(i=>!isDue(i)));
+    // SRS: từ tới hạn lên đầu, sort theo ngày tới hạn tăng dần (quá hạn lâu nhất = ưu tiên cao nhất)
+    const _sortByDue = (a, b) => {
+        const da = a.srs_next_review ? _toDate(a.srs_next_review) : null;
+        const db_ = b.srs_next_review ? _toDate(b.srs_next_review) : null;
+        const aTime = da ? da.getTime() : 0; // null = từ mới = tới hạn ngay = 0
+        const bTime = db_ ? db_.getTime() : 0;
+        return aTime - bTime; // nhỏ hơn (quá hạn lâu hơn) lên đầu
+    };
+    const due    = pool.filter(i =>  isDue(i)).sort(_sortByDue);
+    const notDue = pool.filter(i => !isDue(i)).sort(_sortByDue);
 
     // Nếu chọn "toàn bộ từ đến hạn" → chỉ lấy due words, không giới hạn số lượng
     const basePool = countAll
@@ -8190,21 +8197,7 @@ function openMatchingGame() {
     const pairs = list.map(i => ({ en: i.word, vi: i.vn || '' }))
                       .filter(p => p.en && p.vi);
 
-    // Đảm bảo từ tới hạn luôn lên đầu, không phụ thuộc thứ tự gốc của fullLibrary
-    const _now = new Date();
-    pairs.sort((a, b) => {
-        const ia = list.find(it => it.word === a.en);
-        const ib = list.find(it => it.word === b.en);
-        const da = ia?.srs_next_review ? _toDate(ia.srs_next_review) : null;
-        const db_ = ib?.srs_next_review ? _toDate(ib.srs_next_review) : null;
-        const aDue = !da || isNaN(da) || da <= _now;
-        const bDue = !db_ || isNaN(db_) || db_ <= _now;
-        if (aDue && !bDue) return -1;
-        if (!aDue && bDue) return 1;
-        const aTime = da ? da.getTime() : 0;
-        const bTime = db_ ? db_.getTime() : 0;
-        return aTime - bTime;
-    });
+    // getGameVocab() đã sort đúng thứ tự tới hạn — pairs giữ nguyên thứ tự đó
 
     // Đăng ký listener TRƯỚC khi load frame
     function onReady(e) {
