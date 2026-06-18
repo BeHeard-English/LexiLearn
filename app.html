@@ -4936,6 +4936,16 @@ function openWWPopup(word) {
     _wwCurrentWord = item.word;
     document.getElementById('wwWord').textContent = item.word;
     document.getElementById('wwIpa').textContent  = item.ipa ? `/${item.ipa}/` : '';
+    // Làm giàu IPA từ Dictionary API
+    enrichIPA(item).then(enriched => {
+        if (enriched.ipa && enriched.ipa !== item.ipa) {
+            item.ipa = enriched.ipa;
+            const wwEl = document.getElementById('wwIpa');
+            if (wwEl) wwEl.textContent = `/${enriched.ipa}/`;
+            const li = fullLibrary.find(i => i.word === item.word);
+            if (li) { li.ipa = enriched.ipa; _saveCache(fullLibrary); }
+        }
+    });
     document.getElementById('wwVn').textContent   = item.vn  || '';
     document.getElementById('wwEx').textContent   = item.example || '';
     const cor = item.correct_count||0, inc = item.incorrect_count||0;
@@ -5130,7 +5140,24 @@ function _pickVoice(lang) {
     const baseMatch  = v => v.lang.split(/[-_]/)[0] === base;
 
     if (!_isTouchDevice) {
-        // Desktop: không chọn giọng cụ thể, để trình duyệt tự chọn theo lang
+        // Desktop: ưu tiên giọng Google/Microsoft chất lượng cao nếu có
+        if (base === 'en') {
+            const premiumNames = [
+                'Google US English',        // Chrome
+                'Google UK English Female', // Chrome
+                'Google UK English Male',   // Chrome
+                'Microsoft Aria',           // Edge (Neural)
+                'Microsoft Guy',            // Edge/Windows
+                'Microsoft David',          // Edge/Windows
+                'Samantha',                 // macOS/Safari
+                'Alex',                     // macOS
+            ];
+            const premium = voices.find(v =>
+                baseMatch(v) && premiumNames.some(n => v.name.includes(n))
+            );
+            if (premium) return premium;
+        }
+        // Fallback: để trình duyệt tự chọn
         return null;
     }
 
@@ -5701,6 +5728,41 @@ Rules:
 };
 
 function lvClass(l){ return {A1:'level-A1',A2:'level-A2',B1:'level-B1',B2:'level-B2',C1:'level-C1',C2:'level-C2'}[l]||'level-B1'; }
+
+// ── Dictionary API IPA cache ──────────────────────────────────────────────────
+const _ipaCache = {}; // word → ipa string
+
+async function fetchIPAFromDictionary(word) {
+    if (!word) return null;
+    const key = word.toLowerCase().trim();
+    if (_ipaCache[key] !== undefined) return _ipaCache[key];
+    try {
+        const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(key)}`);
+        if (!res.ok) { _ipaCache[key] = null; return null; }
+        const data = await res.json();
+        // Tìm IPA phonetic đầu tiên có text
+        const phonetics = data[0]?.phonetics || [];
+        const found = phonetics.find(p => p.text && p.text.trim());
+        const ipa = found ? found.text.trim() : null;
+        _ipaCache[key] = ipa;
+        return ipa;
+    } catch(e) {
+        _ipaCache[key] = null;
+        return null;
+    }
+}
+
+// Cập nhật IPA cho 1 từ: thử Dictionary API trước, fallback về AI-generated
+async function enrichIPA(item) {
+    // Chỉ làm với từ đơn (không phải cụm từ dài)
+    if (!item.word || item.word.trim().includes('  ')) return item;
+    // Bỏ qua nếu đã có IPA chuẩn (có dấu / hoặc /)
+    const hasGoodIPA = item.ipa && (item.ipa.startsWith('/') || item.ipa.startsWith('[ˈ') || item.ipa.startsWith('[ˌ'));
+    // Luôn thử Dictionary API để kiểm tra — chỉ bỏ qua nếu đã cache
+    const dictIPA = await fetchIPAFromDictionary(item.word);
+    if (dictIPA) return { ...item, ipa: dictIPA };
+    return item; // giữ nguyên IPA từ Groq nếu Dictionary không có
+}
 
 // ── Chuẩn hóa entry từ AI — đảm bảo không thiếu trường ──────────────────────
 function normalizeVocabEntry(item) {
@@ -6647,6 +6709,21 @@ async function showReviewQuestion() {
         document.getElementById('qPromptLabel').innerText = 'Từ tiếng Anh';
         document.getElementById('qIpa').innerText = target.ipa||'/ /';
         document.getElementById('qWord').innerText = target.word;
+        // Làm giàu IPA từ Dictionary API (async, cập nhật UI ngay khi có)
+        enrichIPA(target).then(enriched => {
+            if (enriched.ipa !== target.ipa) {
+                target.ipa = enriched.ipa;
+                // Cập nhật fullLibrary và cache
+                const li = fullLibrary.find(i => i.word === target.word);
+                if (li) li.ipa = enriched.ipa;
+                _saveCache(fullLibrary);
+                // Cập nhật UI nếu vẫn đang hiển thị từ này
+                const ipaEl = document.getElementById('qIpa');
+                if (ipaEl && document.getElementById('qWord').innerText === target.word) {
+                    ipaEl.innerText = enriched.ipa;
+                }
+            }
+        });
         ttsBtn.style.display='flex';
         const choices = shuffle([target.vn, ...shuffle(reviewPool.filter(i=>i.word!==target.word)).slice(0,3).map(i=>i.vn)]);
         document.getElementById('qChoices').innerHTML = choices.map((c,idx)=>`
