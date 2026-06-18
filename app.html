@@ -8264,6 +8264,18 @@ async function grantGameXP(btn) {
     showToast(`⭐ +5 XP! Tổng hôm nay: ${_gameSessionXP} XP từ game`);
 }
 
+async function refreshLibraryFromFirestore() {
+    // Force fetch từ Firestore thay vì cache — dùng sau game session
+    if (!currentUser) return;
+    try {
+        const snap = await db.collection('users').doc(currentUser.uid).collection('vocabulary').get();
+        fullLibrary = snap.docs.map(d => d.data());
+        _saveCache(fullLibrary);
+        updateGameWordCount();
+        loadSRSDueCount();
+    } catch(e) { console.warn('refreshLibraryFromFirestore error:', e); }
+}
+
 function closeGameModal() {
     const frame = document.getElementById('gameFrame');
     document.getElementById('gameModal').classList.remove('open');
@@ -8277,6 +8289,8 @@ function closeGameModal() {
         document.getElementById('gameLoadingOverlay').style.display = 'flex';
         document.getElementById('vocabBanner').classList.add('hidden');
     }, 200);
+    // Refresh fullLibrary từ Firestore sau khi đóng game
+    refreshLibraryFromFirestore();
 }
 
 function copyVocabAgain() {
@@ -8296,9 +8310,9 @@ function openGameNewTab() {
 // ══════════════════════════════════════════
 window.addEventListener('message', function(e) {
     if (!e.data || e.data.type !== 'EXIT_GAME') return;
-    console.log('[EXIT_GAME] received. Modal open?', document.getElementById('gameModal')?.classList.contains('open'));
     closeGameModal();
-    switchTab('library');
+    // Refresh fullLibrary từ Firestore để đảm bảo SRS mới nhất, rồi chuyển tab
+    refreshLibraryFromFirestore().then(() => switchTab('library'));
 });
 
 // ══════════════════════════════════════════
@@ -8348,11 +8362,10 @@ window.addEventListener('message', async function(e) {
                             srs_reps:      srs.srs_reps,
                             srs_next_review: srs.srs_next_review,
                         }, { merge: true });
-                    console.log('[Game SRS] Firestore write OK for:', wordKey);
+                    // Refresh UI số từ tới hạn ngay sau khi ghi
+                    updateGameWordCount();
+                    loadSRSDueCount();
                 } catch(err) { console.warn('[Game SRS] Firestore write ERROR:', err); }
-            } else {
-                console.warn('[Game SRS] word NOT found in fullLibrary. wordKey:', wordKey,
-                    '| library sample:', fullLibrary.slice(0,3).map(i=>i.word));
             }
         }
 
