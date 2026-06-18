@@ -10208,6 +10208,9 @@ async function checkTypingAnswer() {
     const nextBtn = document.getElementById('nextTypingBtn');
     const inputField = document.getElementById('typingInput');
 
+    // Lưu target TRƯỚC khi currentReviewIdx thay đổi — dùng cho nút TTS
+    window._typingAnswerTarget = target;
+
     inputField.disabled = true;
     checkBtn.disabled = true;
     checkBtn.style.display = 'none';
@@ -10388,10 +10391,9 @@ Học sinh có hiểu đúng nghĩa không?`;
 }
 
 function typingSpeakAnswer() {
-    const target = reviewPool[currentReviewIdx - 1] || reviewPool[currentReviewIdx];
+    // Dùng target được lưu trước khi currentReviewIdx thay đổi
+    const target = window._typingAnswerTarget;
     if (!target) return;
-    // Chế độ vi→en: đọc từ tiếng Anh sau khi hiện đáp án
-    // Chế độ en→vi: đọc từ tiếng Anh hiện tại
     const wordToSpeak = target.word;
     const btn = document.getElementById('typingTtsBtn');
     if (btn) btn.textContent = '🔊';
