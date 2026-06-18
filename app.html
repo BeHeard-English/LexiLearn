@@ -1812,7 +1812,12 @@
                     <input type="text" id="typingInput" class="txt-input" placeholder="Nhập đáp án..." style="margin-bottom:16px;">
                     <div id="typingFeedback" style="display:none;padding:12px 18px;font-weight:800;font-size:.85rem;text-transform:uppercase;letter-spacing:.06em;text-align:center;border-radius:12px;margin-bottom:12px;"></div>
                     <button id="checkTypingBtn" class="btn-primary wide" style="padding:14px;">Kiểm tra</button>
-                    <button id="nextTypingBtn" class="btn-primary wide" style="margin-top:12px;display:none;padding:14px;">Câu tiếp theo ➜</button>
+                    <div style="display:none;margin-top:12px;gap:10px;align-items:stretch;" id="typingAnswerRow">
+                        <button id="typingTtsBtn" onclick="typingSpeakAnswer()" style="flex-shrink:0;padding:14px 18px;border-radius:14px;border:none;background:var(--card);border:1.5px solid var(--border);color:var(--primary);font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s;" title="Nghe phát âm">
+                            🔊
+                        </button>
+                        <button id="nextTypingBtn" class="btn-primary wide" style="padding:14px;flex:1;">Câu tiếp theo ➜</button>
+                    </div>
                 </div>
             </div>
 
@@ -10165,6 +10170,8 @@ async function showTypingQuestion() {
     currentWord = target;
     document.getElementById('typingFeedback').style.display = 'none';
     document.getElementById('nextTypingBtn').style.display = 'none';
+    const _row = document.getElementById('typingAnswerRow');
+    if (_row) _row.style.display = 'none';
     document.getElementById('checkTypingBtn').style.display = 'flex';
     document.getElementById('typingInput').value = '';
     document.getElementById('typingInput').disabled = false;
@@ -10204,6 +10211,8 @@ async function checkTypingAnswer() {
     inputField.disabled = true;
     checkBtn.disabled = true;
     checkBtn.style.display = 'none';
+    const answerRow = document.getElementById('typingAnswerRow');
+    if (answerRow) { answerRow.style.display = 'flex'; }
     nextBtn.style.display = 'flex';
     nextBtn.disabled = true;
     const useAI = document.getElementById('useAIGrading')?.checked || false;
@@ -10376,6 +10385,21 @@ Học sinh có hiểu đúng nghĩa không?`;
         proceed();
     };
     nextBtn.disabled = false;
+}
+
+function typingSpeakAnswer() {
+    const target = reviewPool[currentReviewIdx - 1] || reviewPool[currentReviewIdx];
+    if (!target) return;
+    // Chế độ vi→en: đọc từ tiếng Anh sau khi hiện đáp án
+    // Chế độ en→vi: đọc từ tiếng Anh hiện tại
+    const wordToSpeak = target.word;
+    const btn = document.getElementById('typingTtsBtn');
+    if (btn) btn.textContent = '🔊';
+    speak(wordToSpeak, 'en-US');
+    if (btn) {
+        btn.textContent = '⏸';
+        setTimeout(() => { btn.textContent = '🔊'; }, 2000);
+    }
 }
 
 function typingEnterHandler(e) {
